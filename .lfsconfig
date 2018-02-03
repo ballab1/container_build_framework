@@ -1,0 +1,5 @@
+[lfs]
+        url = https://amaas-mr-mw1.cec.lab.emc.com/artifactory/api/lfs/deven-git-lfs-mw-local
+
+[lfs "https://amaas-mr-mw1.cec.lab.emc.com/artifactory/api/lfs/deven-git-lfs-mw-local"]
+        access = basic 
