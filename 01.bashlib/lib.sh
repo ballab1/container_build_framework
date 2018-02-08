@@ -49,7 +49,7 @@ function lib.runScripts()
     local -r tools="$( lib.getBase )"
 
     IFS=$'\r\n'
-    local files="$(find "${tools}/${dir}" -maxdepth 1 -type f ! -name '.*' | sort)"
+    local files="$(find "${tools}/${dir}"  -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort)"
     if [ "$files" ]; then
         [ "$notice" != ' ' ] && $LOG "${notice}${LF}" 'task'
         for file in ${files} ; do

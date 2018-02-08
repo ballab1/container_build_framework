@@ -52,5 +52,5 @@ function download.getPackages()
     
     while read -r pkg; do
         eval download.getFile "$pkg" || $LOG ">>>>> issue while downloading $( basename "$pkg" ) <<<<<${LF}" 'warn'
-    done < <(find "${tools}/${dir}" -maxdepth 1 -type f ! -name '.*' | sort)
+    done < <(find "${tools}/${dir}"  -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort)
 }

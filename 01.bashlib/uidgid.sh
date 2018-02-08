@@ -46,7 +46,7 @@ function uidgid.createUserAndGroup()
     $LOG "INFO: group/gid (${wanted}):  is currently (${nameMatch})/(${idMatch})${LF}" 'info'
 
     if [[ $wanted != $nameMatch  ||  $wanted != $idMatch ]]; then
-        printf "${LF}create group:  %s${LF}" $group
+        $LOG "create group:  ${group}${LF}" 'info'
         [[ "$nameMatch"  &&  $wanted != $nameMatch ]] && groupdel "$( getent group ${group} | awk -F ':' '{ print $1 }' )"
         [[ "$idMatch"    &&  $wanted != $idMatch ]]   && groupdel "$( getent group ${gid} | awk -F ':' '{ print $1 }' )"
         /usr/sbin/groupadd --gid "${gid}" "${group}"
@@ -59,7 +59,7 @@ function uidgid.createUserAndGroup()
     $LOG "INFO: user/uid (${wanted}):  is currently (${nameMatch})/(${idMatch})${LF}" 'info'
     
     if [[ $wanted != $nameMatch  ||  $wanted != $idMatch ]]; then
-        printf "create user: %s${LF}" $user
+        $LOG "create user: ${user}${LF}" 'info'
         [[ "$nameMatch"  &&  $wanted != $nameMatch ]] && userdel "$( getent passwd ${user} | awk -F ':' '{ print $1 }' )"
         [[ "$idMatch"    &&  $wanted != $idMatch ]]   && userdel "$( getent passwd ${uid} | awk -F ':' '{ print $1 }' )"
 

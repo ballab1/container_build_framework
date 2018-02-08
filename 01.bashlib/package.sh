@@ -11,7 +11,7 @@ function package.getPackages()
 
     while read -r pkg; do
         package.install "$pkg"
-    done < <(find "${tools}/${dir}" -maxdepth 1 -type f ! -name '.*' | sort)
+    done < <(find "${tools}/${dir}"  -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort)
 }
 
 #############################################################################
