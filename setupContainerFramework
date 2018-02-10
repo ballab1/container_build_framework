@@ -4,25 +4,26 @@
 set -o nounset
 set -o errexit
 
-declare TOOLS="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )" 
-
 function createStructure()
 {
+    local tools=${1:?"must pass parameter 'tools' to 'function ${FUNCNAME[0]}()'"}
+
     local -a dirs=( '02.packages' '03.users_groups' '04.downloads' '05.applications' '06.customizations' '07.permissions' '08.cleanup' )
     for dir in ${dirs[@]}; do
-        mkdir -p "${TOOLS}/container/${dir}"
-        touch "${TOOLS}/container/${dir}/.Do Not Delete"
+        mkdir -p "${tools}/container/${dir}"
+        touch "${tools}/container/${dir}/.Do Not Delete"
     done
 }
 
 function createSymlinks()
 {
-    local dr=${1:?"must pass parameter 'dr' to ${FUNCNAME[0]}"}
+    local tools=${1:?"must pass parameter 'tools' to 'function ${FUNCNAME[0]}()'"}
+    local dr=${2:?"must pass parameter 'dr' to 'function ${FUNCNAME[0]}()'"}
     
     local dir="$( basename "$dr" )"
     [ $dir = '01.bashlib' ] && return 0
 
-    cd "${TOOLS}/container/${dir}"
+    cd "${tools}/container/${dir}"
     while read -r fl ;do
         local file="$( basename "$fl" )"
         [ -h "$file" ] && rm "$file"
@@ -34,7 +35,9 @@ function createSymlinks()
 
 function scanLibFolders()
 {
-    cd "${TOOLS}/container"
+    local tools=${1:?"must pass parameter 'tools' to 'function ${FUNCNAME[0]}()'"}
+
+    cd "${tools}/container"
     [ -h 01.bashlib ] && rm -rf 01.bashlib
     [ -d 01.bashlib ] && rm -rf 01.bashlib
     [ -h build.sh ] && rm build.sh
@@ -42,10 +45,10 @@ function scanLibFolders()
 
     # scan lib folders and create symlinks for any files found
     while read -r dr ;do
-        createSymlinks $dr        
+        createSymlinks "$tools" "$dr"        
     done < <(find "${TOOLS}/container_lib" -maxdepth 1 -type d -name '*.*' ! -path '.' ! -path './.*')
 
-    cd "${TOOLS}/container"
+    cd "${tools}/container"
     echo "Creating symlink to ../container_lib/01.bashlib"
     ln -s ../container_lib/01.bashlib .
     echo "Creating symlink to ../container_lib/build.sh"
@@ -53,10 +56,12 @@ function scanLibFolders()
 }
 
 
+declare TOOLS="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )" 
+
 if [ ! -d container ]; then
-    createStructure
-    scanLibFolders
+    createStructure "$TOOLS"
+    scanLibFolders "$TOOLS"
 
 elif [ -d container ] && [ -d container_lib ]; then
-    scanLibFolders
+    scanLibFolders "$TOOLS"
 fi
