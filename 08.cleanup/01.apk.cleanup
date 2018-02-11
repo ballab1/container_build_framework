@@ -1,0 +1,4 @@
+#!/bin/bash
+
+apk del .build-deps
+rm -rf /var/cache/apk/*
