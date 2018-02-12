@@ -47,6 +47,6 @@ function download.getPackages()
     local -a files=${1:?'Input parameter "files" must be defined'}
 
     for file in ${files} ; do
-        eval download.getFile "$pkg" || $LOG ">>>>> issue while downloading $( basename "$pkg" ) <<<<<${LF}" 'warn'
+        eval download.getFile "$file" || $LOG ">>>>> issue while downloading $( basename "$file" ) <<<<<${LF}" 'warn'
     done
 }
