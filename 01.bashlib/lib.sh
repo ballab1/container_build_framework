@@ -35,7 +35,7 @@ function lib.buildContainer()
         local action="${info[2]}"
 
         # get array of files in directory
-        local -a files=( $( lib.getFiles "$dir" ) )
+        local -a files=( $( lib.getFiles "${TOOLS}/$dir" ) )
         [ ${#files[*]} = 0 ] && continue
 
         # show notice if there are files to process
@@ -59,10 +59,9 @@ function lib.getBase()
 function lib.getFiles()
 {
     local -r dir=${1:?'Input parameter "dir" must be defined'}
-    local -r tools="$( lib.getBase )"
 
     IFS=$'\r\n'
-    find "${tools}/${dir}"  -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort
+    find "${dir}"  -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort
 }
 
 #############################################################################
