@@ -1,8 +1,5 @@
 #!/bin/bash
 
-set -o errexit
-set -o nounset
-
 #############################################################################
 #
 #   download.sh
@@ -47,10 +44,9 @@ function download.getFile()
 #############################################################################
 function download.getPackages()
 {
-    local -r dir=${1:?'Input parameter "dir" must be defined'}
-    local -r tools="$( lib.getBase )"
-    
-    while read -r pkg; do
+    local -a files=${1:?'Input parameter "files" must be defined'}
+
+    for file in ${files} ; do
         eval download.getFile "$pkg" || $LOG ">>>>> issue while downloading $( basename "$pkg" ) <<<<<${LF}" 'warn'
-    done < <(find "${tools}/${dir}"  -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort)
+    done
 }

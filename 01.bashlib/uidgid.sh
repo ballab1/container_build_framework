@@ -7,19 +7,13 @@
 
 function uidgid.check()
 {
-    local -r dir=${1:?'Input parameter "dir" must be defined'}
-    local -r notice=${2:-' '}
+    local -a files=${1:?'Input parameter "files" must be defined'}
 
-    IFS=$'\r\n'
-    local files="$(ls -1 "${TOOLS}/${dir}"/* 2>/dev/null | sort)"
-    if [ "$files" ]; then
-        [ "$notice" != ' ' ] && $LOG "${notice}${LF}" 'task'
-        for file in ${files} ; do
-            chmod 755 "$file"
-            $LOG "..executing ${file}${LF}" 'info'
-            eval uidgid.createUserAndGroup "$file" || $LOG "..*** issue while executing $( basename "$file" ) ***${LF}" 'warn'
-        done
-    fi
+    for file in ${files} ; do
+        chmod 755 "$file"
+        $LOG "..executing ${file}${LF}" 'info'
+        eval uidgid.createUserAndGroup "$file" || $LOG "..*** issue while executing $( basename "$file" ) ***${LF}" 'warn'
+    done
 }
 
 #############################################################################

@@ -10,21 +10,50 @@ function lib.buildContainer()
     local -r timezone=${2:-null}
     export TOOLS=$( lib.getBase )
     
+    local -A steps=( ['01']='Install_OS_Support 02.packages lib.runScripts'
+                     ['02']='Verify_users_and_groups 03.users_groups uidgid.check'
+                     ['03']='Download_&_verify_extrenal_packages 04.downloads download.getPackages'
+                     ['04']='Install_applications 05.applications lib.runScripts'
+                     ['05']='Add_configuration_and_customizations 06.customizations lib.runScripts'
+                     ['06']='Make_sure_that_ownership_&_permissions_are_correct 07.permissions lib.runScripts'
+                     ['07']='Clean_up 08.cleanup lib.runScripts'
+                   )
+    
     term.header "$name"
-    lib.runScripts '02.packages' 'Install OS Support'
     [ "$timezone" != null ] && package.installTimezone "$timezone"
-    uidgid.check '03.users_groups' 'Verify users and groups'
-    download.getPackages '04.downloads'
-    lib.runScripts '05.applications' 'Install applications'
-    lib.runScripts '06.customizations' 'Add configuration and customizations'
-    lib.runScripts '07.permissions' 'Make sure that ownership & permissions are correct'
-    lib.runScripts '08.cleanup' 'Clean up'
+
+
+    for id in $( echo "${!steps[@]}" | sort ); do
+        local -a info=( ${steps[$id]} )
+        local notice="${info[0]}"
+        local dir="${info[1]}"
+        local action="${info[2]}"
+
+        local -a files=( $( lib.getFiles "$dir" ) )
+        [ ${#files[*]} = 0 ] && continue
+
+        $LOG "${notice//_/ }${LF}" 'task'
+        if [[ "$timezone" = null && "$dir" = '02.packages' ]]; then
+            package.updateIndexes
+        fi
+        "$action" "${files[*]}"
+    done
 }
 
 #############################################################################
 function lib.getBase()
 {
     printf "%s" "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"   
+}
+
+#############################################################################
+function lib.getFiles()
+{
+    local -r dir=${1:?'Input parameter "dir" must be defined'}
+    local -r tools="$( lib.getBase )"
+
+    IFS=$'\r\n'
+    find "${tools}/${dir}"  -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort
 }
 
 #############################################################################
@@ -44,20 +73,13 @@ function lib.indirectReference()
 #############################################################################
 function lib.runScripts()
 {
-    local -r dir=${1:?'Input parameter "dir" must be defined'}
-    local -r notice=${2:-' '}
-    local -r tools="$( lib.getBase )"
+    local -a files=${1:?'Input parameter "files" must be defined'}
 
-    IFS=$'\r\n'
-    local files="$(find "${tools}/${dir}"  -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort)"
-    if [ "$files" ]; then
-        [ "$notice" != ' ' ] && $LOG "${notice}${LF}" 'task'
-        for file in ${files} ; do
-            chmod 755 "$file"
-            $LOG "..executing ${file}${LF}" 'info'
-            eval "$file" || $LOG ">>>>> issue while executing $( basename "$file" ) <<<<<${LF}" 'warn'
-        done
-    fi
+    for file in ${files} ; do
+        chmod 755 "$file"
+        $LOG "..executing ${file}${LF}" 'info'
+        eval "$file" || $LOG ">>>>> issue while executing $( basename "$file" ) <<<<<${LF}" 'warn'
+    done
 }
 
 #############################################################################

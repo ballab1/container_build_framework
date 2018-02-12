@@ -4,17 +4,6 @@
 #   package.sh
 #
 #############################################################################
-function package.getPackages()
-{
-    local -r dir=${1:?'Input parameter "dir" must be defined'}
-    local -r tools="$( lib.getBase )"
-
-    while read -r pkg; do
-        package.install "$pkg"
-    done < <(find "${tools}/${dir}"  -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort)
-}
-
-#############################################################################
 function package.install()
 {
     local -r pkg=${1:?'Input parameter "pkg" must be defined'}
@@ -42,4 +31,10 @@ function package.installTimezone()
     echo "$tz" > /etc/TZ
     cp "/usr/share/zoneinfo/$tz" /etc/timezone
     cp "/usr/share/zoneinfo/$tz" /etc/localtime
+}
+
+#############################################################################
+function package.updateIndexes()
+{
+     apk update
 }
