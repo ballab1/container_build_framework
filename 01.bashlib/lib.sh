@@ -10,6 +10,8 @@ function lib.buildContainer()
     local -r timezone=${2:-null}
     export TOOLS=$( lib.getBase )
     
+    
+    # list of 'notice, directory, action' to perform
     local -A steps=( ['01']='Install_OS_Support 02.packages lib.runScripts'
                      ['02']='Verify_users_and_groups 03.users_groups uidgid.check'
                      ['03']='Download_&_verify_extrenal_packages 04.downloads download.getPackages'
@@ -23,16 +25,23 @@ function lib.buildContainer()
     [ "$timezone" != null ] && package.installTimezone "$timezone"
 
 
+    # iterate through list
     for id in $( echo "${!steps[@]}" | sort ); do
+
+        # decode list entry into 'notice, directory, action'
         local -a info=( ${steps[$id]} )
         local notice="${info[0]}"
         local dir="${info[1]}"
         local action="${info[2]}"
 
+        # get array of files in directory
         local -a files=( $( lib.getFiles "$dir" ) )
         [ ${#files[*]} = 0 ] && continue
 
+        # show notice if there are files to process
         $LOG "${notice//_/ }${LF}" 'task'
+
+        # perform required actions
         if [[ "$timezone" = null && "$dir" = '02.packages' ]]; then
             package.updateIndexes
         fi
