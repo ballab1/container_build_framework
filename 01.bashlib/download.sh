@@ -34,10 +34,18 @@ function download.getFile()
         [ $? -ne 0 ] && continue
         local result=$(echo "${params['sha256']}  ${params['file']}" | sha256sum -cw 2>&1)
         $LOG "${result}${LF}" 'info'
-        [ "$result" != *' WARNING: '* ] && return 0
-        $LOG "..failed to successfully download ${params['file']}. Retrying....${LF}" 'warn'
+        if [[ "$result" == *'FAILED'* ]]; then
+            $LOG "..Incorrect checksum for ${params['file']}${LF}" 'warn'
+            $LOG "    actual:   $( sha256sum "${params['file']}" | awk '{ print $1 }')${LF}" 'warn'
+            exit 1
+        fi
+        if [[ "$result" == *' WARNING: '* ]]; then
+            $LOG "..failed to successfully download ${params['file']}. Retrying....${LF}" 'info'
+            continue
+        fi
+        return 0
     done
-    exit 0
+    exit 1
 }
 
 
