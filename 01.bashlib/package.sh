@@ -28,6 +28,8 @@ function package.installTimezone()
 {
     local -r tz=${1:?'Input parameter "tz" must be defined'}
     
+    package.updateIndexes
+    apk add --no-cache tzdata
     echo "$tz" > /etc/TZ
     cp "/usr/share/zoneinfo/$tz" /etc/timezone
     cp "/usr/share/zoneinfo/$tz" /etc/localtime
