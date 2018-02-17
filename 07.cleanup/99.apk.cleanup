@@ -1,7 +1,6 @@
 #!/bin/bash
 
-source "${TOOLS}/01.bashlib/lib.sh"
-
+source "${TOOLS}/bin/lib.bashlib"
 
 apk del .build-deps
 

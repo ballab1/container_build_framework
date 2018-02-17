@@ -10,7 +10,7 @@ declare TZ="${2:-null}"
 
 # load our libraries
 declare -r lib_base="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"  
-for src in "${lib_base}/01.bashlib"/*.sh ; do
+for src in "${lib_base}/lib"/*.bashlib ; do
     source "$src"
 done
 
