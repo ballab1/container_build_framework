@@ -3,14 +3,18 @@
 source "${TOOLS}/01.bashlib/lib.sh"
 
 declare -r SUDOERS=/etc/sudoers.d
-declare files=( $( lib.getFiles "$SUDOERS" ) )
-for file in ${files[@]} ; do
-    chown root:root "$file"
-    chmod 600 "$file"
-done
-
 declare -r SUDO=/usr/bin/sudo
+
 if [ -e "$SUDO" ]; then
     chown root "$SUDO"
     chmod 4755 "$SUDO"
+    mkdir -p "$SUDOERS"
+fi
+
+if [ -d "$SUDOERS" ]; then
+    declare files=( $( lib.getFiles "$SUDOERS" ) )
+    for file in ${files[@]} ; do
+        chown root:root "$file"
+        chmod 600 "$file"
+    done
 fi
