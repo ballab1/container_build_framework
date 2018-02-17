@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source "${TOOLS}/bin/lib.bashlib"
+source "${TOOLS}/01.bashlib/lib.sh"
 
 declare -r SUDOERS=/etc/sudoers.d
 declare files=( $( lib.getFiles "$SUDOERS" ) )
