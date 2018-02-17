@@ -22,8 +22,12 @@ function lib.buildContainer()
                    )
     
     term.header "$name"
-    [ "$timezone" != null ] && package.installTimezone "$timezone"
-
+    if [ "$timezone" = null ]; then
+        [ -e /etc/TZ ] && export TZ="$( cat /etc/TZ )"
+    else
+        export TZ="$timezone"
+        package.installTimezone "$timezone"
+    fi
 
     # iterate through list
     for id in $( echo "${!steps[@]}" | sort ); do
