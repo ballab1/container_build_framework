@@ -37,7 +37,7 @@ function download.getFile()
         if [[ "$result" == *'FAILED'* ]]; then
             $LOG "..Incorrect checksum for ${params['file']}${LF}" 'warn'
             $LOG "    actual:   $( sha256sum "${params['file']}" | awk '{ print $1 }')${LF}" 'warn'
-            exit 1
+            continue
         fi
         if [[ "$result" == *' WARNING: '* ]]; then
             $LOG "..failed to successfully download ${params['file']}. Retrying....${LF}" 'info'

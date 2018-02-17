@@ -65,7 +65,7 @@ function lib.getFiles()
     local -r dir=${1:?'Input parameter "dir" must be defined'}
 
     IFS=$'\r\n'
-    find "${dir}"  -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort
+    [ -d "${dir}" ] && find "${dir}"  -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort
 }
 
 #############################################################################
