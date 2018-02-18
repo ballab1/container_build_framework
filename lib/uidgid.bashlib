@@ -41,8 +41,8 @@ function uidgid.createUserAndGroup()
 
     if [[ $wanted != $nameMatch  ||  $wanted != $idMatch ]]; then
         $LOG "create group:  ${group}${LF}" 'info'
-        [[ "$nameMatch"  &&  $wanted != $nameMatch ]] && groupdel "$( getent group ${group} | awk -F ':' '{ print $1 }' )"
-        [[ "$idMatch"    &&  $wanted != $idMatch ]]   && groupdel "$( getent group ${gid} | awk -F ':' '{ print $1 }' )"
+        [[ "$nameMatch"  &&  $wanted != $nameMatch ]] && groupdel "$( getent group ${group} |  cut -d: -f1 )"
+        [[ "$idMatch"    &&  $wanted != $idMatch ]]   && groupdel "$( getent group ${gid} |  cut -d: -f1 )"
         /usr/sbin/groupadd --gid "${gid}" "${group}"
     fi
 
@@ -54,8 +54,8 @@ function uidgid.createUserAndGroup()
     
     if [[ $wanted != $nameMatch  ||  $wanted != $idMatch ]]; then
         $LOG "create user: ${user}${LF}" 'info'
-        [[ "$nameMatch"  &&  $wanted != $nameMatch ]] && userdel "$( getent passwd ${user} | awk -F ':' '{ print $1 }' )"
-        [[ "$idMatch"    &&  $wanted != $idMatch ]]   && userdel "$( getent passwd ${uid} | awk -F ':' '{ print $1 }' )"
+        [[ "$nameMatch"  &&  $wanted != $nameMatch ]] && userdel "$( getent passwd ${user} |  cut -d: -f1 )"
+        [[ "$idMatch"    &&  $wanted != $idMatch ]]   && userdel "$( getent passwd ${uid} |  cut -d: -f1 )"
 
         if [ "$homedir" ]; then
             [ -d "$homedir" ] || mkdir -p "$homedir"

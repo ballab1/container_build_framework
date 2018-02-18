@@ -37,7 +37,7 @@ function download.getFile()
         if [[ "$result" == *'FAILED'* ]]; then
             $LOG "..Incorrect checksum for ${params['file']}${LF}" 'warn'
             $LOG "    actual:   $( sha256sum "${params['file']}" | awk '{ print $1 }')${LF}" 'warn'
-            exit 1
+            continue
         fi
         if [[ "$result" == *' WARNING: '* ]]; then
             $LOG "..failed to successfully download ${params['file']}. Retrying....${LF}" 'info'
@@ -55,6 +55,7 @@ function download.getPackages()
     local -a files=${1:?'Input parameter "files" must be defined'}
 
     for file in ${files} ; do
+        cd /tmp
         eval download.getFile "$file" || $LOG ">>>>> issue while downloading $( basename "$file" ) <<<<<${LF}" 'warn'
     done
 }
