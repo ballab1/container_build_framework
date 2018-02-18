@@ -6,7 +6,7 @@ A framework do simplify 'Dockerfile' and make it easier to build complex contain
 
 Across the web, there are many examples of container [Dockerfile](https://github.com/search?utf8=%E2%9C%93&q=Dockerfile&type=) configuration files. These range from very simple to complex, almost unreadable files. The general problem, seems to be that everyone attempts to use the **Dockerfile** as a *kitchen sink* and put every command related to the creation of the container, into the Dockerfile itself. The [Dockerfile documentation](https://docs.docker.com/engine/reference/builder/) only describes the directives which may be used. It does not talk about standards or best practices.
 
-This always results in *mixed mode* programming, since the Dockerfile `RUN` command is used. It invokes some other command inside of the build container. Usually, this is a bash script, though it can be any script language. Including these script commands on the `RUN` command, end up with a lot of escaping and formatting because the Dockerfile is not a native file for the script. (Hence: "mixed-mode" program).
+This always results in *mixed mode programming*, since the Dockerfile `RUN` command is used. It invokes some other command inside of the build container. Usually, this is a bash script, though it can be any script language. Including these script commands on the `RUN` command, end up with a lot of escaping and formatting because the Dockerfile is not a native file for the script. (Hence: "mixed-mode" program).
 
 This framework takes a differnt approach. It minimizes the 'mixed mode' code, and moves it to a set of small scripts which are `COPY`'d to the build container from where they are run.
 
