@@ -25,3 +25,19 @@ A typical project has a `Docker` file. A project using the **container\_lib** fr
 The simplified project `Dockerfile` looks like this:
 
 ![project Dockerfile](https://github.com/ballab1/container_lib/blob/doc/docs/Project_Dockerfile.png)
+
+Depending on the project, there may also be other `ENV`, `EXPOSE`, `ARG` or `ONBUILD` directives, and possibily a `USER` directive.
+As can be seen, all of the script code has been moved out of the `Dockerfile`, reducing the *mixed-mode* code, and resulting in simplification. 
+
+## Framework for Building Containers
+The build processes of all containers is always the same. 
+
+1. Install needed OS Support
+2. Verify users and groups exist
+3. Download & verify external packages
+4. Install applications
+5. Add customizations and configuration
+6. Make sure that ownership & permissions are correct
+7. Clean up
+
+Every container will perform one or more of these actions. Many container builds, perform these items multiple times with different targets. Also, in the [Dockerfile](https://github.com/search?utf8=%E2%9C%93&q=Dockerfile&type=) examples, these items are seldom perfomed in any consistent manner. The result can make it not only difficult to debug your own Dockerfiles, but near impossible for someone else to understand, modify and debug your Dockerfiles.
