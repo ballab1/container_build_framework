@@ -18,4 +18,6 @@ Container security is always a concern, so it pays to be mindful of who owns the
 
 
 ## Docker project
-A typical project has a `Docker` file. A project using the **container\_lib** framework, contains a `Dockerfile` and a *build* folder. I usually include a *vols* folder for any local mountpoints, as well as a [.dockeringnore](https://docs.docker.com/engine/reference/builder/#dockerignore-file) and the usual meta files for [git](https://git-scm.com/doc). This results in:
+A typical project has a `Docker` file. A project using the **container\_lib** framework, contains a `Dockerfile` and a *build* folder. I usually include a *vols* folder for any local mountpoints, as well as a [.dockeringnore](https://docs.docker.com/engine/reference/builder/#dockerignore-file) and the usual meta files for [git](https://git-scm.com/doc). This results in a project folder which looks like:
+
+![container project folder](https://github.com/ballab1/container_lib/blob/doc/docs/Container_Project_Folder.png)
