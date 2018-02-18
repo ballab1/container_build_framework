@@ -13,6 +13,7 @@ function createStructure()
         [ ! -d "$lib" ] && continue
         local dir="$( basename "$lib" )"
         [ "$dir" = 'bin' ] && continue
+        [ "$dir" = 'docs' ] && continue
         [ "$dir" = 'lib' ] && continue
         [ "$dir" = 'test' ] && continue
 
