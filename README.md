@@ -20,11 +20,11 @@ Container security is always a concern, so it pays to be mindful of who owns the
 ## Docker project
 A typical project has a `Docker` file. A project using the **container\_lib** framework, contains a `Dockerfile` and a *build* folder. I usually include a *vols* folder for any local mountpoints, as well as a [.dockeringnore](https://docs.docker.com/engine/reference/builder/#dockerignore-file) and the usual meta files for [git](https://git-scm.com/doc). This results in a project folder which looks like:
 
-![container project folder](https://github.com/ballab1/container_build_framework/blob/doc/docs/Container_Project_Folder.png)
+![container project folder](https://github.com/ballab1/container_build_framework/blob/dev/refactor/docs/Container_Project_Folder.png)
 
 The simplified project `Dockerfile` looks like this:
 
-![project Dockerfile](https://github.com/ballab1/container_build_framework/blob/doc/docs/Project_Dockerfile.png)
+![project Dockerfile](https://github.com/ballab1/container_build_framework/blob/dev/refactor/docs/Project_Dockerfile.png)
 
 Depending on the project, there may also be other `ENV`, `EXPOSE`, `ARG` or `ONBUILD` directives, and possibily a `USER` directive.
 As can be seen, all of the script code has been moved out of the `Dockerfile`, reducing the *mixed-mode* code, and resulting in simplification. 
