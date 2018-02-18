@@ -30,13 +30,23 @@ If a folder contains any files, they are processed, otherwise it is skipped. Sim
 
 ![build folder contents](https://github.com/ballab1/container_build_framework/blob/dev/refactor/docs/build_folder_contents.png) 
 
-## Custom Folders
+### Install needed OS Support
+**Folder:** _01.packages_
 
-The `build` folder alos contains zero or more **custom folders**. Theese folders are copied to the root of the of the file system of the container. This allows creation of files and subfolders which will be as-is inside your container. No errors occur when any of these folders do not exist.
+### Verify users and groups exist
+**Folder:** _02.users_groups_
 
+### Download & verify external packages
+**Folder:** _03.downloads_
 
-## Container Folder
-The `container` folder contains the instructions for the framework.
+### Install applications
+**Folder:** _04.applications_
 
-![actions folder](https://github.com/ballab1/container_build_framework/blob/dev/refactor/docs/action_folders.png) 
+### Add customizations and configuration
+**Folder:** _05.customizations_
 
+### Make sure that ownership & permissions are correct
+**Folder:** _06.permissions_
+
+### Clean up 
+**Folder:** _07.cleanup_
