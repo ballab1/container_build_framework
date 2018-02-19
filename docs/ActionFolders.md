@@ -22,6 +22,7 @@ This folder contains scripts definitions for users and groups to configure insid
 - uid
 - group
 - gid
+
 `shell` and `home` are optional fields. 
 
 Example *01.hubot* file:
@@ -69,7 +70,24 @@ The file gets downloaded and saved to the specified file. The sha256 is compared
 ### Install applications
 **Folder:** _04.applications_
 
-This folder contains scripts which should perform the installation of the major functionality. One script should be used per application installation.
+This folder contains scripts which should perform the installation of the major functionality. One script should be used per application installation. Example application installation script:
+```
+#!/bin/bash
+# Gradle installation script
+source "${TOOLS}/01.bashlib/term.sh"
+source "${TOOLS}/04.downloads/01.GRADLE" 
+mkdir -p /opt
+cd /opt
+unzip "${GRADLE['file']}"
+ln -s "/opt/gradle-${GRADLE['version']}/bin/gradle" /usr/bin/gradle
+declare dot_gradle="${GRADLE['home']}/.gradle"
+mkdir -p "$dot_gradle"
+chown -R gradle:gradle "${GRADLE['home']}"
+ln -s "$dot_gradle" /root/.gradle
+$LOG "Testing Gradle installation${LF}" 'info'
+/usr/bin/gradle --version
+printf "%s\n" ${GRADLE[@]}
+```
 
 ### Add customizations and configuration
 **Folder:** _05.customizations_
