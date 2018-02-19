@@ -4,6 +4,9 @@
 #   lib.bashlib
 #
 #############################################################################
+
+declare -r ACTION_FOLDERS='action_folders'
+
 function lib.buildContainer()
 {
     local -r name=${1:?'Input parameter "name" must be defined'}
@@ -57,7 +60,7 @@ function lib.buildContainer()
 #############################################################################
 function lib.getBase()
 {
-    printf "%s" "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"   
+    printf "%s" "$( cd "$( dirname "${BASH_SOURCE[0]}" )/../../${ACTION_FOLDERS}" && pwd )"   
 }
 
 #############################################################################
