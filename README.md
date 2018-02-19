@@ -45,5 +45,5 @@ Every container will perform one or more of these actions. Many container builds
 **************
 
 ## Installation & Documentation
-[Installation](./docs/Installation.md)
-[Action Folders](./docs/ActionFolders.md)
+- [Installation](./docs/Installation.md)
+- [Action Folders](./docs/ActionFolders.md)
