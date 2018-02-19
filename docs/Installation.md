@@ -13,7 +13,7 @@ Once installed in a GIT project, configure the project default configuration by 
 build/container_build_framework/bin/setupContainerFramework
 ```
 
-Installing the framework, will setup a `contaner` folder in the build folder. This contains subfloders for each of the action categories performed.
+Installing the framework, will setup a `action_folder` folder in the build folder. This contains subfolders for each of the action categories performed.
 
 Folder | Action
 --- | --- 
@@ -25,18 +25,21 @@ Folder | Action
 06.permissions | Make sure that ownership & permissions are correct
 07.cleanup | Clean up 
 
-The **/tmp/build** script, called form the *DockerFile*, loads the framework library scripts, then iterates in order, across the coresponding directories in the `container` folder.
-If a folder contains any files, they are processed, otherwise it is skipped. Similarly, if a folder does not exist in the `container' direcoty, it is skipped.
+The **/tmp/build** script, called from the *DockerFile*, loads the framework library scripts, and then iterates in order, across the coresponding directories in the `action_folders` folder.
+If a folder contains any files, they are processed, otherwise it is skipped. Similarly, if a folder does not exist in the `action_folders' directory, it is skipped.
+As the framework processes each action folder, it ignores hidden files, it ignores subfolders and then processes the remaining files and symbolic links in alphabetically sorted order.
+For this reason, a convention is adopted, whereby each filename starts with two numbers.
 
 ![build folder contents](https://github.com/ballab1/container_build_framework/blob/dev/refactor/docs/build_folder_contents.png) 
 
+
 ## Custom Folders
 
-The `build` folder alos contains zero or more **custom folders**. Theese folders are copied to the root of the of the file system of the container. This allows creation of files and subfolders which will be as-is inside your container. No errors occur when any of these folders do not exist.
+The `build` folder also contains zero or more **custom folders**. Theese folders are copied to the root of the of the file system of the container. This allows creation of files and subfolders which will be as-is inside your container. No errors occur when any of these folders do not exist.
 
 
-## Container Folder
-The `container` folder contains the instructions for the framework.
+## Action Folders
+The `action_folders` folder contains the instructions for the framework. The contents of this folder are processed in sorted order.
 
-![actions folder](https://github.com/ballab1/container_build_framework/blob/dev/refactor/docs/action_folders.png) 
+
 
