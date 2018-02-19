@@ -41,3 +41,9 @@ The build processes of all containers is always the same.
 7. Clean up
 
 Every container will perform one or more of these actions. Many container builds, perform these items multiple times with different targets. Also, in the [Dockerfile](https://github.com/search?utf8=%E2%9C%93&q=Dockerfile&type=) examples, these items are seldom perfomed in any consistent manner. The result can make it not only difficult to debug your own Dockerfiles, but near impossible for someone else to understand, modify and debug your Dockerfiles.
+
+**************
+
+## Installation & Documentation
+[Installation](./docs/Installation.md)
+[Action Folders](./docs/ActionFolders.md)

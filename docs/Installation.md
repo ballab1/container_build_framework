@@ -1,6 +1,6 @@
 # Framework for Building Containers
 
-## Installation:
+## Installation
 
 The framework is installed as a submodule within the `build` folder. In the root folder of your GIT project, type the following:
 ```
@@ -30,15 +30,15 @@ If a folder contains any files, they are processed, otherwise it is skipped. Sim
 As the framework processes each action folder, it ignores hidden files, it ignores subfolders and then processes the remaining files and symbolic links in alphabetically sorted order.
 For this reason, a convention is adopted, whereby each filename starts with two numbers.
 
-![build folder contents](https://github.com/ballab1/container_build_framework/blob/dev/refactor/docs/build_folder_contents.png) 
+![build folder contents](./build_folder_contents.png) 
 
 
-## Custom Folders
+### Custom Folders
 
 The `build` folder also contains zero or more **custom folders**. Theese folders are copied to the root of the of the file system of the container. This allows creation of files and subfolders which will be as-is inside your container. No errors occur when any of these folders do not exist.
 
 
-## Action Folders
+### Action Folders
 The `action_folders` folder contains the instructions for the framework. The contents of this folder are processed in sorted order.
 
 
