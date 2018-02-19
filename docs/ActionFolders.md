@@ -17,13 +17,13 @@ apk add --no-cache bash-completion coreutils openssh-client shadow supervisor su
 ### Verify users and groups exist
 **Folder:** _02.users_groups_
 
-This folder contains scripts definitions for users and groups to configure inside the container. After stripping off any prefix digits, the name (by convention) should be the same as the associative array declared by the file.
-All of these array definitions should allways be lowercase to prevent name conflicts with ##Downloads## The mandatory fields are
+This folder contains scripts definitions for users and groups to configure inside the container. After stripping off any prefix digits, the name (by convention) should be the same as the associative array declared by the file. All of these array definitions should allways be lowercase to prevent name conflicts with ##Downloads## The mandatory fields are
 - user
 - uid
 - group
 - gid
 `shell` and `home` are optional fields. 
+
 Example of 01.hubot file:
 ```
 # Hubot
@@ -54,6 +54,7 @@ The mandatory fields are
 - file
 - url
 - sha256
+
 Every other declaration is optional. 
 Example of 01.PHPADMIN file:
 
@@ -69,9 +70,7 @@ PHPADMIN['sha256']="fd1a92959553f5d87b3a2163a26b62d6314309096e1ee5e8964605045743
 
 export WWW=/www  
 ```
-The file gets downloaded and saved to the specified file. The sha256 is compared against that calculated from the downloaded file, and if it is the same, the download is considered successful. A max of three retries is performed.
-The file should be downloaded and the sha256 calculated ahead of building your container. In Linux, the `sha256sum` application can be used.
-These file may be 'sourced' in later scripts to access their definitions.
+The file gets downloaded and saved to the specified file. The sha256 is compared against that calculated from the downloaded file, and if it is the same, the download is considered successful. A max of three retries is performed. The file should be downloaded and the sha256 calculated ahead of building your container. In Linux, the `sha256sum` application can be used. These file may be 'sourced' in later scripts to access their definitions.
 
 
 ### Install applications
