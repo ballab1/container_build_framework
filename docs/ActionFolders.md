@@ -80,6 +80,7 @@ This folder contains scripts definitions which should perform the installation o
 
 ### Add customizations and configuration
 **Folder:** _05.customizations_
+
 This folder contains scripts definitions which custom what has been setup. This is where the script `01.custom_folders`, to copy the content of the custom folders is located. I
 ```
 #!/bin/bash
