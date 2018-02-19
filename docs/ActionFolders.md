@@ -6,6 +6,7 @@
 
 ### Install needed OS Support
 **Folder:** _01.packages_
+
 This folder contains scripts and/or symbolic links which contain commands to install OS functionality. On Alpine Linux, these files contain `apk add` commands. Example:
 ```
 # core Packages
@@ -15,12 +16,13 @@ apk add --no-cache bash-completion coreutils openssh-client shadow supervisor su
 
 ### Verify users and groups exist
 **Folder:** _02.users_groups_
+
 This folder contains scripts definitions for users and groups to configure inside the container. After stripping off any prefix digits, the name (by convention) should be the same as the associative array declared by the file.
 All of these array definitions should allways be lowercase to prevent name conflicts with ##Downloads## The mandatory fields are
-# user
-# uid
-# group
-# gid
+- user
+- uid
+- group
+- gid
 `shell` and `home` are optional fields. 
 Example of 01.hubot file:
 ```
@@ -46,11 +48,12 @@ These files may be 'sourced' in later scripts to access their definitions.
 
 ### Download & verify external packages
 **Folder:** _03.downloads_
+
 This folder contains scripts definitions for files which should be downloaded. After stripping off any prefix digits, the name (by convention) should be the same as the associative array declared by the file.
 The mandatory fields are
-# file
-# url
-# sha256
+- file
+- url
+- sha256
 Every other declaration is optional. 
 Example of 01.PHPADMIN file:
 
@@ -70,8 +73,10 @@ The file gets downloaded and saved to the specified file. The sha256 is compared
 The file should be downloaded and the sha256 calculated ahead of building your container. In Linux, the `sha256sum` application can be used.
 These file may be 'sourced' in later scripts to access their definitions.
 
+
 ### Install applications
 **Folder:** _04.applications_
+
 This folder contains scripts definitions which should perform the installation of the major functionality. One script should be used per application installation.
 
 ### Add customizations and configuration
@@ -91,6 +96,8 @@ true
 
 ### Make sure that ownership & permissions are correct
 **Folder:** _06.permissions_
+
+
 
 ### Clean up 
 **Folder:** _07.cleanup_
