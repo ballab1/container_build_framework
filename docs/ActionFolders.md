@@ -21,7 +21,9 @@ Any script language may be used in the any of the `action_folders', other than *
 ### Install needed OS Support
 **Folder:** _01.packages_
 
-This folder contains scripts and/or symbolic links which contain commands to install OS functionality. On Alpine Linux, these files contain `apk add` commands. Example:
+This folder contains scripts and/or symbolic links which contain commands to install OS functionality. On Alpine Linux, these files contain `apk add` commands. 
+
+The following shows an example of the type of file expected in the _01.packages_ folder:
 ```bash
 # core Packages
 apk add --no-cache bash-completion coreutils openssh-client shadow supervisor sudo ttf-dejavu unzip 
@@ -31,15 +33,16 @@ apk add --no-cache bash-completion coreutils openssh-client shadow supervisor su
 ### Verify users and groups exist
 **Folder:** _02.users_groups_
 
-This folder contains scripts definitions for users and groups to configure inside the container. After stripping off any prefix digits, the name (by convention) should be the same as the associative array declared by the file. All of these array definitions should allways be lowercase to prevent name conflicts with ##Downloads## The mandatory fields are
+This folder contains scripts definitions for users and groups to configure inside the container. After stripping off any prefix digits, the name (by convention) should be the same as the associative array declared by the file. All of these array definitions should always be lowercase to prevent name conflicts with **Downloads**.
+
+The `shell` and `home` are optional, while mandatory fields are:
 - user
 - uid
 - group
 - gid
 
-`shell` and `home` are optional fields. 
 
-Example *01.hubot* file:
+The *01.hubot* file, shows an example of the type of file expected in the _02.users_groups_ folder:
 ```bash
 # Hubot
 declare -A hubot=()
@@ -67,8 +70,8 @@ The mandatory fields are
 - sha256
 
 Every other declaration is optional. 
-Example of 01.PHPADMIN file:
 
+The *01.PHPADMIN* file, shows an example of the type of file expected in the _03.downloads_ folder:
 ```bash
 # PHPADMIN
 declare -A PHPADMIN=()
@@ -84,7 +87,9 @@ The file gets downloaded and saved to the specified file. The sha256 is compared
 ### Install applications
 **Folder:** _04.applications_
 
-This folder contains scripts which should perform the installation of the major functionality. One script should be used per application installation. Example application installation script:
+This folder contains scripts which should perform the installation of the major functionality. One script should be used per application installation. 
+
+The *02.Gradle* file, shows an example of the type of file expected in the _04.applications_ folder:
 ```bash
 #!/bin/bash
 # Gradle installation script
@@ -107,6 +112,8 @@ printf "%s\n" ${GRADLE[@]}
 **Folder:** _05.customizations_
 
 This folder contains scripts  which customize what has been setup so far. A symbolic link to the the script `01.custom_folders` is located in this folder. It copies the content of the custom folders is located. I
+
+The *01.custom_folders* file, shows an example of the type of file expected in the _05.customizations_ folder:
 ```bash
 #!/bin/bash
 # 01.custom_folders: copy contents of custme folders from /tmp into the root of the container
@@ -123,6 +130,7 @@ true
 
 This folder contains scripts which setup file ownership and permissions.
 
+The *01.docker-entry* file, shows an example of the type of file expected in the _06.permissions_ folder:
 ```bash
 #!/bin/bash
 if [ -f /usr/local/bin/docker-entrypoint.sh ]; then
@@ -135,6 +143,8 @@ fi
 **Folder:** _07.cleanup_
 
 This folder contains scripts which cleanup content which is outside of the /tmp folder. A symbolic link to the 99.apk.cleanup script is located here.
+
+The *99.apk.cleanup* file, shows an example of the type of file expected in the _07.cleanup_ folder:
 ```bash
 #!/bin/bash
 source "${CBF['lib']}/cbf.bashlib"
