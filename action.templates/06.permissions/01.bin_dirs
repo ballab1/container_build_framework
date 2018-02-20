@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source "${TOOLS}/bin/lib.bashlib"
+source "${CBF['lib']}lib.bashlib"
 
 declare -r dirlist='/usr/local/bin /usr/bin /sbin'
 

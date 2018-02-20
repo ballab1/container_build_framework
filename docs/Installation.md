@@ -15,6 +15,8 @@ build/container_build_framework/bin/setupContainerFramework
 
 Installing the framework, will setup a `action_folder` folder in the build folder. This contains subfolders for each of the action categories performed.
 
+![build folder contents](./build_folder_contents.png) 
+
 Folder | Action
 --- | --- 
 01.packages |  Install needed OS Support
@@ -25,21 +27,19 @@ Folder | Action
 06.permissions | Make sure that ownership & permissions are correct
 07.cleanup | Clean up 
 
+
+The `build` folder also contains zero or more **custom folders**. These folders are copied to the root of the of the file system of the container. This allows creation of files and subfolders which will be as-is inside your container. No errors occur when any of these folders do not exist.
+
+### Action Folders
 The **/tmp/build** script, called from the *DockerFile*, loads the framework library scripts, and then iterates in order, across the coresponding directories in the `action_folders` folder.
+The `action_folders` folder contains the instructions for the framework. The contents of this folder are processed in sorted order.
 If a folder contains any files, they are processed, otherwise it is skipped. Similarly, if a folder does not exist in the `action_folders' directory, it is skipped.
 As the framework processes each action folder, it ignores hidden files, it ignores subfolders and then processes the remaining files and symbolic links in alphabetically sorted order.
 For this reason, a convention is adopted, whereby each filename starts with two numbers.
 
-![build folder contents](./build_folder_contents.png) 
-
 
 ### Custom Folders
-
-The `build` folder also contains zero or more **custom folders**. Theese folders are copied to the root of the of the file system of the container. This allows creation of files and subfolders which will be as-is inside your container. No errors occur when any of these folders do not exist.
-
-
-### Action Folders
-The `action_folders` folder contains the instructions for the framework. The contents of this folder are processed in sorted order.
+These folders may contain any content which is copied to the coresponding folder in the 
 
 
 **************

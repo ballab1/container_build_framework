@@ -16,5 +16,5 @@ done
 
 
 # build our container
-lib.buildContainer "$NAME" "$TZ"
+cbf.buildContainer "$NAME" "$TZ"
 

@@ -42,7 +42,7 @@ function main()
     done
 
     # create project specific folder as sibling of 'framework'
-    local -r actionFolders="${build_dir}/action_folders"
+    local -r actionFolders="${build_dir}/${ACTION_FOLDERS}"
     mkdir -p "$actionFolders"
     cd "$actionFolders"
 

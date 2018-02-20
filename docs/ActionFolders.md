@@ -4,11 +4,25 @@
 
 ![action folders](./action_folders.png) 
 
+#### Environment
+Every script defined in the action folders, is run from the '/tmp' folder as the current directory.
+The following environment variables are available:
+
+Environment Variable | contents
+--- | ---
+ CBF['base'] | base folder. In the build container, this is '/tmp'. In the git workspace, this is the 'build' folder.
+ CBF['action'] | actions folder. This contains the folders over which the framework iterates.
+ CBF['lib'] | cbf library folder. This contains the framework bashlib scripts.
+ CBF['templates'] | action template folders. This is the framework copy of the `action_folders`
+ 
+These environment variables may be used to source any of the scripts in the action folders using "${CBF['action']}" or from the `action_folders` directories using "${CBF['action']}".
+Any script language may be used in the any of the `action_folders', other than *02.users_groups* and *03.downloads*.
+
 ### Install needed OS Support
 **Folder:** _01.packages_
 
 This folder contains scripts and/or symbolic links which contain commands to install OS functionality. On Alpine Linux, these files contain `apk add` commands. Example:
-```
+```bash
 # core Packages
 apk add --no-cache bash-completion coreutils openssh-client shadow supervisor sudo ttf-dejavu unzip 
 ```
@@ -26,7 +40,7 @@ This folder contains scripts definitions for users and groups to configure insid
 `shell` and `home` are optional fields. 
 
 Example *01.hubot* file:
-```
+```bash
 # Hubot
 declare -A hubot=()
 declare bht_uid=${hubot_uid:-2223}
@@ -55,7 +69,7 @@ The mandatory fields are
 Every other declaration is optional. 
 Example of 01.PHPADMIN file:
 
-```
+```bash
 # PHPADMIN
 declare -A PHPADMIN=()
 PHPADMIN['version']=${PHPADMIN_VERSION:-4.7.4}
@@ -71,11 +85,11 @@ The file gets downloaded and saved to the specified file. The sha256 is compared
 **Folder:** _04.applications_
 
 This folder contains scripts which should perform the installation of the major functionality. One script should be used per application installation. Example application installation script:
-```
+```bash
 #!/bin/bash
 # Gradle installation script
-source "${TOOLS}/01.bashlib/term.sh"
-source "${TOOLS}/04.downloads/01.GRADLE" 
+source "${CBF['lib']}/term.sh"
+source "${CBF['action']}/04.downloads/01.GRADLE" 
 mkdir -p /opt
 cd /opt
 unzip "${GRADLE['file']}"
@@ -93,7 +107,7 @@ printf "%s\n" ${GRADLE[@]}
 **Folder:** _05.customizations_
 
 This folder contains scripts  which customize what has been setup so far. A symbolic link to the the script `01.custom_folders` is located in this folder. It copies the content of the custom folders is located. I
-```
+```bash
 #!/bin/bash
 # 01.custom_folders: copy contents of custme folders from /tmp into the root of the container
 declare -r tools=/tmp
@@ -109,14 +123,21 @@ true
 
 This folder contains scripts which setup file ownership and permissions.
 
+```bash
+#!/bin/bash
+if [ -f /usr/local/bin/docker-entrypoint.sh ]; then
+    chmod u+rwx /usr/local/bin/docker-entrypoint.sh
+    [ -h /docker-entrypoint.sh ] || ln -s /usr/local/bin/docker-entrypoint.sh /docker-entrypoint.sh 
+fi
+```1
 
 ### Clean up 
 **Folder:** _07.cleanup_
 
 This folder contains scripts which cleanup content which is outside of the /tmp folder. A symbolic link to the 99.apk.cleanup script is located here.
-```
+```bash
 #!/bin/bash
-source "${TOOLS}/bin/lib.bashlib"
+source "${CBF['lib']}/cbf.bashlib"
 apk del .build-deps
 declare -r cacheDir=/var/cache/apk
 declare -a files=( $( lib.getFiles "${cacheDir}" ) )
