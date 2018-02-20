@@ -3,17 +3,17 @@
 ## Installation
 
 The framework is installed as a submodule within the `build` folder. In the root folder of your GIT project, type the following:
-```
+```bash
 git submodule add https://github.com/ballab1/container_build_framework.git build/container_build_framework
 ```
 
 The framework gets copied into `tmp` folder in the build environemt along with the other scripts and customizations.
 Once installed in a GIT project, configure the project default configuration by running 
-```
+```bash
 build/container_build_framework/bin/setupContainerFramework
 ```
 
-Installing the framework, will setup a `action_folder` folder in the build folder. This contains subfolders for each of the action categories performed.
+Installing the framework, will setup a `action_folder` folder in the build folder. This contains subfolders for each of the action categories performed. It also sets up symlinks in the action folders to scripts maintained in the **action.templates** folder of the container build framework. These scripts perform the most common tasks. The Dockerfile copies these action folders and the framework folder to the **/tmp** folder of the container being built. The last command in the Dockerfile deletes the contents of the **/tmp** folder. The result is that none of the framework, or any of the action folders reside in the final container.
 
 ![build folder contents](./build_folder_contents.png) 
 
@@ -39,7 +39,7 @@ For this reason, a convention is adopted, whereby each filename starts with two 
 
 
 ### Custom Folders
-These folders may contain any content which is copied to the coresponding folder in the 
+These folders may contain any content which is copied to the coresponding folder in the root forlder of the container being built.
 
 
 **************
