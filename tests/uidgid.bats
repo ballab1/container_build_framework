@@ -19,7 +19,7 @@
 export LOG=test_log
 
 function setup() {
-  source "$BATS_TEST_DIRNAME/../lib/uidgid.bashlib"
+  source "$BATS_TEST_DIRNAME/../cbf/uidgid.bashlib"
 
   rep_log=.
   script_name=test_log

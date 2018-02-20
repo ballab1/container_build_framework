@@ -8,12 +8,18 @@ set -o nounset
 declare NAME=${1:?'Input parameter "NAME" must be defined'} 
 declare TZ="${2:-null}"
 
-# load our libraries
-declare -r lib_base="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"  
-for src in "${lib_base}/lib"/*.bashlib ; do
-    source "$src"
-done
+function getBase()
+{
+    if [ -d 'container_build_framework' ]; then
+        echo -n 'container_build_framework' 
+    else
+        echo -n '..' 
+    fi
+}
 
+# load our libraries
+source "$( cd "$( dirname "${BASH_SOURCE[0]}" )/$( getBase )/cbf" && pwd )/cbf.bashlib"
+cbf.__init
 
 # build our container
 cbf.buildContainer "$NAME" "$TZ"

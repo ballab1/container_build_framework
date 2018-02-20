@@ -19,7 +19,6 @@
 export LOG=test_log
 
 function setup() {
-  source "$BATS_TEST_DIRNAME/../lib/download.bashlib"
 
   rep_log=.
   script_name=test_log

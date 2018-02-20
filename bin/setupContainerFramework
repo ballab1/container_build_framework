@@ -4,54 +4,87 @@
 set -o nounset
 set -o errexit
 
+######################################################################
 function createStructure()
 {
-    local action_folders=${1:?"must pass parameter 'action_folders' to 'function ${FUNCNAME[0]}()'"}
-    local framework=${2:?"must pass parameter 'framework' to 'function ${FUNCNAME[0]}()'"}
+    local actionFolders=${1:?"must pass parameter 'actionFolders' to 'function ${FUNCNAME[0]}()'"}
+    local templatesFolder=${2:?"must pass parameter 'templatesFolder' to 'function ${FUNCNAME[0]}()'"}
 
-    local dirs=( $( lib.getFiles "${tools}/${framework}" ) )
+    
+    # create actions folder [ should be a sibling of 'container_build_framework' ]
+    mkdir -p "$actionFolders"
+    cd "$actionFolders"
+
+    local relativePath="$( relativize "$actionFolders" "$templatesFolder" )"
+    local dirs=( $( lib.getFiles "$templatesFolder" ) )
     for lib in ${dirs[@]}; do
         [ ! -d "$lib" ] && continue
 
         local dir="$( basename "$lib" )"
-        [ "$dir" = 'bin' ] && continue
-        [ "$dir" = 'docs' ] && continue
-        [ "$dir" = 'lib' ] && continue
-        [ "$dir" = 'test' ] && continue
-
         mkdir -p "${action_folders}/${dir}"
+        cd "${action_folders}/${dir}"
+
+
         while read -r fl ;do
             local file="$( basename "$fl" )"
             [ -h "$file" ] && rm "$file"
             [ -e "$file" ] && rm "$file"
-            echo "Creating symlink to ../../${framework}/${dir}/${file}"
-            ln -s "../../${framework}/${dir}/${file}" .
-        done < <(find "$lib" -maxdepth 1 -type f)
+            echo "Creating symlink to ../../${templatesFolder}/${dir}/${file}"
+            ln -s "../../${templatesFolder}/${dir}/${file}" .
+        done < <(find "${templatesFolder}/${dir}" -maxdepth 1 -type f)
     done
 }
 
+######################################################################
+function getBase()
+{
+    if [ -d 'container_build_framework' ]; then
+        echo -n 'container_build_framework' 
+    else
+        echo -n '..' 
+    fi
+}
 
+######################################################################
+function relativize()
+{
+    local from="$1"
+    local to="$2"
+
+    from=${from//\/\//\/}
+    from=${from%/}
+    IFS=/
+    dirs=(${from#/})
+    for to; do
+        to=${to//\/\//\/}
+        to=${to%/}
+        local commonPrefix=/
+        for d in "${dirs[@]}"; do
+            case "$to/" in "$commonPrefix$d/"*) ;;
+                *) break;;
+            esac
+            commonPrefix+="$d/"
+        done
+        local ancestor="${from#${commonPrefix%/}}"
+        ancestor=${ancestor//[^\/]/}
+        ancestor=${ancestor//\//..\/}
+    done
+    echo - "$ancestor${to#$commonPrefix}"
+}
+
+######################################################################
 function main()
 {
-    local build_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )" 
-    local framework="$( basename "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )" )"
-    
-    # pull in framework libraries
-    for src in "${build_dir}/${framework}/lib"/*.bashlib ; do
-        source "$src"
-    done
-
-    # create project specific folder as sibling of 'framework'
-    local -r actionFolders="${build_dir}/${ACTION_FOLDERS}"
-    mkdir -p "$actionFolders"
-    cd "$actionFolders"
+    # load our libraries
+    source "$( cd "$( dirname "${BASH_SOURCE[0]}" )/$( getBase )/cbf" && pwd )/cbf.bashlib"
+    cbf.__init
 
     # scan lib folders and create symlinks for any files found
-    createStructure "$actionFolders" "$framework"
+    createStructure "${CBF['action']}" "${CBF['templates']}"
 
     # create symlink for build script
-    cd "$tools"
-    ln -s "${framework}/bin/build" .
+    cp "${ CBF['lib']}/build" "${CBF['base']}"
+    chmod 755 "${CBF['base']}/build"
 }
 
 
