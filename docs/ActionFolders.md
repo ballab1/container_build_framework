@@ -151,7 +151,7 @@ source "${CBF['lib']}/cbf.bashlib"
 apk del .build-deps
 declare -r cacheDir=/var/cache/apk
 declare -a files=( $( lib.getFiles "${cacheDir}" ) )
-if [ ${#files[*]} -gt 0 ]; then
+if [ ${#files[@]} -gt 0 ]; then
     rm -rf "$cacheDir"/*
 fi 
 ```
