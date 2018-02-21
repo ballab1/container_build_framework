@@ -11,16 +11,13 @@ declare -Ax CBF=()
 function cbf.__init()
 {
     if [ "${#CBF[@]}" -eq 0 ]; then
-        declare -r lib_base="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"  
-        for src in "${lib_base}"/*.bashlib ; do
-            [ "$src" = "${BASH_SOURCE[0]}"  ] && continue
-            source "$src"
-        done
-        
-        CBF['base']="$( cd "$( dirname "$lib_base" )/../.." && pwd )"
-        CBF['action']="${CBF['base']}/action_folders"
+        local cbf_base="$( cd "$( dirname "$lib_base" )" && pwd )"
+        CBF['bin']="${cbf_base}/bin"
         CBF['lib']="$lib_base"
-        CBF['templates']="$( cd "$( dirname "$lib_base" )/../action.templates" && pwd )"
+        CBF['templates']="${cbf_base}/action.templates"
+
+        CBF['base']="$( cd "$( dirname "$cbf_base" )" && pwd )"
+        CBF['action']="${CBF['base']}/action_folders"
     fi
 }
 
@@ -109,6 +106,33 @@ function cbf.readFile()
     else
         echo 'File does not exist'
     fi
+}
+
+######################################################################
+function cbf.relativize()
+{
+    local from="$1"
+    local to="$2"
+
+    from=${from//\/\//\/}
+    from=${from%/}
+    IFS=/
+    dirs=(${from#/})
+    for to; do
+        to=${to//\/\//\/}
+        to=${to%/}
+        local commonPrefix=/
+        for d in "${dirs[@]}"; do
+            case "$to/" in "$commonPrefix$d/"*) ;;
+                *) break;;
+            esac
+            commonPrefix+="$d/"
+        done
+        local ancestor="${from#${commonPrefix%/}}"
+        ancestor=${ancestor//[^\/]/}
+        ancestor=${ancestor//\//..\/}
+    done
+    echo -n "$ancestor${to#$commonPrefix}"
 }
 
 #############################################################################

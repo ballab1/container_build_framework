@@ -15,36 +15,36 @@
 # Otherwise, the output may cause Bats to fail by polluting the TAP stream on stdout.
 
 
-#Tests for lib.bashlib
+#Tests for cbf.bashlib
 export LOG=test_log
 
 function setup() {
-  source "$BATS_TEST_DIRNAME/../cbf/lib.bashlib"
+  source "$BATS_TEST_DIRNAME/../cbf/cbf.bashlib"
 
   rep_log=.
   script_name=test_log
 }
 
-@test "lib.buildContainer" {
-  run lib.buildContainer
+@test "cbf.buildContainer" {
+  run cbf.buildContainer
 }
 
-@test "lib.getBase" {
-  run lib.getBase
+@test "cbf.getBase" {
+  run cbf.getBase
 }
 
-@test "lib.getFiles" {
-  run lib.getFiles
+@test "cbf.getFiles" {
+  run cbf.getFiles
 }
 
-@test "lib.indirectReference" {
-  run lib.indirectReference
+@test "cbf.indirectReference" {
+  run cbf.indirectReference
 }
 
-@test "lib.readFile" {
-  run lib.readFile
+@test "cbf.readFile" {
+  run cbf.readFile
 }
 
-@test "lib.runScripts" {
-  run lib.runScripts
+@test "cbf.runScripts" {
+  run cbf.runScripts
 }

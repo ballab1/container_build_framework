@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source "${CBF['lib']}/lib.bashlib"
+source "${CBF['lib']}/cbf.bashlib"
 
 declare -r SUDOERS=/etc/sudoers.d
 declare files=( $( lib.getFiles "$SUDOERS" ) )

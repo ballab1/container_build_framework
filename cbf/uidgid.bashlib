@@ -26,12 +26,12 @@ function uidgid.createUserAndGroup()
     name="${name//[0-9]/}"
     name="${name#.}"
 
-    local user="$( lib.indirectReference $name 'user' )"
-    local uid="$( lib.indirectReference $name 'uid' )"
-    local group="$( lib.indirectReference $name 'group' )"
-    local gid="$( lib.indirectReference $name 'gid' )"
-    local homedir="$( lib.indirectReference $name 'home' )"
-    local shell="$( lib.indirectReference $name 'shell' )"
+    local user="$( cbf.indirectReference $name 'user' )"
+    local uid="$( cbf.indirectReference $name 'uid' )"
+    local group="$( cbf.indirectReference $name 'group' )"
+    local gid="$( cbf.indirectReference $name 'gid' )"
+    local homedir="$( cbf.indirectReference $name 'home' )"
+    local shell="$( cbf.indirectReference $name 'shell' )"
 
     
     local wanted=$( printf '%s:%s' $group $gid )

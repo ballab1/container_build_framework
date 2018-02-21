@@ -15,75 +15,42 @@ function createStructure()
     mkdir -p "$actionFolders"
     cd "$actionFolders"
 
-    local relativePath="$( relativize "$actionFolders" "$templatesFolder" )"
-    local dirs=( $( lib.getFiles "$templatesFolder" ) )
+    local relativePath="../$( cbf.relativize "$actionFolders" "$templatesFolder" )"
+#    local dirs=( $( cbf.getFiles "$templatesFolder" ) )
+    local dirs=( $( ls -d "$templatesFolder"/* ) )
     for lib in ${dirs[@]}; do
         [ ! -d "$lib" ] && continue
 
         local dir="$( basename "$lib" )"
-        mkdir -p "${action_folders}/${dir}"
-        cd "${action_folders}/${dir}"
+        mkdir -p "${actionFolders}/${dir}"
+        cd "${actionFolders}/${dir}"
 
 
         while read -r fl ;do
             local file="$( basename "$fl" )"
             [ -h "$file" ] && rm "$file"
             [ -e "$file" ] && rm "$file"
-            echo "Creating symlink to ../../${templatesFolder}/${dir}/${file}"
-            ln -s "../../${templatesFolder}/${dir}/${file}" .
-        done < <(find "${templatesFolder}/${dir}" -maxdepth 1 -type f)
+            echo "Creating symlink to ${relativePath}/${dir}/${file}"
+            ln -s "${relativePath}/${dir}/${file}" .
+        done < <(find "${templatesFolder}/${dir}" -maxdepth 1 -type f ! -name '.*')
     done
-}
-
-######################################################################
-function getBase()
-{
-    if [ -d 'container_build_framework' ]; then
-        echo -n 'container_build_framework' 
-    else
-        echo -n '..' 
-    fi
-}
-
-######################################################################
-function relativize()
-{
-    local from="$1"
-    local to="$2"
-
-    from=${from//\/\//\/}
-    from=${from%/}
-    IFS=/
-    dirs=(${from#/})
-    for to; do
-        to=${to//\/\//\/}
-        to=${to%/}
-        local commonPrefix=/
-        for d in "${dirs[@]}"; do
-            case "$to/" in "$commonPrefix$d/"*) ;;
-                *) break;;
-            esac
-            commonPrefix+="$d/"
-        done
-        local ancestor="${from#${commonPrefix%/}}"
-        ancestor=${ancestor//[^\/]/}
-        ancestor=${ancestor//\//..\/}
-    done
-    echo - "$ancestor${to#$commonPrefix}"
 }
 
 ######################################################################
 function main()
 {
     # load our libraries
-    source "$( cd "$( dirname "${BASH_SOURCE[0]}" )/$( getBase )/cbf" && pwd )/cbf.bashlib"
+    source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/init.libraries"
     cbf.__init
+    for i in ${!CBF[@]}; do
+       $LOG "$i:  ${CBF[$i]}${LF}" 'info'
+    done
 
     # scan lib folders and create symlinks for any files found
     createStructure "${CBF['action']}" "${CBF['templates']}"
 
     # create symlink for build script
-    cp "${ CBF['lib']}/build" "${CBF['base']}"
+    cp "${CBF['bin']}/build" "${CBF['base']}"
     chmod 755 "${CBF['base']}/build"
 }
 

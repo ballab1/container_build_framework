@@ -15,7 +15,7 @@ function trap.catch_error()
 {
     $LOG "ERROR: an unknown error occurred.${LF}" 'error'
 
-    $LOG "Error in ${BASH_SOURCE[1]}:${BASH_LINENO[0]}. '${BASH_COMMAND}' exited with status $err" 'errOr'
+    $LOG "Error in ${BASH_SOURCE[1]}:${BASH_LINENO[0]}. '${BASH_COMMAND}' exited with status $err" 'error'
     # Print out the stack trace described by $function_stack  
     if [ ${#FUNCNAME[@]} -gt 2 ]; then
         $LOG "Stack trace:${LF}" 'error'

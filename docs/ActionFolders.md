@@ -150,7 +150,7 @@ The *99.apk.cleanup* file, shows an example of the type of file expected in the 
 source "${CBF['lib']}/cbf.bashlib"
 apk del .build-deps
 declare -r cacheDir=/var/cache/apk
-declare -a files=( $( lib.getFiles "${cacheDir}" ) )
+declare -a files=( $( cbf.getFiles "${cacheDir}" ) )
 if [ ${#files[@]} -gt 0 ]; then
     rm -rf "$cacheDir"/*
 fi 
