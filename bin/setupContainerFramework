@@ -50,8 +50,8 @@ function main()
     createStructure "${CBF['action']}" "${CBF['templates']}"
 
     # create symlink for build script
-    cp "${CBF['bin']}/build" "${CBF['base']}"
-    chmod 755 "${CBF['base']}/build"
+    cp "${CBF['bin']}/build.sh" "${CBF['base']}"
+    chmod 755 "${CBF['base']}/build.sh"
 }
 
 
