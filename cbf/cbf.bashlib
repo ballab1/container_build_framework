@@ -18,7 +18,7 @@ function cbf.__init()
         done
         
         CBF['base']="$( cd "$( dirname "$lib_base" )/../.." && pwd )"
-        CBF['action']="${base}/action_folders"
+        CBF['action']="${CBF['base']}/action_folders"
         CBF['lib']="$lib_base"
         CBF['templates']="$( cd "$( dirname "$lib_base" )/../action.templates" && pwd )"
     fi

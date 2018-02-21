@@ -14,10 +14,15 @@ declare -i pipe_error=0
 function trap.catch_error()
 {
     $LOG "ERROR: an unknown error occurred.${LF}" 'error'
-    $LOG "Stack trace:${LF}"
-    for i in 1..${#BASH_SOURCE[*]}; do
-        $LOG ">>>   ${BASH_SOURCE[$i]} : ${FUNCNAME[$i-1]} : ${BASH_LINENO[$i-1]}  <<<${LF}" 'error'
-    done
+
+    $LOG "Error in ${BASH_SOURCE[1]}:${BASH_LINENO[0]}. '${BASH_COMMAND}' exited with status $err" 'errOr'
+    # Print out the stack trace described by $function_stack  
+    if [ ${#FUNCNAME[@]} -gt 2 ]; then
+        $LOG "Stack trace:${LF}" 'error'
+        for ((i=1;i<${#FUNCNAME[@]}-1;i++)); do
+            $LOG  ">>>    $i: ${BASH_SOURCE[$i+1]}:${BASH_LINENO[$i]} ${FUNCNAME[$i]}(...)  <<<${LF}" 'error'
+        done
+    fi
     exit 1
 }
 
@@ -49,7 +54,10 @@ function trap.die()
     exit $status
 }  
 
+# trap ERR to provide an error handler whenever a command exits nonzero
 trap trap.catch_error ERR
 trap trap.catch_int INT
-trap trap.catch_pipe PIPE 
+trap trap.catch_pipe PIPE
 
+# setting errtrace allows our ERR trap handler to be propagated to functions, expansions and subshells
+set -o errtrace
