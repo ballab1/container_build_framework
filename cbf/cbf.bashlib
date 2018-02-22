@@ -48,7 +48,7 @@ function cbf.buildContainer()
 
 
     # iterate through list
-    for id in $( echo "${!steps[@]}" | sort ); do
+    for dir in $( echo "${!steps[@]}" | sort ); do
         [ ! -d "{CBF['action']}/$dir" ] && continue
 
         # get array of files in directory
@@ -56,7 +56,7 @@ function cbf.buildContainer()
         [ ${#files[*]} = 0 ] && continue
 
         # decode action
-        local action="${info[$dir]}"
+        local action="${steps[$dir]}"
         # get .info file, & read for 'notice'
         local info="${CBF['action']}/$dir/.info"
         [ -e "$info" ] || info="${CBF['templates']}/$dir/.info"

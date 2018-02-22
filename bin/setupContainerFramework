@@ -16,7 +16,6 @@ function createStructure()
     cd "$actionFolders"
 
     local relativePath="../$( cbf.relativize "$actionFolders" "$templatesFolder" )"
-#    local dirs=( $( cbf.getFiles "$templatesFolder" ) )
     local dirs=( $( ls -d "$templatesFolder"/* ) )
     for lib in ${dirs[@]}; do
         [ ! -d "$lib" ] && continue
@@ -50,8 +49,11 @@ function main()
     createStructure "${CBF['action']}" "${CBF['templates']}"
 
     # create symlink for build script
-    cp "${CBF['bin']}/build.sh" "${CBF['base']}"
-    chmod 755 "${CBF['base']}/build.sh"
+    cd "${CBF['base']}"
+    [ -e build.sh ] && rm build.sh
+    local relativePath="$( cbf.relativize "${CBF['base']}" "${CBF['bin']}" )"
+    echo "ln -s ${relativePath}/build.sh ."
+    ln -s "${relativePath}/build.sh" .
 }
 
 

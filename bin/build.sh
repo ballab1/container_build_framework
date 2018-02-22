@@ -8,7 +8,7 @@ set -o nounset
 declare NAME=${1:?'Input parameter "NAME" must be defined'} 
 declare TZ="${2:-null}"
 
-if [ -d 'container_build_framework' ]; then
+if [ -d '/tmp/container_build_framework' ]; then
     # load our libraries
     source "$( cd "$( dirname "${BASH_SOURCE[0]}" )/container_build_framework/bin" && pwd )/init.libraries"
     cbf.__init
