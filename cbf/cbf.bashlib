@@ -27,7 +27,6 @@ function cbf.buildContainer()
     local -r name=${1:?'Input parameter "name" must be defined'}
     local -r timezone=${2:-null}
     
-    
     # list of 'notice, directory, action' to perform
     local -A steps=( ['01.packages']='cbf.runScripts'
                      ['02.users_groups']='uidgid.check'
@@ -48,8 +47,8 @@ function cbf.buildContainer()
 
 
     # iterate through list
-    for dir in $( echo "${!steps[@]}" | sort ); do
-        [ ! -d "{CBF['action']}/$dir" ] && continue
+    for dir in $( printf "%s\n" "${!steps[@]}" | sort ); do
+        [ ! -d "${CBF['action']}/$dir" ] && continue
 
         # get array of files in directory
         local -a files=( $( cbf.getFiles "${CBF['action']}/$dir" ) )
