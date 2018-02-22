@@ -1,16 +1,17 @@
 #!/bin/bash
 
-source "${CBF['lib']}/cbf.bashlib"
-
 declare -r SUDOERS=/etc/sudoers.d
-declare files=( $( lib.getFiles "$SUDOERS" ) )
-for file in ${files[@]} ; do
-    chown root:root "$file"
-    chmod 600 "$file"
-done
+if [ -d "$SUDOERS" ]; then
+    declare files=( $( cbf.getFiles "$SUDOERS" ) )
 
-declare -r SUDO=/usr/bin/sudo
-if [ -e "$SUDO" ]; then
-    chown root "$SUDO"
-    chmod 4755 "$SUDO"
+    for file in ${files[@]} ; do
+        chown root:root "$file"
+        chmod 600 "$file"
+    done
+
+    declare -r SUDO=/usr/bin/sudo
+    if [ -e "$SUDO" ]; then
+        chown root "$SUDO"
+        chmod 4755 "$SUDO"
+    fi
 fi

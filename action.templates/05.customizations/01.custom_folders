@@ -3,7 +3,9 @@
 declare -r dirs='bin etc home lib lib64 media mnt opt root sbin usr var www'
 
 for dir in ${dirs} ; do
-    [ -d "${CBF['base']}/${dir}" ] && cp -r "${CBF['base']}/${dir}/"* "/${dir}/"
+    declare custom_folder="${CBF['base']}/$dir"
+    if [ -d "$custom_folder" ]; then
+        echo "Updating ${dir} from ${custom_folder}"
+        cp -r "${custom_folder}/"* "/${dir}/"
+    fi
 done
-
-true

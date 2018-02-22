@@ -41,9 +41,6 @@ function main()
     # load our libraries
     source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/init.libraries"
     cbf.__init
-    for i in ${!CBF[@]}; do
-       $LOG "$i:  ${CBF[$i]}${LF}" 'info'
-    done
 
     # scan lib folders and create symlinks for any files found
     createStructure "${CBF['action']}" "${CBF['templates']}"
