@@ -1,0 +1,65 @@
+#!/bin/bash
+#############################################################################
+#
+#   trap.bashlib
+#
+#----------------------------------------------------------------------------
+
+# global exceptions
+declare -i dying=0
+declare -i pipe_error=0
+
+#----------------------------------------------------------------------------
+# Exit on any error
+function trap.catch_error()
+{
+    local err=$?
+    
+    set +o verbose
+    set +o xtrace
+    $LOG "Error in ${BASH_SOURCE[1]}:${BASH_LINENO[0]}. '${BASH_COMMAND}' exited with status $err${LF}" 'error'
+    # Print out the stack trace described by $function_stack  
+    if [ ${#FUNCNAME[@]} -gt 2 ]; then
+        $LOG "Stack trace:${LF}" 'error'
+        for ((i=1;i<${#FUNCNAME[@]}-1;i++)); do
+            $LOG  ">>>    $i: ${BASH_SOURCE[$i+1]}:${BASH_LINENO[$i]} ${FUNCNAME[$i]}(...)  <<<${LF}" 'error'
+        done
+    fi
+    exit 1
+}
+
+#----------------------------------------------------------------------------
+# Detect when build is aborted
+function trap.catch_int()
+{
+    trap.die "${BASH_SOURCE[0]} has been aborted with SIGINT (Ctrl-C)"
+}
+
+#----------------------------------------------------------------------------
+function trap.catch_pipe()
+{
+    pipe_error+=1
+    [[ $pipe_error -eq 1 ]] || return 0
+    [[ $dying -eq 0 ]] || return 0
+
+    trap.die "${BASH_SOURCE[0]} has been aborted with SIGPIPE (broken pipe)"
+}
+
+#----------------------------------------------------------------------------
+function trap.die()
+{
+    local status=$?
+    [[ $status -ne 0 ]] || status=255
+    dying+=1
+
+    ( $LOG "${LF}FATAL ERROR: $*${LF}" 'error' ) >&2
+    exit $status
+}  
+
+# trap ERR to provide an error handler whenever a command exits nonzero
+trap trap.catch_error ERR
+trap trap.catch_int INT
+trap trap.catch_pipe PIPE
+
+# setting errtrace allows our ERR trap handler to be propagated to functions, expansions and subshells
+set -o errtrace

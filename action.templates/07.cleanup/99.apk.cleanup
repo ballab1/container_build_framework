@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if apk info .build-deps; then
+    apk del .build-deps
+fi
+
+declare -r cacheDir=/var/cache/apk
+declare -a files=( $( cbf.getFiles "${cacheDir}" ) )
+
+if [ ${#files[*]} -gt 0 ]; then
+    rm -rf "$cacheDir"/*
+fi

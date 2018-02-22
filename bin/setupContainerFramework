@@ -1,0 +1,57 @@
+#!/bin/bash
+
+#set -o verbose
+set -o nounset
+set -o errexit
+
+######################################################################
+function createStructure()
+{
+    local actionFolders=${1:?"must pass parameter 'actionFolders' to 'function ${FUNCNAME[0]}()'"}
+    local templatesFolder=${2:?"must pass parameter 'templatesFolder' to 'function ${FUNCNAME[0]}()'"}
+
+    
+    # create actions folder [ should be a sibling of 'container_build_framework' ]
+    mkdir -p "$actionFolders"
+    cd "$actionFolders"
+
+    local relativePath="../$( cbf.relativize "$actionFolders" "$templatesFolder" )"
+    local dirs=( $( ls -d "$templatesFolder"/* ) )
+    for lib in ${dirs[@]}; do
+        [ ! -d "$lib" ] && continue
+
+        local dir="$( basename "$lib" )"
+        mkdir -p "${actionFolders}/${dir}"
+        cd "${actionFolders}/${dir}"
+
+
+        while read -r fl ;do
+            local file="$( basename "$fl" )"
+            [ -h "$file" ] && rm "$file"
+            [ -e "$file" ] && rm "$file"
+            echo "Creating symlink to ${relativePath}/${dir}/${file}"
+            ln -s "${relativePath}/${dir}/${file}" .
+        done < <(find "${templatesFolder}/${dir}" -maxdepth 1 -type f ! -name '.*')
+    done
+}
+
+######################################################################
+function main()
+{
+    # load our libraries
+    source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/init.libraries"
+    cbf.__init
+
+    # scan lib folders and create symlinks for any files found
+    createStructure "${CBF['action']}" "${CBF['templates']}"
+
+    # create symlink for build script
+    cd "${CBF['base']}"
+    [ -e build.sh ] && rm build.sh
+    local relativePath="$( cbf.relativize "${CBF['base']}" "${CBF['bin']}" )"
+    echo "ln -s ${relativePath}/build.sh ."
+    ln -s "${relativePath}/build.sh" .
+}
+
+
+main
