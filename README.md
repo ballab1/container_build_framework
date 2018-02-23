@@ -1,7 +1,7 @@
 # Framework for Building Containers
 ## repo: container_build_framework
 
-A framework do simplify 'Dockerfile' and make it easier to build complex containers
+A framework to simplify 'Dockerfile' and make it easier to build complex containers
 
 ## Introduction
 
