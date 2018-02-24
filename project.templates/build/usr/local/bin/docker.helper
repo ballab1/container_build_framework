@@ -6,6 +6,7 @@ declare -r runningEnv="/usr/local/bin/docker-environment.sh"
 function docker.prepareEnvironment()
 {
     # clean out old plugins to ensure we are always at specified versions
+:
 #    [[ -d "$pluginsFolder" ]] && rm -rf "$pluginsFolder"
 #    mkdir -p "$pluginsFolder"
 #    cp -r "$pluginsReferenceFolder"/* "$pluginsFolder"

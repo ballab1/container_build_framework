@@ -5,7 +5,7 @@ export -A BASHLIBS=()
 set +o nounset
 if [ "${#BASHLIBS[@]}" -eq 0 ]; then
     # when nothing exists in 'BASHLIBS' populate it with names of files 'source'd from cbf folder
-    declare -r lib_base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../cbf" && pwd )"  
+    declare lib_base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../cbf" && pwd )"  
     for src in "${lib_base}"/*.bashlib ; do
         declare name="$( basename "$src" )"
         name="${name%%.bashlib}"
