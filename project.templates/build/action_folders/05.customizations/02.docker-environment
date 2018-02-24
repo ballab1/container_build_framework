@@ -1,0 +1,12 @@
+#!/bin/bash
+
+declare -r tools="/usr/local/bin"
+source "${tools}/docker.helper"
+
+# save our runtime environment vars to be sourced when docker-entrypoint,sh runs. If this is not required, it may be deleted
+cat > "$runningEnv" <<EOF
+#!/bin/bash
+# this is a generated file!!  DO NOT MODIFY
+
+#export JENKINS_OPTS="--prefix=/jenkins" 
+EOF

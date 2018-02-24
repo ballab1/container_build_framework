@@ -93,7 +93,7 @@ function setupCBF.main()
     cd "${CBF['base']}"
     [ -e build.sh ] && rm build.sh
     local relativePath="$( cbf.relativize "${CBF['base']}" "${CBF['bin']}" )"
-    echo "ln -s ${relativePath}/build.sh ."
+    echo "Creating symlink to ${relativePath}/build.sh"
     ln -s "${relativePath}/build.sh" .
     
     setupCBF.setupProjectFiles
@@ -103,24 +103,28 @@ function setupCBF.main()
 function setupCBF.setupProjectFiles()
 {
     cd "${CBF['bin']}"
-    local top="$(git rev-parse --show-superproject-working-tree)" ]
+    local top="$(git rev-parse --show-superproject-working-tree)"
     if [ "$top" ]; then
         cd "$top"
+        local projectName="$( basename "$top" )"
+        echo "setting files for superProject: $projectName"
+
         [ ! -e Dockerfile ] && setupCBF.verifyDepententContainerExists
         
-        local projectName="$( basename "$top" )"
-
         # ensure our folder structure exists
         while read -r abs_dir; do
-            local dir="$( relativize "$top" "$abs_dir" )"
+            local dir="$( cbf.relativize "${CBF['cbfbase']}/project.templates" "$abs_dir" )"
             mkdir -p "${top}/$dir"  
-        done < <(find "${CBF['base']}/project.templates" -type d)
+        done < <(find "${CBF['cbfbase']}/project.templates" -mindepth 1 -type d)
 
         # copy any missing files from project templates
         while read -r abs_file; do
-            local file="$( relativize "$top" "$abs_file" )"
-            [ ! e "$file" ] && sed -i "s|newcontainer|${projectName}|g" "$abs_file" > "$file"
-        done < <(find "${CBF['base']}/project.templates" -type f)
+            local file="$( cbf.relativize "${CBF['cbfbase']}/project.templates" "$abs_file" )"
+            if [ ! -e "$file" ]; then
+                sed "s|newcontainer|${projectName}|g" "$abs_file" > "$file"
+                echo "  created: ${file}"
+            fi
+        done < <(find "${CBF['cbfbase']}/project.templates" -type f)
     fi
 }
 

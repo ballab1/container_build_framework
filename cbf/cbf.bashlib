@@ -15,6 +15,7 @@ function cbf.__init()
 
     if [ "${#CBF[@]}" -eq 0 ]; then
         local cbf_base="$( cd "$( dirname "$lib_base" )" && pwd )"
+        CBF['cbfbase']="$cbf_base"
         CBF['bin']="${cbf_base}/bin"
         CBF['lib']="$lib_base"
         CBF['templates']="${cbf_base}/action.templates"
