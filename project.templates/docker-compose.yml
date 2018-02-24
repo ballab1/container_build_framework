@@ -1,0 +1,26 @@
+version: '3.5'
+
+services:
+    newcontainer:
+        build:
+            args:
+                CONTAINER_VERSION: 1.0.1
+                FROM_BASE: base_container:20180217
+            cache_from:
+                - alpine:3.6
+                - base_container:20180217
+            context: .
+        container_name: newcontainer
+#        environment:
+#            WEBDAV_USER: "${CFG_MYSQL_USER}"
+        hostname: newcontainer
+        image: newcontainer:20180217
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "10m"
+        ports:
+            - 8003:80
+#        restart: unless-stopped
+        volumes:
+            - ./vols/log:/var/log 

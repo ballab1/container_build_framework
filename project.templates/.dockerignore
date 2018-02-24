@@ -1,0 +1,12 @@
+# Git files
+.git
+.gitattributes
+.gitignore
+.lfsconfig
+
+#build files
+docker-compose.yml
+
+# Information files
+LICENSE
+README.md

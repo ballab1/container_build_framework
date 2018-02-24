@@ -10,6 +10,9 @@ declare -Ax CBF=()
 
 function cbf.__init()
 {
+    # this function is usually called from bin/init.libraries
+    local -r lib_base=${1:?'Input parameter "lib_base" must be defined'}
+
     if [ "${#CBF[@]}" -eq 0 ]; then
         local cbf_base="$( cd "$( dirname "$lib_base" )" && pwd )"
         CBF['bin']="${cbf_base}/bin"
@@ -145,8 +148,7 @@ cat << EOF > "$tmpScript"
 #!/bin/bash
 set -o errexit
 set -o nounset  
-source "${CBF['bin']}/init.libraries"
-cbf.__init
+source "${CBF['bin']}/init.libraries" "${CBF['lib']}" 
 cd /tmp
 [ "${CBF['debug']}" != "0" ] && set -o verbose  
 source "$file"

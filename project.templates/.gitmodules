@@ -1,0 +1,3 @@
+[submodule "build/container_build_framework"]
+	path = build/container_build_framework
+    url = ../container_build_framework.git

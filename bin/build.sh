@@ -11,7 +11,6 @@ declare TZ="${2:-null}"
 if [ -d '/tmp/container_build_framework' ]; then
     # load our libraries
     source "$( cd "$( dirname "${BASH_SOURCE[0]}" )/container_build_framework/bin" && pwd )/init.libraries"
-    cbf.__init
 
     # build our container
     cbf.buildContainer "$NAME" "$TZ"
