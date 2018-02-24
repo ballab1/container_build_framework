@@ -13,7 +13,9 @@ Once installed in a GIT project, configure the project default configuration by 
 build/container_build_framework/bin/setupContainerFramework
 ```
 
-Installing the framework, will setup a `action_folder` folder in the build folder. This contains subfolders for each of the action categories performed. It also sets up symlinks in the action folders to scripts maintained in the **action.templates** folder of the container build framework. These scripts perform the most common tasks. The Dockerfile copies these action folders and the framework folder to the **/tmp** folder of the container being built. The last command in the Dockerfile deletes the contents of the **/tmp** folder. The result is that none of the framework, or any of the action folders reside in the final container.
+Installing the framework, will setup a `action_folder` folder in the build folder. This contains subfolders for each of the action categories performed. It also sets up symlinks in the action folders to 'canned scripts' maintained in the **action.templates** folder of the container build framework. These scripts perform the most common tasks. 
+
+When building the container, the Dockerfile copies these action folders and the framework folder to the **/tmp** folder of the container being built. The last command in the Dockerfile deletes the contents of the **/tmp** folder. The result is that none of the framework, or any of the action folders reside in the final container.
 
 ![build folder contents](./build_folder_contents.png) 
 
@@ -28,14 +30,18 @@ Folder | Action
 07.cleanup | Clean up 
 
 
-The `build` folder also contains zero or more **custom folders**. These folders are copied to the root of the of the file system of the container. This allows creation of files and subfolders which will be as-is inside your container. No errors occur when any of these folders do not exist.
+The `build` folder also contains zero or more **custom folders**. These folders are copied to the root of the of the file system of the container. 
+This allows creation of files and subfolders which will be as-is inside your container. No errors occur when any of these folders do not exist.
 
 ### Action Folders
-The **/tmp/build** script, called from the *DockerFile*, loads the framework library scripts, and then iterates in order, across the coresponding directories in the `action_folders` folder.
+The **/tmp/build.sh** script, called from the *DockerFile*, loads the framework library scripts, and then iterates in order, across the coresponding directories in the `action_folders` folder.
+
 The `action_folders` folder contains the instructions for the framework. The contents of this folder are processed in sorted order.
 If a folder contains any files, they are processed, otherwise it is skipped. Similarly, if a folder does not exist in the `action_folders' directory, it is skipped.
+
 As the framework processes each action folder, it ignores hidden files, it ignores subfolders and then processes the remaining files and symbolic links in alphabetically sorted order.
 For this reason, a convention is adopted, whereby each filename starts with two numbers.
+
 The framework invokes each action script in its own bash shell to prevent undesired clashes between scripts. All of the framework bash library scripts are available to actions
 
 ### Custom Folders
