@@ -1,7 +1,7 @@
 # Framework for Building Containers
 ## repo: container_build_framework
 
-A framework do simplify 'Dockerfile' and make it easier to build complex containers
+A framework to simplify 'Dockerfile' and make it easier to build complex containers
 
 ## Introduction
 
@@ -15,17 +15,17 @@ This framework takes a differnt approach. It minimizes the 'mixed mode' code, an
 Downloading files is another common pattern which occurs. Somethimes developers verify a PGP signature, or a SHA to validate the downloaded file. I have even seen SHA's downloaded from the same site as a file and used to verify the download. Sometimes, a retry is performed. There is so much duplicated code.
 
 #### Non ROOT user in container
-Container security is always a concern, so it pays to be mindful of who owns the process which the container runs. Usually, default is ‘root’ unless you specify `USER` in *Dockerfile*. Also, just because `USER` is specified, that user may not have same uid on host system, as it does inside the container. This can lead to debugging issues, as well as access issues on the host system when `VOLUME`s are also mounted.
+Container security is always a concern, so it pays to be mindful of who owns the process which the container runs. Usually, default is â€˜rootâ€™ unless you specify `USER` in *Dockerfile*. Also, just because `USER` is specified, that user may not have same uid on host system, as it does inside the container. This can lead to debugging issues, as well as access issues on the host system when `VOLUME`s are also mounted.
 
 
 ## Docker project
-A typical project has a `Docker` file. A project using the **container\_lib** framework, contains a `Dockerfile` and a *build* folder. I usually include a *vols* folder for any local mountpoints, as well as a [.dockeringnore](https://docs.docker.com/engine/reference/builder/#dockerignore-file) and the usual meta files for [git](https://git-scm.com/doc). This results in a project folder which looks like:
+A typical project has a `Docker` file. A project using the **container\_build\_framework**, contains a `Dockerfile` and a *build* folder. I usually include a *vols* folder for any local mountpoints, as well as a [.dockeringnore](https://docs.docker.com/engine/reference/builder/#dockerignore-file) and the usual meta files for [git](https://git-scm.com/doc). This results in a project folder which looks like:
 
-![container project folder](https://github.com/ballab1/container_build_framework/blob/dev/refactor/docs/Container_Project_Folder.png)
+![container project folder](./docs/Container_Project_Folder.png)
 
 The simplified project `Dockerfile` looks like this:
 
-![project Dockerfile](https://github.com/ballab1/container_build_framework/blob/dev/refactor/docs/Project_Dockerfile.png)
+![project Dockerfile](./docs/Project_Dockerfile.png)
 
 Depending on the project, there may also be other `ENV`, `EXPOSE`, `ARG` or `ONBUILD` directives, and possibily a `USER` directive.
 As can be seen, all of the script code has been moved out of the `Dockerfile`, reducing the *mixed-mode* code, and resulting in simplification. 

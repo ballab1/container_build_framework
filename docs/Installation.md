@@ -36,10 +36,12 @@ The `action_folders` folder contains the instructions for the framework. The con
 If a folder contains any files, they are processed, otherwise it is skipped. Similarly, if a folder does not exist in the `action_folders' directory, it is skipped.
 As the framework processes each action folder, it ignores hidden files, it ignores subfolders and then processes the remaining files and symbolic links in alphabetically sorted order.
 For this reason, a convention is adopted, whereby each filename starts with two numbers.
-
+The framework invokes each action script in its own bash shell to prevent undesired clashes between scripts. All of the framework bash library scripts are available to actions
 
 ### Custom Folders
 These folders may contain any content which is copied to the coresponding folder in the root forlder of the container being built.
+Custom folders are not mandatory. The following custom folders are supported:
+bin etc home lib lib64 media mnt opt root sbin usr var www
 
 
 **************

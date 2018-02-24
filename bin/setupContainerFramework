@@ -5,6 +5,22 @@ set -o nounset
 set -o errexit
 
 ######################################################################
+function update()
+{
+    local old=${1:?"must pass parameter 'old' to 'function ${FUNCNAME[0]}()'"}
+    local new=${2:?"must pass parameter 'new' to 'function ${FUNCNAME[0]}()'"}
+    
+    [ -d "$old" ] && mv "$old" "$new"
+    while read -r file; do
+        sed -i "s/${old}/${new}/g" "$file"
+    done < <(find . -type f -name '0*')
+    while read -r file; do
+        awk '!/{TOOLS}/' "$file" > "${file}.tmp"
+        mv "${file}.tmp" "$file"
+    done < <(find . -type f -name '0*' -exec grep -Hc '{TOOLS}' '{}' \; | grep -v ':0' | awk -F: '{ print $1 }')
+}
+
+######################################################################
 function createStructure()
 {
     local actionFolders=${1:?"must pass parameter 'actionFolders' to 'function ${FUNCNAME[0]}()'"}
@@ -12,8 +28,24 @@ function createStructure()
 
     
     # create actions folder [ should be a sibling of 'container_build_framework' ]
-    mkdir -p "$actionFolders"
-    cd "$actionFolders"
+    if [ -d "$( dirname "$actionFolders")/container" ]; then
+        # migrate old framework
+        [ -d "${CBF['base']}/container_lib" ] && rm -rf "${CBF['base']}/container_lib"
+        mv "${CBF['base']}/container" "$actionFolders"
+        cd "$actionFolders"
+        find . -type l -delete
+        find . -name '.Do Not Delete' -delete
+        update 02.packages 01.packages
+        update 03.users_groups 02.users_groups
+        update 04.downloads 03.downloads
+        update 05.applications 04.applications
+        update 06.customizations 05.customizations
+        update 07.permissions 06.permissions
+        update 08.cleanup 07.cleanup
+    else
+        mkdir -p "$actionFolders"
+        cd "$actionFolders"
+    fi
 
     local relativePath="../$( cbf.relativize "$actionFolders" "$templatesFolder" )"
     local dirs=( $( ls -d "$templatesFolder"/* ) )

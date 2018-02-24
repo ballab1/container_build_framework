@@ -11,7 +11,9 @@ The following environment variables are available:
 Environment Variable | contents
 --- | ---
  CBF['base'] | base folder. In the build container, this is '/tmp'. In the git workspace, this is the 'build' folder.
- CBF['action'] | actions folder. This contains the folders over which the framework iterates.
+ CBF['bin'] | cbf bin folder. this contains the _setupContainerFramework_ script and test script.
+ CBF['debug'] | when set to 1 (from DEBUG_TRACE build arguement) causes action scripts to be verbose.
+ CBF['action'] | project actions folder. This contains the folders over which the framework iterates.
  CBF['lib'] | cbf library folder. This contains the framework bashlib scripts.
  CBF['templates'] | action template folders. This is the framework copy of the `action_folders`
  
@@ -35,7 +37,7 @@ apk add --no-cache bash-completion coreutils openssh-client shadow supervisor su
 
 This folder contains scripts definitions for users and groups to configure inside the container. After stripping off any prefix digits, the name (by convention) should be the same as the associative array declared by the file. All of these array definitions should always be lowercase to prevent name conflicts with **Downloads**.
 
-The `shell` and `home` are optional, while mandatory fields are:
+The `shell` and `home` are optional, while **mandatory fields** are:
 - user
 - uid
 - group
@@ -64,7 +66,7 @@ These files may be 'sourced' in later scripts to access their definitions.
 **Folder:** _03.downloads_
 
 This folder contains scripts definitions for files which should be downloaded. After stripping off any prefix digits, the name (by convention) should be the same as the associative array declared by the file.
-The mandatory fields are
+The **mandatory fields** are
 - file
 - url
 - sha256
@@ -117,13 +119,17 @@ The *01.custom_folders* file, shows an example of the type of file expected in t
 ```bash
 #!/bin/bash
 # 01.custom_folders: copy contents of custme folders from /tmp into the root of the container
-declare -r tools=/tmp
-declare -r dirs='bin etc home lib lib64 media mnt opt root sbin usr var'
+declare -r dirs='bin etc home lib lib64 media mnt opt root sbin usr var www' 
 for dir in ${dirs} ; do
-    [ -d "${tools}/${dir}" ] && cp -r "${tools}/${dir}/"* "/${dir}/"
-done
-true 
+    declare custom_folder="${CBF['base']}/$dir"
+    if [ -d "$custom_folder" ]; then
+        echo "Updating ${dir} from ${custom_folder}"
+        cp -r "${custom_folder}/"* "/${dir}/"
+    fi
+done 
 ```
+The 01.custom_folders canned script is provided with the framework, and linked into a users 'action_folders/05.customizations' folder:
+
 
 ### Make sure that ownership & permissions are correct
 **Folder:** _06.permissions_
@@ -138,6 +144,13 @@ if [ -f /usr/local/bin/docker-entrypoint.sh ]; then
     [ -h /docker-entrypoint.sh ] || ln -s /usr/local/bin/docker-entrypoint.sh /docker-entrypoint.sh 
 fi
 ```
+There are three canned scripts provided with the framework, and linked into a users 'action_folders/06.permissions' folder:
+canned script | functionality provided
+--- | ---
+ 01.bin_dirs | ensures that all files in the /usr/local/bin, /usr/bin and /sbin folders are executable
+ 01.docker-entry | creates a link in the root folder to /usr/local/bin/docker-entrypoint.sh for backward compatibility and convenience
+ 01.sudo | checks if /usr/bin/sudo has been installed, ensures that the correct permissions are on the file, and that all files in /etc/sudoers.d  are only accessible by root
+
 
 ### Clean up 
 **Folder:** _07.cleanup_
@@ -155,6 +168,7 @@ if [ ${#files[@]} -gt 0 ]; then
     rm -rf "$cacheDir"/*
 fi 
 ```
+The 99.apk.cleanup canned script is provided with the framework, and linked into a users 'action_folders/07.cleanup' folder:
 
 
 **************
