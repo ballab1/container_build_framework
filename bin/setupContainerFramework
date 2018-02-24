@@ -12,12 +12,8 @@ function update()
     
     [ -d "$old" ] && mv "$old" "$new"
     while read -r file; do
-        sed -i "s/${old}/${new}/g" "$file"
+        sed -i "s|\${TOOLS}/${old}|\\$\\{CBF['action']\\}/${new}|g" "$file"
     done < <(find . -type f -name '0*')
-    while read -r file; do
-        awk '!/{TOOLS}/' "$file" > "${file}.tmp"
-        mv "${file}.tmp" "$file"
-    done < <(find . -type f -name '0*' -exec grep -Hc '{TOOLS}' '{}' \; | grep -v ':0' | awk -F: '{ print $1 }')
 }
 
 ######################################################################
@@ -42,6 +38,10 @@ function createStructure()
         update 06.customizations 05.customizations
         update 07.permissions 06.permissions
         update 08.cleanup 07.cleanup
+        while read -r file; do
+            awk '!/{TOOLS}/' "$file" > "${file}.tmp"
+            mv "${file}.tmp" "$file"
+        done < <(find . -type f -name '0*' -exec grep -Hc '{TOOLS}' '{}' \; | grep -v ':0' | awk -F: '{ print $1 }')
     else
         mkdir -p "$actionFolders"
         cd "$actionFolders"
