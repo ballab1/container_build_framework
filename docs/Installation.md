@@ -2,22 +2,30 @@
 
 ## Installation
 
-The framework is installed as a submodule within the `build` folder. In the root folder of your GIT project, type the following:
+The framework is installed as a submodule within the `build` folder of a GIT repo. This may be an existing repo, or a new repo. 
+In the root folder of your GIT project, type the following:
 ```bash
-git submodule add https://github.com/ballab1/container_build_framework.git build/container_build_framework
+GIT_LFS_SKIP_SMUDGE=1 git submodule add https://eos2git.cec.lab.emc.com/DevEnablement/container_build_framework.git build/container_build_framework
+```
+If you are starting a new container project, create a folder with the name of the project, initialize it as a git repo, then add the container\_build\_framework subproject as detailed above. Later, when you configure the project, it will recognize and use your project's name.
+```bash
+mkdir newProject
+cd newProject
+git init
+GIT_LFS_SKIP_SMUDGE=1 git submodule add https://eos2git.cec.lab.emc.com/DevEnablement/container_build_framework.git build/container_build_framework
 ```
 
-The framework gets copied into `tmp` folder in the build environemt along with the other scripts and customizations.
-Once installed in a GIT project, configure the project default configuration by running 
+Once installed in a GIT project, configure the project defaults by running 
 ```bash
 build/container_build_framework/bin/setupContainerFramework
 ```
 
-Installing the framework, will setup a `action_folder` folder in the build folder. This contains subfolders for each of the action categories performed. It also sets up symlinks in the action folders to 'canned scripts' maintained in the **action.templates** folder of the container build framework. These scripts perform the most common tasks. 
+Configuring the framework, will setup a `action_folder` folder in the build folder. This contains subfolders for each of the action categories performed. It also sets up symlinks in the action folders to 'canned scripts' maintained in the **action.templates** folder of the container build framework. These scripts perform the most common tasks. 
 
-When building the container, the Dockerfile copies these action folders and the framework folder to the **/tmp** folder of the container being built. The last command in the Dockerfile deletes the contents of the **/tmp** folder. The result is that none of the framework, or any of the action folders reside in the final container.
+The project `Dockerfile` copies the action folders and the framework folder into the container **/tmp** directory (in the build environment), along with the other scripts and customizations, when building the container. The last command in the Dockerfile deletes the contents of the **/tmp** folder. The result is that none of the framework, or any of the action folders reside in the final container.
 
 ![build folder contents](./build_folder_contents.png) 
+
 
 Folder | Action
 --- | --- 
@@ -43,6 +51,7 @@ As the framework processes each action folder, it ignores hidden files, it ignor
 For this reason, a convention is adopted, whereby each filename starts with two numbers.
 
 The framework invokes each action script in its own bash shell to prevent undesired clashes between scripts. All of the framework bash library scripts are available to actions
+
 
 ### Custom Folders
 These folders may contain any content which is copied to the coresponding folder in the root forlder of the container being built.

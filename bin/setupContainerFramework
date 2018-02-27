@@ -96,36 +96,47 @@ function setupCBF.main()
     echo "Creating symlink to ${relativePath}/build.sh"
     ln -s "${relativePath}/build.sh" .
     
-    setupCBF.setupProjectFiles
+    setupCBF.setupProjectFiles "$( setupCBF.getSuperProjectDir )"
+}
+
+######################################################################
+function setupCBF.getSuperProjectDir()
+{   
+    cd "${CBF['base']}/.."
+    pwd
+#    cd "${CBF['bin']}"
+#    local top="$(git rev-parse --show-superproject-working-tree)"
+#    if [ "$top" ]; then
+#    
+#    fi
 }
 
 ######################################################################
 function setupCBF.setupProjectFiles()
 {
-    cd "${CBF['bin']}"
-    local top="$(git rev-parse --show-superproject-working-tree)"
-    if [ "$top" ]; then
-        cd "$top"
-        local projectName="$( basename "$top" )"
-        echo "setting files for superProject: $projectName"
+    local top=${1:?"must pass parameter 'top' to 'function ${FUNCNAME[0]}()'"}
 
-        [ ! -e Dockerfile ] && setupCBF.verifyDepententContainerExists
-        
-        # ensure our folder structure exists
-        while read -r abs_dir; do
-            local dir="$( cbf.relativize "${CBF['cbfbase']}/project.templates" "$abs_dir" )"
-            mkdir -p "${top}/$dir"  
-        done < <(find "${CBF['cbfbase']}/project.templates" -mindepth 1 -type d)
+    cd "$top"
+    local projectName="$( basename "$top" )"
+    echo "setting files for superProject: $projectName"
+    projectName=${projectName,,}
 
-        # copy any missing files from project templates
-        while read -r abs_file; do
-            local file="$( cbf.relativize "${CBF['cbfbase']}/project.templates" "$abs_file" )"
-            if [ ! -e "$file" ]; then
-                sed "s|newcontainer|${projectName}|g" "$abs_file" > "$file"
-                echo "  created: ${file}"
-            fi
-        done < <(find "${CBF['cbfbase']}/project.templates" -type f)
-    fi
+    [ ! -e Dockerfile ] && setupCBF.verifyDepententContainerExists
+
+    # ensure our folder structure exists
+    while read -r abs_dir; do
+        local dir="$( cbf.relativize "${CBF['cbfbase']}/project.templates" "$abs_dir" )"
+        mkdir -p "${top}/$dir"  
+    done < <(find "${CBF['cbfbase']}/project.templates" -mindepth 1 -type d)
+
+    # copy any missing files from project templates
+    while read -r abs_file; do
+        local file="$( cbf.relativize "${CBF['cbfbase']}/project.templates" "$abs_file" )"
+        if [ ! -e "$file" ]; then
+            sed "s|newcontainer|${projectName}|gi" "$abs_file" > "$file"
+            echo "  created: ${file}"
+        fi
+    done < <(find "${CBF['cbfbase']}/project.templates" -type f)
 }
 
 ######################################################################

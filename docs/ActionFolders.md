@@ -95,8 +95,8 @@ The *02.Gradle* file, shows an example of the type of file expected in the _04.a
 ```bash
 #!/bin/bash
 # Gradle installation script
-source "${CBF['lib']}/term.sh"
-source "${CBF['action']}/04.downloads/01.GRADLE" 
+source "${CBF['action']}/03.downloads/01.GRADLE" 
+
 mkdir -p /opt
 cd /opt
 unzip "${GRADLE['file']}"
@@ -145,6 +145,7 @@ if [ -f /usr/local/bin/docker-entrypoint.sh ]; then
 fi
 ```
 There are three canned scripts provided with the framework, and linked into a users 'action_folders/06.permissions' folder:
+
 canned script | functionality provided
 --- | ---
  01.bin_dirs | ensures that all files in the /usr/local/bin, /usr/bin and /sbin folders are executable
@@ -160,13 +161,14 @@ This folder contains scripts which cleanup content which is outside of the /tmp 
 The *99.apk.cleanup* file, shows an example of the type of file expected in the _07.cleanup_ folder:
 ```bash
 #!/bin/bash
-source "${CBF['lib']}/cbf.bashlib"
-apk del .build-deps
+if apk info .build-deps; then
+    apk del .build-deps
+fi
 declare -r cacheDir=/var/cache/apk
 declare -a files=( $( cbf.getFiles "${cacheDir}" ) )
 if [ ${#files[@]} -gt 0 ]; then
     rm -rf "$cacheDir"/*
-fi 
+fi
 ```
 The 99.apk.cleanup canned script is provided with the framework, and linked into a users 'action_folders/07.cleanup' folder:
 
