@@ -2,7 +2,7 @@ ARG FROM_BASE=base_container:20180217
 FROM $FROM_BASE
 
 # name and version of this docker image
-ARG CONTAINER_NAME=NewContainer
+ENV CONTAINER_NAME=NewContainer
 ARG CONTAINER_VERSION=1.0.0
 
 LABEL org_name=$CONTAINER_NAME
@@ -23,4 +23,4 @@ RUN rm -rf /tmp/*
 
 
 ENTRYPOINT [ "docker-entrypoint.sh" ]
-CMD ["$CONTAINER_NAME"]
+CMD ["NewContainer"]
