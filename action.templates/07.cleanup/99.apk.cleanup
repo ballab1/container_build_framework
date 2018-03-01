@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+
 if [ "${CBF['os_id']}" = 'alpine' ]; then
     ( apk info .build-deps > /dev/null 2>&1 ) && apk del .build-deps
 
