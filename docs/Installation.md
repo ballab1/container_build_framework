@@ -5,14 +5,14 @@
 The framework is installed as a submodule within the `build` folder of a GIT repo. This may be an existing repo, or a new repo. 
 In the root folder of your GIT project, type the following:
 ```bash
-GIT_LFS_SKIP_SMUDGE=1 git submodule add https://eos2git.cec.lab.emc.com/DevEnablement/container_build_framework.git build/container_build_framework
+GIT_LFS_SKIP_SMUDGE=1 git submodule add https://github.com/ballab1/container_build_framework.git build/container_build_framework
 ```
 If you are starting a new container project, create a folder with the name of the project, initialize it as a git repo, then add the container\_build\_framework subproject as detailed above. Later, when you configure the project, it will recognize and use your project's name.
 ```bash
 mkdir newProject
 cd newProject
 git init
-GIT_LFS_SKIP_SMUDGE=1 git submodule add https://eos2git.cec.lab.emc.com/DevEnablement/container_build_framework.git build/container_build_framework
+GIT_LFS_SKIP_SMUDGE=1 git submodule add https://github.com/ballab1/container_build_framework.git build/container_build_framework
 ```
 
 Once installed in a GIT project, configure the project defaults by running 
