@@ -6,6 +6,6 @@ for dir in ${dirs} ; do
     declare custom_folder="${CBF['base']}/$dir"
     if [ -d "$custom_folder" ]; then
         echo "Updating ${dir} from ${custom_folder}"
-        cp -r "${custom_folder}/"* "/${dir}/"
+        cp -r "${custom_folder}/". "/${dir}/"
     fi
 done

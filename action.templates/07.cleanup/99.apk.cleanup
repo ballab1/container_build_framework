@@ -1,7 +1,7 @@
 #!/bin/bash
-
+set -x
 if [ "${CBF['os_id']}" = 'alpine' ]; then
-    ( apk info .build-deps > /dev/null ) && apk del .build-deps
+    ( apk info .build-deps > /dev/null 2>&1 ) && apk del .build-deps
 
     declare -r cacheDir=/var/cache/apk
     declare -a files=( cbf.getFiles "$cacheDir" )

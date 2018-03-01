@@ -33,17 +33,23 @@ function uidgid.createUserAndGroup()
     local homedir="$( cbf.indirectReference $name 'home' )"
     local shell="$( cbf.indirectReference $name 'shell' )"
 
-    
+ 
+   
     local wanted=$( printf '%s:%s' $group $gid )
     local nameMatch=$( getent group "${group}" | awk -F ':' '{ printf "%s:%s",$1,$3 }' )
     local idMatch=$( getent group "${gid}" | awk -F ':' '{ printf "%s:%s",$1,$3 }' )
     $LOG "INFO: group/gid (${wanted}):  is currently (${nameMatch})/(${idMatch})${LF}" 'info'
 
     if [[ $wanted != $nameMatch  ||  $wanted != $idMatch ]]; then
-        $LOG "create group:  ${group}${LF}" 'info'
-        [[ "$nameMatch"  &&  $wanted != $nameMatch ]] && groupdel "$( getent group ${group} |  cut -d: -f1 )"
-        [[ "$idMatch"    &&  $wanted != $idMatch ]]   && groupdel "$( getent group ${gid} |  cut -d: -f1 )"
-        /usr/sbin/groupadd --gid "${gid}" "${group}"
+        if [[ -n "$nameMatch"  &&  $(getent passwd ${user} | wc -l) -gt 0 ]]; then
+            $LOG "update group:  ${group}${LF}" 'info'
+            /usr/sbin/groupmod --gid "${gid}" "${group}"
+        else
+            $LOG "create group:  ${group}${LF}" 'info'
+            [[ "$nameMatch"  &&  $wanted != $nameMatch ]] && groupdel "$( getent group ${group} |  cut -d: -f1 )"
+            [[ "$idMatch"    &&  $wanted != $idMatch ]]   && groupdel "$( getent group ${gid} |  cut -d: -f1 )"
+            /usr/sbin/groupadd --gid "${gid}" "${group}"
+        fi
     fi
 
     
@@ -53,15 +59,24 @@ function uidgid.createUserAndGroup()
     $LOG "INFO: user/uid (${wanted}):  is currently (${nameMatch})/(${idMatch})${LF}" 'info'
     
     if [[ $wanted != $nameMatch  ||  $wanted != $idMatch ]]; then
-        $LOG "create user: ${user}${LF}" 'info'
-        [[ "$nameMatch"  &&  $wanted != $nameMatch ]] && userdel "$( getent passwd ${user} |  cut -d: -f1 )"
-        [[ "$idMatch"    &&  $wanted != $idMatch ]]   && userdel "$( getent passwd ${uid} |  cut -d: -f1 )"
-
-        if [ "$homedir" ]; then
-            [ -d "$homedir" ] || mkdir -p "$homedir"
-            /usr/sbin/useradd --home-dir "$homedir" --uid "${uid}" --gid "${gid}" --no-create-home --shell "${shell}" "${user}"
+        if [[ -z "$idMatch"  &&  -n "$nameMatch" ]]; then
+            $LOG "update user:  ${user}${LF}" 'info'
+            if [ "$homedir" ]; then
+                [ -d "$homedir" ] || mkdir -p "$homedir"
+                /usr/sbin/usermod --home "$homedir" --uid "${uid}" --gid "${gid}" --shell "${shell}" "${user}"
+            else
+                /usr/sbin/usermod --uid "${uid}" --gid "${gid}" --shell "${shell}" "${user}"
+            fi
         else
-            /usr/sbin/useradd --no-create-home --uid "${uid}" --gid "${gid}" --no-create-home --shell "${shell}" "${user}"
+            $LOG "create user: ${user}${LF}" 'info'
+            [[ "$nameMatch"  &&  $wanted != $nameMatch ]] && userdel "$( getent passwd ${user} |  cut -d: -f1 )"
+            [[ "$idMatch"    &&  $wanted != $idMatch ]]   && userdel "$( getent passwd ${uid} |  cut -d: -f1 )"
+            if [ "$homedir" ]; then
+                [ -d "$homedir" ] || mkdir -p "$homedir"
+                /usr/sbin/useradd --home-dir "$homedir" --uid "${uid}" --gid "${gid}" --shell "${shell}" "${user}"
+            else
+                /usr/sbin/useradd --no-create-home --uid "${uid}" --gid "${gid}" --shell "${shell}" "${user}"
+            fi
         fi
     fi
 } 

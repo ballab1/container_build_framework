@@ -55,6 +55,7 @@ function cbf.buildContainer()
 
     # iterate through list
     for dir in $( printf "%s\n" "${!steps[@]}" | sort ); do
+        [ "$dir" = '07.cleanup' ] && [ $DEBUG_TRACE -ne 0 ] && continue
         [ ! -d "${CBF['action']}/$dir" ] && continue
 
         # get array of files in directory

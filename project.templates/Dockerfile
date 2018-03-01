@@ -1,8 +1,7 @@
-ARG FROM_BASE=base_container:20180217
-FROM $FROM_BASE
+FROM base_container:20180217
 
 # name and version of this docker image
-ENV CONTAINER_NAME=NewContainer
+ARG CONTAINER_NAME=NewContainer
 ARG CONTAINER_VERSION=1.0.0
 
 LABEL org_name=$CONTAINER_NAME
@@ -19,8 +18,9 @@ COPY build /tmp/
 RUN set -o verbose \
     && chmod u+rwx /tmp/build.sh \
     && /tmp/build.sh "$CONTAINER_NAME"
-RUN rm -rf /tmp/* 
+RUN [[ $DEBUG_TRACE == 0 ]] && rm -rf /tmp/* 
 
 
 ENTRYPOINT [ "docker-entrypoint.sh" ]
+#CMD ["$CONTAINER_NAME"]
 CMD ["NewContainer"]
