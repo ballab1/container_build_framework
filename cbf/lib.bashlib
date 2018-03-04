@@ -1,0 +1,123 @@
+#!/bin/bash
+#############################################################################
+#
+#   lib.bashlib: container_build_framework
+#
+#############################################################################
+
+
+#############################################################################
+function lib.file_env()
+{
+    local var="$1"
+    local fileVar="${var}_FILE"
+    local def="${2:-}"
+    if [ "${!var:-}" ] && [ "${!fileVar:-}" ]; then
+        echo >&2 "error: both $var and $fileVar are set (but are exclusive)"
+        exit 1
+    fi
+    local val="$def"
+    if [ "${!var:-}" ]; then
+        val="${!var}"
+    elif [ "${!fileVar:-}" ]; then
+        val="$(< "${!fileVar}")"
+    fi
+    export "$var"="$val"
+    unset "$fileVar"
+}
+
+#############################################################################
+function lib.getFiles()
+{
+    local -r dir=${1:?'Input parameter "dir" must be defined'}
+
+    IFS=$'\r\n'
+    [ -d "$dir" ] && find "$dir"  -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort
+}
+
+#############################################################################
+function lib.indirectReference()
+{
+    local -r hash=${1:?'Input parameter "hash" must be defined'}
+    local -r key=${2:?'Input parameter "key" must be defined'}
+    set +o nounset
+    local -r default="$3"
+
+    local val=$( eval "echo \${$hash[$key]}" )
+    [ -z "$val" ] && val="$default"
+    echo "$val"
+    set -o nounset
+}
+
+#############################################################################
+function lib.readFile()
+{
+    local -r file=${1:?'Input parameter "file" must be defined'}
+    
+    if [ -e "$file" ]; then
+        cat $file
+    else
+        echo 'File does not exist'
+    fi
+}
+
+######################################################################
+function lib.relativize()
+{
+    local from="$1"
+    local to="$2"
+
+    from=${from//\/\//\/}
+    from=${from%/}
+    IFS=/
+    dirs=(${from#/})
+    for to; do
+        to=${to//\/\//\/}
+        to=${to%/}
+        local commonPrefix=/
+        for d in "${dirs[@]}"; do
+            case "$to/" in "$commonPrefix$d/"*) ;;
+                *) break;;
+            esac
+            commonPrefix+="$d/"
+        done
+        local ancestor="${from#${commonPrefix%/}}"
+        ancestor=${ancestor//[^\/]/}
+        ancestor=${ancestor//\//..\/}
+    done
+    echo -n "$ancestor${to#$commonPrefix}"
+}
+
+#############################################################################
+function lib.makeScript()
+{
+    local -a file=${1:?'Input parameter "file" must be defined'}
+    local tmpScript="/tmp/runScript.$( basename "$file" )"
+
+cat << EOF > "$tmpScript"
+#!/bin/bash
+set -o errexit
+set -o nounset  
+source "${CBF['bin']}/init.libraries" "${CBF['lib']}" 
+cd /tmp
+[ "${CBF['debug']}" != "0" ] && set -o verbose  
+source "$file"
+EOF
+    chmod 755 "$tmpScript"
+    eval "$tmpScript" || $LOG ">>>>> issue while executing $( basename "$file" ) <<<<<${LF}" 'warn'
+    [[ $? -eq 0 ]] || exit 1
+}
+
+#############################################################################
+function lib.runScripts()
+{
+    local -a files=${1:?'Input parameter "files" must be defined'}
+ 
+    for file in ${files} ; do
+        chmod 755 "$file"
+        $LOG "..executing ${file}${LF}" 'info'
+        lib.makeScript "$file"
+    done
+}
+
+#############################################################################

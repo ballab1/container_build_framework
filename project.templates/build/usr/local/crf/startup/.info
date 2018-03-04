@@ -1,0 +1,6 @@
+# This folder contains scripts which are run at runtime startup. 
+#
+# These scripts perform the custom actions required during container startup, such as
+#      - modifying permissions or ownership of files that exist on mounted volumes
+#      - applying custom parameters from runtime environment variables (setting GITHUB access)
+#

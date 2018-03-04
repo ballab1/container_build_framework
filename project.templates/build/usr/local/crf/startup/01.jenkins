@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# clean out old plugins to ensure we are always at specified versions
+
+[[ -d "$pluginsFolder" ]] && rm -rf "$pluginsFolder"
+mkdir -p "$pluginsFolder"
+cp -r "$pluginsReferenceFolder"/* "$pluginsFolder"
+
+chown -R docker:docker "$JENKINS_HOME"
+chown -R docker:docker /usr/share/docker/ref
+if [ "${JENKINS_GITHUB_EMAIL}" ]; then
+    git config --global user.email "${JENKINS_GITHUB_EMAIL}"
+    unset JENKINS_GITHUB_EMAIL
+fi
+if [ "${JENKINS_GITHUB_NAME}" ]; then
+    git config --system user.name "${JENKINS_GITHUB_NAME}"
+    unset JENKINS_GITHUB_NAME
+fi
+if [ "${JENKINS_GITHUB_CREDENTIALS}" ]; then
+    git config --system credential.user "${JENKINS_GITHUB_CREDENTIALS}"
+    unset JENKINS_GITHUB_CREDENTIALS
+fi

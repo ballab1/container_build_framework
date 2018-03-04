@@ -1,0 +1,5 @@
+# This folder contains runtime bashlib library files. 
+# It is to setup the appropriate functions for the runtime environment  (docker-entrypoint.sh)
+#
+#  The bashlib files in this folder are copied into this folder by the build process
+#  and are 'sourced' at runtime by /usr/local/bin/docker-entrypoint.sh 
