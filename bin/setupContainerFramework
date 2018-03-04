@@ -29,7 +29,7 @@ function setupCBF.createSymlinks()
     local actionFolders=${1:?"must pass parameter 'actionFolders' to 'function ${FUNCNAME[0]}()'"}
     local templatesFolder=${2:?"must pass parameter 'templatesFolder' to 'function ${FUNCNAME[0]}()'"}
 
-    local relativePath="../$( cbf.relativize "$actionFolders" "$templatesFolder" )"
+    local relativePath="../$( lib.relativize "$actionFolders" "$templatesFolder" )"
     local dirs=( $( ls -d "$templatesFolder"/* ) )
     for lib in ${dirs[@]}; do
         [ ! -d "$lib" ] && continue
@@ -92,7 +92,7 @@ function setupCBF.main()
     # create symlink for build script
     cd "${CBF['base']}"
     [ -e build.sh ] && rm build.sh
-    local relativePath="$( cbf.relativize "${CBF['base']}" "${CBF['bin']}" )"
+    local relativePath="$( lib.relativize "${CBF['base']}" "${CBF['bin']}" )"
     echo "Creating symlink to ${relativePath}/build.sh"
     ln -s "${relativePath}/build.sh" .
     
@@ -125,13 +125,13 @@ function setupCBF.setupProjectFiles()
 
     # ensure our folder structure exists
     while read -r abs_dir; do
-        local dir="$( cbf.relativize "${CBF['cbfbase']}/project.templates" "$abs_dir" )"
+        local dir="$( lib.relativize "${CBF['cbfbase']}/project.templates" "$abs_dir" )"
         mkdir -p "${top}/$dir"  
     done < <(find "${CBF['cbfbase']}/project.templates" -mindepth 1 -type d)
 
     # copy any missing files from project templates
     while read -r abs_file; do
-        local file="$( cbf.relativize "${CBF['cbfbase']}/project.templates" "$abs_file" )"
+        local file="$( lib.relativize "${CBF['cbfbase']}/project.templates" "$abs_file" )"
         if [ ! -e "$file" ]; then
             sed "s|newcontainer|${projectName}|gi" "$abs_file" > "$file"
             echo "  created: ${file}"
