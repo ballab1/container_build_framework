@@ -5,6 +5,6 @@ mkdir -p "${CBF['crf_lib']}"
 mkdir -p "${CBF['crf_env']}"
 
 declare libs='docker.bashlib lib.bashlib term.bashlib trap.bashlib'
-for lib in "$libs"; do
+for lib in $libs; do
     cp "${CBF['lib']}/${lib}" "${CBF['crf_lib']}"
 done

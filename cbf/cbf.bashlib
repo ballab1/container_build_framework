@@ -30,6 +30,11 @@ function cbf.__init()
         CBF['crf_lib']="${CBF['crf_base']}/bashlib"
         CBF['crf_env']="${CBF['crf_base']}/environment"
         CBF['crf_startup']="${CBF['crf_base']}/startup"
+
+        CBF['crt_base']="/tmp${CBF['crf_base']}"
+        CBF['crt_lib']="/tmp${CBF['crf_lib']}"
+        CBF['crt_env']="/tmp${CBF['crf_env']}"
+        CBF['crt_startup']="/tmp${CBF['crf_startup']}"
     fi
 }
 
