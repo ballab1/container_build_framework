@@ -8,7 +8,7 @@ fi
 
 declare -r SUDOERS=/etc/sudoers.d
 if [ -d "$SUDOERS" ]; then
-    declare files=( $( cbf.getFiles "$SUDOERS" ) )
+    declare files=( $( lib.getFiles "$SUDOERS" ) )
 
     if [ "${#files[*]}" -gt 0 ]; then
         for file in ${files[@]} ; do
