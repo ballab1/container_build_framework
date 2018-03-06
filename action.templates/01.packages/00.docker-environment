@@ -1,10 +1,4 @@
 #!/bin/bash
 
-mkdir -p "${CBF['crf_startup']}"
-mkdir -p "${CBF['crf_lib']}"
-mkdir -p "${CBF['crf_env']}"
-
-declare libs='docker.bashlib lib.bashlib term.bashlib trap.bashlib'
-for lib in "$libs"; do
-    cp "${CBF['lib']}/${lib}" "${CBF['crf_lib']}"
-done
+mkdir -p "${CBF['crf_base']}"
+cp -r  "${CBF['cbf_base']}"/crf/*  "${CBF['crf_base']}"

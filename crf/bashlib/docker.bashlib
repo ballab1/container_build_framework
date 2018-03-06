@@ -1,0 +1,16 @@
+#!/bin/sh
+
+#------------------------------------------------------------------
+function docker.prepareEnvironment()
+{
+
+} 
+
+#------------------------------------------------------------------
+function docker.setExports()
+{
+    local currentEnv=/tmp/env.sh
+    
+    [ -e "$runningEnv" ] && source "$runningEnv"
+}
+
