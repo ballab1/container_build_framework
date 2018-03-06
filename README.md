@@ -19,7 +19,7 @@ Container security is always a concern, so it pays to be mindful of who owns the
 
 
 ## Docker project
-A typical project has a `Docker` file. A project using the **container\_build\_framework**, contains a `Dockerfile` and a *build* folder. I usually include a *vols* folder for any local mountpoints, as well as a [.dockeringnore](https://docs.docker.com/engine/reference/builder/#dockerignore-file) and the usual meta files for [git](https://git-scm.com/doc). This results in a project folder which looks like:
+A typical project has a `Docker` file. A project using the **container\_build\_framework**, contains a `Dockerfile` and a *build* folder.  You can include a *vols* folder for any local mountpoints, as well as a [.dockeringnore](https://docs.docker.com/engine/reference/builder/#dockerignore-file) and the usual meta files for [git](https://git-scm.com/doc). This results in a project folder which looks like:
 
 ![container project folder](./docs/Container_Project_Folder.png)
 
@@ -41,7 +41,9 @@ The build processes of all containers is always the same.
 6. Make sure that ownership & permissions are correct
 7. Clean up
 
-Every container will perform one or more of these actions. Many container builds, perform these items multiple times with different targets. Also, in the [Dockerfile](https://github.com/search?utf8=%E2%9C%93&q=Dockerfile&type=) examples, these items are seldom perfomed in any consistent manner. The result can make it not only difficult to debug your own Dockerfiles, but near impossible for someone else to understand, modify and debug your Dockerfiles.
+Every container will perform one or more of these actions. Many container builds, perform these items multiple times with different targets. Also, in the [Dockerfile](https://github.com/search?utf8=%E2%9C%93&q=Dockerfile&type=) examples, these items are seldom performed in any consistent manner. The result can make it not only difficult to debug your own Dockerfiles, but near impossible for someone else to understand, modify and debug your Dockerfiles.
+
+This framework solves these problems by breaking the steps previously in the Dockerfile into small, well organized scripts.  The scripts are placed into known locations making them easy to find and identify.  A naming convention is used to control the order the scripts are executed.  This gives you very precise control over the build process and makes the Docker application easier for you and others to modify or extend.
 
 **************
 

@@ -2,8 +2,9 @@
 
 ## Installation
 
-The framework is installed as a submodule within the `build` folder of a GIT repo. This may be an existing repo, or a new repo. 
-In the root folder of your GIT project, type the following:
+The framework is installed as a submodule within the `build` folder of a GIT repo. This may be an existing repo, or a new repo. The first step is to add the scripts that drive the framework to your project as a submodule.  The submodule you are adding is the "DevEnablement/container_build_framework" repository.  The scripts in this repository properly load all the data and run all the scripts in the "build" and "build/action_folders" directories.
+
+If you are adding the framework to an existing project, in the root folder of your GIT project, type the following:
 ```bash
 GIT_LFS_SKIP_SMUDGE=1 git submodule add https://github.com/ballab1/container_build_framework.git build/container_build_framework
 ```
@@ -50,7 +51,7 @@ If a folder contains any files, they are processed, otherwise it is skipped. Sim
 As the framework processes each action folder, it ignores hidden files, it ignores subfolders and then processes the remaining files and symbolic links in alphabetically sorted order.
 For this reason, a convention is adopted, whereby each filename starts with two numbers.
 
-The framework invokes each action script in its own bash shell to prevent undesired clashes between scripts. All of the framework bash library scripts are available to actions
+The framework invokes each action script in its own bash shell to prevent undesired clashes between scripts. All of the framework bash library scripts are available to actions.  The naming convention you see above is important to get the framework to executes scripts in order.  The directories are evaluated in alphabetical order and the scripts in each directory are run in alphabetical order.  Therefore, each directory and script/file starts with a number to ensure that it is executed exactly when it should be.
 
 
 ### Custom Folders
