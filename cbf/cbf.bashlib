@@ -85,7 +85,7 @@ function cbf.buildContainer()
         $LOG "${notice}${LF}" 'task'
 
         # perform required actions
-        if [[ "$timezone" = null && "$dir" = '02.packages' ]]; then
+        if [[ "$timezone" = null && "$dir" = '01.packages' ]]; then
             package.updateIndexes
         fi
         
