@@ -5,13 +5,32 @@
 #
 #############################################################################
 
+function lib.copyFileToRuntimeEnvironment()
+{
+    local -r file="${1:?'Input parameter "file" must be defined'}"
+
+    if [ -e "$file" ]; then
+        cp "$file" "${CBF['crf_env']}/"
+    fi
+}
+
+#############################################################################
+function lib.copyFileToRuntimeStartup()
+{
+    local -r file="${1:?'Input parameter "file" must be defined'}"
+
+    if [ -e "$file" ]; then
+        cp "$file" "${CBF['crf_startup']}/"
+    fi
+}
 
 #############################################################################
 function lib.file_env()
 {
-    local var="$1"
-    local fileVar="${var}_FILE"
+    local -r var="${1:?'Input parameter "var" must be defined'}"
     local def="${2:-}"
+
+    local fileVar="${var}_FILE"
     if [ "${!var:-}" ] && [ "${!fileVar:-}" ]; then
         echo >&2 "error: both $var and $fileVar are set (but are exclusive)"
         exit 1
@@ -91,28 +110,33 @@ function lib.relativize()
 #############################################################################
 function lib.makeScript()
 {
-    local -a file=${1:?'Input parameter "file" must be defined'}
+    local file=${1:?'Input parameter "file" must be defined'}
     local tmpScript="/tmp/runScript.$( basename "$file" )"
 
 cat << EOF > "$tmpScript"
 #!/bin/bash
 set -o errexit
-set -o nounset  
-source "${CBF['bin']}/init.libraries" "${CBF['lib']}" 
+set -o nounset
+#set -o xtrace
+#set -o verbose
+[ -e "${CBF['bin']}/init.libraries" ] && source "${CBF['bin']}/init.libraries" "${CBF['lib']}" 
+[ -e "/usr/local/crf/bin/init.runtime" ] && source /usr/local/crf/bin/init.runtime 
 cd /tmp
 [ "${CBF['debug']}" != "0" ] && set -o verbose  
 source "$file"
 EOF
     chmod 755 "$tmpScript"
-    eval "$tmpScript" || $LOG ">>>>> issue while executing $( basename "$file" ) <<<<<${LF}" 'warn'
-    [[ $? -eq 0 ]] || exit 1
+    if ! eval "$tmpScript" ; then
+        $LOG ">>>>> issue while executing $( basename "$file" ) <<<<<${LF}" 'warn'
+        exit 1
+    fi
 }
 
 #############################################################################
 function lib.runScripts()
 {
     local -a files=${1:?'Input parameter "files" must be defined'}
- 
+
     for file in ${files} ; do
         chmod 755 "$file"
         $LOG "..executing ${file}${LF}" 'info'

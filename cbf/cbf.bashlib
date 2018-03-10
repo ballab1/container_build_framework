@@ -6,14 +6,14 @@
 #############################################################################
 
 
-declare -Ax CBF=()
+declare -Ax CBF
 
 function cbf.__init()
 {
     # this function is usually called from bin/init.libraries
     local -r lib_base=${1:?'Input parameter "lib_base" must be defined'}
-
     if [ "${#CBF[@]}" -eq 0 ]; then
+        CBF=()
         local cbf_base="$( cd "$( dirname "$lib_base" )" && pwd )"
         CBF['cbfbase']="$cbf_base"
         CBF['bin']="${cbf_base}/bin"
@@ -28,11 +28,13 @@ function cbf.__init()
 
         CBF['crf_base']=/usr/local/crf
         CBF['crf_lib']="${CBF['crf_base']}/bashlib"
+        CBF['crf_bin']="${CBF['crf_base']}/bin"
         CBF['crf_env']="${CBF['crf_base']}/environment"
         CBF['crf_startup']="${CBF['crf_base']}/startup"
 
         CBF['crt_base']="/usr/local/crf"
         CBF['crt_lib']="${CBF['crt_base']}/bashlib"
+        CBF['crt_bin']="${CBF['crt_base']}/bin"
         CBF['crt_env']="${CBF['crt_base']}/environment"
         CBF['crt_startup']="${CBF['crt_base']}/startup"
     fi
@@ -86,6 +88,15 @@ function cbf.buildContainer()
         if [[ "$timezone" = null && "$dir" = '02.packages' ]]; then
             package.updateIndexes
         fi
+        
+        # copy definition files to environment folder
+        if [ "$dir" = '02.users_groups' ] || [ "$dir" = '03.downloads' ]; then
+            for file in ${files} ; do
+                lib.copyFileToRuntimeEnvironment "$file"
+            done 
+        fi
+        
+        # perform desired action
         "$action" "${files[*]}"
     done
 }

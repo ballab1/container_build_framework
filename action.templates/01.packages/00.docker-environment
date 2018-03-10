@@ -1,4 +1,0 @@
-#!/bin/bash
-
-mkdir -p "${CBF['crf_base']}"
-cp -r  "${CBF['cbf_base']}"/crf/*  "${CBF['crf_base']}"

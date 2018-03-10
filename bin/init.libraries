@@ -1,28 +1,22 @@
 #!/bin/bash
 
-export -A BASHLIBS=()
-
 set +o nounset
-if [ "${#BASHLIBS[@]}" -eq 0 ]; then
-    # when nothing exists in 'BASHLIBS' populate it with names of files 'source'd from cbf folder
-    declare lib_base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../cbf" && pwd )"  
-    for src in "${lib_base}"/*.bashlib ; do
-        declare name="$( basename "$src" )"
-        name="${name%%.bashlib}"
-        [ "${BASHLIBS[$name]}" ] && continue
-        BASHLIBS[$name]="$src"
-        source "$src"
-    done
-    cbf.__init "$lib_base"
 
-#elif [ $# -gt 0 ]; then
-#
-#    for src in "$@" ; do
-#        declare name="$( basename "$src" )"]}"
-#        name="${name%%.bashlib}"
-#        [ "${BASHLIBS[$name]}" ] && continue
-#        BASHLIBS["$( basename "$src" )"]="$src"
-#        source "$src"
-#    done
+declare lib_base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../cbf" && pwd )"  
+declare -i __init=0
+declare -a __files
+
+if [ "${#BASHLIBS[@]}" -eq 0 ]; then
+    export -A BASHLIBS=()
+    __init=1
 fi
+
+for src in $(find "${lib_base}" -maxdepth 1 -mindepth 1  -name '*.bashlib') ; do
+    declare name="$( basename "$src" )"
+    declare _name="${name//./_}"
+    [ "${BASHLIBS[$_name]}" ] && continue
+    BASHLIBS[$_name]="$src"
+    source "$src"
+done
+[ $__init -ne 0 ] && cbf.__init "$lib_base"
 set -o nounset

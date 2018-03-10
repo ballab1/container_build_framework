@@ -5,6 +5,7 @@
 #   download.bashlib
 #
 #############################################################################
+
 function download.getFile()
 {
     local -r file=${1:?'Input parameter "file" must be defined'}
