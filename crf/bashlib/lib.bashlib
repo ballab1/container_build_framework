@@ -10,7 +10,7 @@ function lib.copyFileToRuntimeEnvironment()
     local -r file="${1:?'Input parameter "file" must be defined'}"
 
     if [ -e "$file" ]; then
-        cp "$file" "${CBF['crf_env']}/"
+        cp "$file" "${CRF['env']}/"
     fi
 }
 
@@ -20,7 +20,7 @@ function lib.copyFileToRuntimeStartup()
     local -r file="${1:?'Input parameter "file" must be defined'}"
 
     if [ -e "$file" ]; then
-        cp "$file" "${CBF['crf_startup']}/"
+        cp "$file" "${CRF['startup']}/"
     fi
 }
 
@@ -120,7 +120,7 @@ set -o nounset
 #set -o xtrace
 #set -o verbose
 [ -e "${CBF['bin']}/init.libraries" ] && source "${CBF['bin']}/init.libraries" "${CBF['lib']}" 
-[ -e "/usr/local/crf/bin/init.runtime" ] && source /usr/local/crf/bin/init.runtime 
+[ -e "${CRF['bin']}/init.runtime" ] && source "${${CBF['bin']}/init.runtime" 
 cd /tmp
 [ "${CBF['debug']}" != "0" ] && set -o verbose  
 source "$file"

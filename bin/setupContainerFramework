@@ -43,8 +43,8 @@ function setupCBF.createSymlinks()
             local file="$( basename "$fl" )"
             [ -h "$file" ] && rm "$file"
             [ -e "$file" ] && rm "$file"
-            echo "Creating symlink to ${relativePath}/${dir}/${file}"
-            ln -s "${relativePath}/${dir}/${file}" .
+            echo "Creating link to ${relativePath}/${dir}/${file}"
+            echo ". ${relativePath}/${dir}/${file}" > "$file"
         done < <(find "${templatesFolder}/${dir}" -maxdepth 1 -type f ! -name '.*')
     done
 }
@@ -60,7 +60,7 @@ function setupCBF.migrateOldFx()
 
     cd "$actionFolders"
     
-    # get rid of symlinks and files to keep folders in GIT
+    # get rid of links and files to keep folders in GIT
     find . -type l -delete
     find . -name '.Do Not Delete' -delete
     
@@ -85,16 +85,18 @@ function setupCBF.main()
 {
     # load our libraries
     source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/init.libraries"
+    source "${CBF['crf_bin']}/init.runtime"
 
-    # scan lib folders and create symlinks for any files found
+    # scan lib folders and create links for any files found
     setupCBF.createStructure "${CBF['action']}" "${CBF['templates']}"
 
-    # create symlink for build script
+    # create link for build script
     cd "${CBF['base']}"
     [ -e build.sh ] && rm build.sh
+    [ -h build.sh ] && rm build.sh
     local relativePath="$( lib.relativize "${CBF['base']}" "${CBF['bin']}" )"
-    echo "Creating symlink to ${relativePath}/build.sh"
-    ln -s "${relativePath}/build.sh" .
+    echo "Creating link to ${relativePath}/build.sh"
+    echo ". ${relativePath}/build.sh \"\$@\"" > build.sh
     
     setupCBF.setupProjectFiles "$( setupCBF.getSuperProjectDir )"
 }
