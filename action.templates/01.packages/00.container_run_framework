@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # copy runtime framework
-mkdir -p "${CBF['crf_base']}"
-cp -r  "${CBF['cbfbase']}"/crf/*  "${CBF['crf_base']}"
+mkdir -p "${CBF['crt_base']}"
+cp -r  "${CBF['crf_base']}"/*  "${CBF['crt_base']}"
 
 # create docker-entrypoint.sh from copy default entrypoint script if none exists
 if [ ! -e "${CBF['base']}/usr/local/bin/docker-entrypoint.sh" ]; then

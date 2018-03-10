@@ -24,19 +24,15 @@ function cbf.__init()
         CBF['action']="${CBF['base']}/action_folders"
 
         CBF['debug']="${DEBUG_TRACE:-0}"
-        CBF['os_id']=$( cat /etc/os-release | grep -e '^ID=' | awk -F'=' '{ print $2 }' )
+        if [ -e /etc/os-release ]; then
+            CBF['os_id']=$( cat /etc/os-release | grep -e '^ID=' | awk -F'=' '{ print $2 }' )
+        else
+            CBF['os_id']=windows
+        fi
 
         CBF['crf_base']="${cbf_base}/crf"
-        CBF['crf_lib']="${CBF['crf_base']}/bashlib"
         CBF['crf_bin']="${CBF['crf_base']}/bin"
-        CBF['crf_env']="${CBF['crf_base']}/environment"
-        CBF['crf_startup']="${CBF['crf_base']}/startup"
-
         CBF['crt_base']="/usr/local/crf"
-        CBF['crt_lib']="${CBF['crt_base']}/bashlib"
-        CBF['crt_bin']="${CBF['crt_base']}/bin"
-        CBF['crt_env']="${CBF['crt_base']}/environment"
-        CBF['crt_startup']="${CBF['crt_base']}/startup"
     fi
 }
 
@@ -72,6 +68,7 @@ function cbf.buildContainer()
 
         # get array of files in directory
         local -a files=( $( lib.getFiles "${CBF['action']}/$dir" ) )
+        files+=( $( lib.getFiles "${CBF['templates']}/$dir" ) )
         [ ${#files[*]} = 0 ] && continue
 
         # decode action

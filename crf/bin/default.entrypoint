@@ -15,7 +15,7 @@ if [[ "$1" = 'newcontainer' ]]; then
     fi
 
     declare -r tools=/usr/local/bin
-    [ ! -e "${tools}/run.sh" ] && trap.die 'No run.sh detected'
+    [ ! -e "${tools}/run.sh" ] && trap.die "No ${tools}/run.sh detected"
     shift
     exec "${tools}/run.sh" "$@"
 

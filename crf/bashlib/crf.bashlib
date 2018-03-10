@@ -51,21 +51,17 @@ EOF
 #############################################################################
 function crf.prepareEnvironment()
 {
-    crf.runScripts  "$( lib.getFiles "${CRF['startup']}" )"
-    $LOG "Finished executing startup scripts${LF}" 'info'
-}
+    local -a files=( $( lib.getFiles "${CRF['startup']}" ) )
+    if [ ${#files[*]} -gt 0 ]; then
 
-#############################################################################
-function crf.runScripts()
-{
-    local -a files=${1:?'Input parameter "files" must be defined'}
-    local -i deleteOnCompletion=0
-
-    for file in ${files} ; do
-        chmod 755 "$file"
-        $LOG "..executing ${file}${LF}" 'info'
-        crf.makeScript "$file" $deleteOnCompletion
-    done
+        # execute files in sorted order
+        for file in $( printf "%s\n" ${files[@]} | sort ); do
+            chmod 755 "$file"
+            $LOG "..executing ${file}${LF}" 'info'
+            crf.makeScript "$file"
+        done
+        $LOG "Finished executing startup scripts${LF}" 'info'
+    fi
 }
 
 #############################################################################

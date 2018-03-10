@@ -20,32 +20,27 @@ function setupCBF.createStructure()
         cd "$actionFolders"
     fi
 
-    setupCBF.createSymlinks "$actionFolders" "$templatesFolder"
+    setupCBF.removeSymlinks "$actionFolders" "$templatesFolder"
 }
 
 ######################################################################
-function setupCBF.createSymlinks()
+function setupCBF.removeSymlinks()
 {
     local actionFolders=${1:?"must pass parameter 'actionFolders' to 'function ${FUNCNAME[0]}()'"}
     local templatesFolder=${2:?"must pass parameter 'templatesFolder' to 'function ${FUNCNAME[0]}()'"}
 
-    local relativePath="../$( lib.relativize "$actionFolders" "$templatesFolder" )"
-    local dirs=( $( ls -d "$templatesFolder"/* ) )
-    for lib in ${dirs[@]}; do
-        [ ! -d "$lib" ] && continue
-
-        local dir="$( basename "$lib" )"
-        mkdir -p "${actionFolders}/${dir}"
-        cd "${actionFolders}/${dir}"
-
+    local -a dirs=( $( find "$templatesFolder" -maxdepth 1 -mindepth 1 -type d ! -name '.*' ) )
+    for template in ${dirs[@]}; do
+    
+        local actionDir="${actionFolders}/$( basename "$template" )"
+        [ ! -d "$actionDir" ] && continue
+        cd "${actionDir}"
 
         while read -r fl ;do
             local file="$( basename "$fl" )"
             [ -h "$file" ] && rm "$file"
             [ -e "$file" ] && rm "$file"
-            echo "Creating link to ${relativePath}/${dir}/${file}"
-            echo ". ${relativePath}/${dir}/${file}" > "$file"
-        done < <(find "${templatesFolder}/${dir}" -maxdepth 1 -type f ! -name '.*')
+        done < <(find "${template}" -maxdepth 1 -type f ! -name '.*')
     done
 }
 
@@ -96,7 +91,7 @@ function setupCBF.main()
     [ -h build.sh ] && rm build.sh
     local relativePath="$( lib.relativize "${CBF['base']}" "${CBF['bin']}" )"
     echo "Creating link to ${relativePath}/build.sh"
-    echo ". ${relativePath}/build.sh \"\$@\"" > build.sh
+    echo -e "#!/bin/bash\n . /tmp/container_build_framework/bin/build.sh \"\$@\"" > build.sh
     
     setupCBF.setupProjectFiles "$( setupCBF.getSuperProjectDir )"
 }
