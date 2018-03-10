@@ -64,6 +64,7 @@ function cbf.buildContainer()
 
         # get array of files in directory
         local -a files=( $( lib.getFiles "${CBF['action']}/$dir" ) )
+        files+=( $( lib.getFiles "${CBF['templates']}/$dir" ) )
         [ ${#files[*]} = 0 ] && continue
 
         # decode action

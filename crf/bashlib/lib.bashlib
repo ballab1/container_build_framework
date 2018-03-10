@@ -115,20 +115,18 @@ function lib.makeScript()
 
 cat << EOF > "$tmpScript"
 #!/bin/bash
+[ -e "${CBF['bin']}/init.libraries" ] && source "${CBF['bin']}/init.libraries" "${CBF['lib']}" 
+[ -e "${CRF['bin']}/init.runtime" ] && source "${CRF['bin']}/init.runtime" 
+[ "${CBF['debug']}" != "0" ] && set -o verbose  
 set -o errexit
 set -o nounset
-#set -o xtrace
-#set -o verbose
-[ -e "${CBF['bin']}/init.libraries" ] && source "${CBF['bin']}/init.libraries" "${CBF['lib']}" 
-[ -e "${CRF['bin']}/init.runtime" ] && source "${${CBF['bin']}/init.runtime" 
 cd /tmp
-[ "${CBF['debug']}" != "0" ] && set -o verbose  
 source "$file"
 EOF
     chmod 755 "$tmpScript"
     if ! eval "$tmpScript" ; then
         $LOG ">>>>> issue while executing $( basename "$file" ) <<<<<${LF}" 'warn'
-        exit 1
+        [ "${CBF['debug']}" = "2" ] || trap.die "unable to execute $file"
     fi
 }
 
@@ -137,7 +135,20 @@ function lib.runScripts()
 {
     local -a files=${1:?'Input parameter "files" must be defined'}
 
-    for file in ${files} ; do
+    # create a hash to sort the files by name & remove any templates that have been overriden
+    local -A hash
+    set +o nounset
+    for file in ${files[@]}; do
+        local name="$( basename "$file" )"
+        local _name="${name//./_}"
+        [[ -n "${hash[$_name]}"  &&  "${hash[$_name]}" =~ */action.templates/* ]] && continue
+        hash[$_name]="$file"
+    done
+    set +o xtrace
+
+    # execute scritps in sorted order
+    for _name in $( printf "%s\n" ${!hash[@]} | sort ); do
+        local file="${hash[$_name]}"
         chmod 755 "$file"
         $LOG "..executing ${file}${LF}" 'info'
         lib.makeScript "$file"

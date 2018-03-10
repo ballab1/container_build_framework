@@ -2,21 +2,28 @@
 
 set +o nounset
 
-declare lib_base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../cbf" && pwd )"  
-declare -i __init=0
-declare -a __files
+declare __init
 
 if [ "${#BASHLIBS[@]}" -eq 0 ]; then
     export -A BASHLIBS=()
     __init=1
 fi
 
-for src in $(find "${lib_base}" -maxdepth 1 -mindepth 1  -name '*.bashlib') ; do
+declare base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
+
+set -o nounset
+source "$base/crf/bin/init.runtime"
+set +o nounset
+
+for src in $(find "${base}/cbf" -maxdepth 1 -mindepth 1  -name '*.bashlib') ; do
     declare name="$( basename "$src" )"
     declare _name="${name//./_}"
-    [ "${BASHLIBS[$_name]}" ] && continue
+    [ -z "${BASHLIBS[$_name]}" ] || continue
     BASHLIBS[$_name]="$src"
     source "$src"
 done
-[ $__init -ne 0 ] && cbf.__init "$lib_base"
+
+[ "$__init" = 1 ] && cbf.__init "$base/cbf"
+
+unset base
 set -o nounset
