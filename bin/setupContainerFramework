@@ -96,7 +96,7 @@ function setupCBF.main()
     [ -h build.sh ] && rm build.sh
     local relativePath="$( lib.relativize "${CBF['base']}" "${CBF['bin']}" )"
     echo "Creating link to ${relativePath}/build.sh"
-    echo ". ${relativePath}/build.sh \"\$@\"" > build.sh
+    echo ". /tmp/container_build_framework/bin/build.sh \"\$@\"" > build.sh
     
     setupCBF.setupProjectFiles "$( setupCBF.getSuperProjectDir )"
 }

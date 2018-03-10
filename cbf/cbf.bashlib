@@ -27,16 +27,8 @@ function cbf.__init()
         CBF['os_id']=$( cat /etc/os-release | grep -e '^ID=' | awk -F'=' '{ print $2 }' )
 
         CBF['crf_base']="${cbf_base}/crf"
-        CBF['crf_lib']="${CBF['crf_base']}/bashlib"
         CBF['crf_bin']="${CBF['crf_base']}/bin"
-        CBF['crf_env']="${CBF['crf_base']}/environment"
-        CBF['crf_startup']="${CBF['crf_base']}/startup"
-
         CBF['crt_base']="/usr/local/crf"
-        CBF['crt_lib']="${CBF['crt_base']}/bashlib"
-        CBF['crt_bin']="${CBF['crt_base']}/bin"
-        CBF['crt_env']="${CBF['crt_base']}/environment"
-        CBF['crt_startup']="${CBF['crt_base']}/startup"
     fi
 }
 
