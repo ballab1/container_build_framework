@@ -4,8 +4,10 @@
 mkdir -p "${CBF['crt_base']}"
 cd "${CBF['crf_base']}"
 for file in $(find . -type f ! -name '.*'); do
-    diff "$file" "${CBF['crt_base']}/$file"
-    [ $? -ne 0 ] || continue
+    if [ -e "${CBF['crt_base']}/$file" ]; then
+        diff "$file" "${CBF['crt_base']}/$file"
+        [ $? -ne 0 ] || continue
+    fi
     cp "$file" "${CBF['crt_base']}/$file"
 done
 
