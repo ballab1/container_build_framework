@@ -9,14 +9,14 @@ services:
                 DEBUG_TRACE: 0
             cache_from:
                 - alpine:3.6
-#                - base_container:20180310
+#                - base_container:20180311
             context: .
             dockerfile: Dockerfile
         container_name: newContainer
 #        environment:
 #            WEBDAV_USER: ${CFG_MYSQL_USER}
         hostname: newContainer
-        image: newContainer:20180310
+        image: newContainer:20180311
         logging:
             driver: json-file
             options:

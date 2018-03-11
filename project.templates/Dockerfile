@@ -1,4 +1,4 @@
-FROM base_container:20180217
+FROM alpine:3.6
 
 # name and version of this docker image
 ARG CONTAINER_NAME=NewContainer
