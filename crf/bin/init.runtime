@@ -17,7 +17,11 @@ for src in $(find "${lib_base}"/bashlib -maxdepth 1 -mindepth 1 ! -name '.*'  -p
     declare _name="${name//./_}"
     [ -z "${BASHLIBS[$_name]}" ] || continue
     BASHLIBS[$_name]="$src"
-#    echo "..loading ${src}"
+    [ -e /tmp/bashlibs ] || touch /tmp/bashlibs
+    if grep -sq "$_name" /tmp/bashlibs; then
+        echo "$_name" >> /tmp/bashlibs
+        echo "..loading library: ${src}"
+    fi
     source "$src"
 done
 
@@ -27,7 +31,11 @@ for src in $(find "${lib_base}"/environment -maxdepth 1 -mindepth 1 ! -name '.*'
     declare _name="${name//./_}"
     [ -z "${ENVIRON[$_name]}" ] || continue
     ENVIRON[$_name]="$src"
-#    echo "..loading ${src}" 
+    [ -e /tmp/environ ] || touch /tmp/environ
+    if grep -sq "$_name" /tmp/environ; then
+        echo "$_name" >> /tmp/environ
+        echo "..loading environment: ${src}"
+    fi
     source "$src"
 done
 
