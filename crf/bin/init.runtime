@@ -1,0 +1,36 @@
+#!/bin/bash
+
+set +o nounset
+
+declare lib_base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
+declare __init
+
+if [ "${#BASHLIBS[@]}" -eq 0 ]; then
+    export -A BASHLIBS=()
+    export -A ENVIRON=()
+    __init=1
+fi
+
+# when nothing exists in 'BASHLIBS' populate it with names of files 'source'd from crf folder
+for src in $(find "${lib_base}"/bashlib -maxdepth 1 -mindepth 1 ! -name '.*'  -print) ; do
+    declare name="$( basename "$src" )"
+    declare _name="${name//./_}"
+    [ -z "${BASHLIBS[$_name]}" ] || continue
+    BASHLIBS[$_name]="$src"
+#    echo "..loading ${src}"
+    source "$src"
+done
+
+
+for src in $(find "${lib_base}"/environment -maxdepth 1 -mindepth 1 ! -name '.*' -print) ; do
+    declare name="$( basename "$src" )"
+    declare _name="${name//./_}"
+    [ -z "${ENVIRON[$_name]}" ] || continue
+    ENVIRON[$_name]="$src"
+#    echo "..loading ${src}" 
+    source "$src"
+done
+
+[ "$__init" = 1 ] && crf.__init "$lib_base"
+set -o nounset
+unset lib_base

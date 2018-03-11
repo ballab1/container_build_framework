@@ -1,1 +1,4 @@
 vols-rw/*
+*.log
+*.tgz
+*.zip

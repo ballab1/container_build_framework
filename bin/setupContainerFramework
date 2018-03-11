@@ -16,36 +16,40 @@ function setupCBF.createStructure()
         # migrate old framework
         setupCBF.migrateOldFx "$actionFolders"
     else
-        mkdir -p "$actionFolders"
+        mkdir -p "${actionFolders}/01.packages"
+        mkdir -p "${actionFolders}/02.users_groups"
+        mkdir -p "${actionFolders}/03.downloads"
+        mkdir -p "${actionFolders}/04.applications"
+        mkdir -p "${actionFolders}/05.customizations"
+        mkdir -p "${actionFolders}/06.permissions"
+        mkdir -p "${actionFolders}/07.cleanup"
         cd "$actionFolders"
     fi
 
-    setupCBF.createSymlinks "$actionFolders" "$templatesFolder"
+    setupCBF.removeSymlinks "$actionFolders" "$templatesFolder"
 }
 
 ######################################################################
-function setupCBF.createSymlinks()
+function setupCBF.removeSymlinks()
 {
     local actionFolders=${1:?"must pass parameter 'actionFolders' to 'function ${FUNCNAME[0]}()'"}
     local templatesFolder=${2:?"must pass parameter 'templatesFolder' to 'function ${FUNCNAME[0]}()'"}
 
-    local relativePath="../$( cbf.relativize "$actionFolders" "$templatesFolder" )"
-    local dirs=( $( ls -d "$templatesFolder"/* ) )
-    for lib in ${dirs[@]}; do
-        [ ! -d "$lib" ] && continue
-
-        local dir="$( basename "$lib" )"
-        mkdir -p "${actionFolders}/${dir}"
-        cd "${actionFolders}/${dir}"
-
-
-        while read -r fl ;do
+    local -a dirs=( $( find "$templatesFolder" -maxdepth 1 -mindepth 1 -type d ! -name '.*' ) )
+    for template in ${dirs[@]}; do
+    
+        local actionDir="${actionFolders}/$( basename "$template" )"
+        if [ ! -d "$actionDir" ]; then
+            mkdir -p "$actionDir"
+            continue
+        fi
+        
+        cd "${actionDir}"
+        for fl in $(find "${template}" -maxdepth 1 -type f ! -name '.*') ;do
             local file="$( basename "$fl" )"
-            [ -h "$file" ] && rm "$file"
-            [ -e "$file" ] && rm "$file"
-            echo "Creating symlink to ${relativePath}/${dir}/${file}"
-            ln -s "${relativePath}/${dir}/${file}" .
-        done < <(find "${templatesFolder}/${dir}" -maxdepth 1 -type f ! -name '.*')
+            [ ! -f "$file" ] || rm "$file"
+            [ ! -h "$file" ] || rm "$file"
+        done
     done
 }
 
@@ -60,7 +64,7 @@ function setupCBF.migrateOldFx()
 
     cd "$actionFolders"
     
-    # get rid of symlinks and files to keep folders in GIT
+    # get rid of links and files to keep folders in GIT
     find . -type l -delete
     find . -name '.Do Not Delete' -delete
     
@@ -74,10 +78,10 @@ function setupCBF.migrateOldFx()
     setupCBF.updateFiles "08.cleanup" "07.cleanup"
     
     #remove any references to our scripts since they are no longer needed
-    while read -r file; do
+    for file in $(find . -type f -name '0*' -exec grep -Hc '01.bashlib' '{}' \; | grep -v ':0' | awk -F: '{ print $1 }'); do
         awk '!/01.bashlib/' "$file" > "${file}.tmp"
         mv "${file}.tmp" "$file"
-    done < <(find . -type f -name '0*' -exec grep -Hc '01.bashlib' '{}' \; | grep -v ':0' | awk -F: '{ print $1 }')
+    done
 }
 
 ######################################################################
@@ -85,16 +89,18 @@ function setupCBF.main()
 {
     # load our libraries
     source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/init.libraries"
+    source "${CBF['crf_bin']}/init.runtime"
 
-    # scan lib folders and create symlinks for any files found
+    # scan lib folders and create links for any files found
     setupCBF.createStructure "${CBF['action']}" "${CBF['templates']}"
 
-    # create symlink for build script
+    # create link for build script
     cd "${CBF['base']}"
-    [ -e build.sh ] && rm build.sh
-    local relativePath="$( cbf.relativize "${CBF['base']}" "${CBF['bin']}" )"
-    echo "Creating symlink to ${relativePath}/build.sh"
-    ln -s "${relativePath}/build.sh" .
+    [ ! -e build.sh ] || rm build.sh
+    [ ! -h build.sh ] || rm build.sh
+    local relativePath="$( lib.relativize "${CBF['base']}" "${CBF['bin']}" )"
+    echo "Creating link to ${relativePath}/build.sh"
+    echo -e "#!/bin/bash\n . /tmp/container_build_framework/bin/build.sh \"\$@\"" > build.sh
     
     setupCBF.setupProjectFiles "$( setupCBF.getSuperProjectDir )"
 }
@@ -124,19 +130,19 @@ function setupCBF.setupProjectFiles()
     [ ! -e Dockerfile ] && setupCBF.verifyDepententContainerExists
 
     # ensure our folder structure exists
-    while read -r abs_dir; do
-        local dir="$( cbf.relativize "${CBF['cbfbase']}/project.templates" "$abs_dir" )"
+    for abs_dir in $(find "${CBF['cbfbase']}/project.templates" -mindepth 1 -type d); do
+        local dir="$( lib.relativize "${CBF['cbfbase']}/project.templates" "$abs_dir" )"
         mkdir -p "${top}/$dir"  
-    done < <(find "${CBF['cbfbase']}/project.templates" -mindepth 1 -type d)
+    done
 
     # copy any missing files from project templates
-    while read -r abs_file; do
-        local file="$( cbf.relativize "${CBF['cbfbase']}/project.templates" "$abs_file" )"
+    for abs_file in $(find "${CBF['cbfbase']}/project.templates" -type f); do
+        local file="$( lib.relativize "${CBF['cbfbase']}/project.templates" "$abs_file" )"
         if [ ! -e "$file" ]; then
             sed "s|newcontainer|${projectName}|gi" "$abs_file" > "$file"
             echo "  created: ${file}"
         fi
-    done < <(find "${CBF['cbfbase']}/project.templates" -type f)
+    done
 }
 
 ######################################################################
@@ -146,9 +152,9 @@ function setupCBF.updateFiles()
     local new=${2:?"must pass parameter 'new' to 'function ${FUNCNAME[0]}()'"}
     
     [ -d "$old" ] && mv "$old" "$new"
-    while read -r file; do
+    for file in $(find . -type f -name '0*'); do
         sed -i "s|\${TOOLS}/${old}|\\$\\{CBF['action']\\}/${new}|g" "$file"
-    done < <(find . -type f -name '0*')
+    done
 }
 
 ######################################################################

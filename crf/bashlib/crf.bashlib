@@ -1,0 +1,67 @@
+#!/bin/bash
+#############################################################################
+#
+#   crf.bashlib: container_run_framework
+#
+#############################################################################
+
+
+declare -A CRF
+
+function crf.__init()
+{
+    # this function is usually called from bin/init.libraries
+    if [ "${#CRF[@]}" -eq 0 ]; then
+        CRF=()
+        CRF['base']="/usr/local/crf"
+        CRF['bin']="${CRF['base']}/bin"
+        CRF['lib']="${CRF['base']}/bashlib"
+        CRF['env']="${CRF['base']}/environment"
+        CRF['startup']="${CRF['base']}/startup"
+        CRF['debug']=${DEBUG_TRACE:-0}
+    fi
+}
+
+
+#############################################################################
+function crf.makeScript()
+{
+    local file=${1:?'Input parameter "file" must be defined'}
+    local tmpScript="/tmp/runScript.$( basename "$file" )"
+
+cat << EOF > "$tmpScript"
+#!/bin/bash
+set -o errexit
+set -o nounset
+#set -o xtrace
+#set -o verbose
+[ -e "/usr/local/crf/bin/init.runtime" ] && source /usr/local/crf/bin/init.runtime 
+cd /tmp
+[ "${CRF['debug']}" != "0" ] && set -o verbose  
+source "$file"
+EOF
+    chmod 755 "$tmpScript"
+    if ! eval "$tmpScript" ; then
+        $LOG ">>>>> issue while executing $( basename "$file" ) <<<<<${LF}" 'warn'
+        exit 1
+    fi
+    rm "$tmpScript"
+}
+
+#############################################################################
+function crf.prepareEnvironment()
+{
+    local -a files=( $( lib.getFiles "${CRF['startup']}" ) )
+    if [ ${#files[*]} -gt 0 ]; then
+
+        # execute files in sorted order
+        for file in $( printf "%s\n" ${files[@]} | sort ); do
+            chmod 755 "$file"
+            $LOG "..executing ${file}${LF}" 'info'
+            crf.makeScript "$file"
+        done
+        $LOG "Finished executing startup scripts${LF}" 'info'
+    fi
+}
+
+#############################################################################

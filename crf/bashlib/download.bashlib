@@ -5,6 +5,7 @@
 #   download.bashlib
 #
 #############################################################################
+
 function download.getFile()
 {
     local -r file=${1:?'Input parameter "file" must be defined'}
@@ -19,9 +20,9 @@ function download.getFile()
     name="${name#.}"
 
     # derefernce our params
-    local -A params=( ['file']="$( cbf.indirectReference "$name" 'file' )" \
-                      ['url']="$( cbf.indirectReference "$name" 'url' )" \
-                      ['sha256']="$( cbf.indirectReference "$name" 'sha256' )" \
+    local -A params=( ['file']="$( lib.indirectReference "$name" 'file' )" \
+                      ['url']="$( lib.indirectReference "$name" 'url' )" \
+                      ['sha256']="$( lib.indirectReference "$name" 'sha256' )" \
                     )
     $LOG "....file:  ${params['file']}${LF}" 'info'
     $LOG ".....url:  ${params['url']}${LF}" 'info'

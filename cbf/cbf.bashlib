@@ -6,14 +6,14 @@
 #############################################################################
 
 
-declare -Ax CBF=()
+declare -Ax CBF
 
 function cbf.__init()
 {
     # this function is usually called from bin/init.libraries
     local -r lib_base=${1:?'Input parameter "lib_base" must be defined'}
-
     if [ "${#CBF[@]}" -eq 0 ]; then
+        CBF=()
         local cbf_base="$( cd "$( dirname "$lib_base" )" && pwd )"
         CBF['cbfbase']="$cbf_base"
         CBF['bin']="${cbf_base}/bin"
@@ -24,7 +24,15 @@ function cbf.__init()
         CBF['action']="${CBF['base']}/action_folders"
 
         CBF['debug']="${DEBUG_TRACE:-0}"
-        CBF['os_id']=$( cat /etc/os-release | grep -e '^ID=' | awk -F'=' '{ print $2 }' )
+        if [ -e /etc/os-release ]; then
+            CBF['os_id']=$( cat /etc/os-release | grep -e '^ID=' | awk -F'=' '{ print $2 }' )
+        else
+            CBF['os_id']=windows
+        fi
+
+        CBF['crf_base']="${cbf_base}/crf"
+        CBF['crf_bin']="${CBF['crf_base']}/bin"
+        CBF['crt_base']="/usr/local/crf"
     fi
 }
 
@@ -35,13 +43,13 @@ function cbf.buildContainer()
     local -r timezone=${2:-null}
     
     # list of 'notice, directory, action' to perform
-    local -A steps=( ['01.packages']='cbf.runScripts'
+    local -A steps=( ['01.packages']='lib.runScripts'
                      ['02.users_groups']='uidgid.check'
                      ['03.downloads']='download.getPackages'
-                     ['04.applications']='cbf.runScripts'
-                     ['05.customizations']='cbf.runScripts'
-                     ['06.permissions']='cbf.runScripts'
-                     ['07.cleanup']='cbf.runScripts'
+                     ['04.applications']='lib.runScripts'
+                     ['05.customizations']='lib.runScripts'
+                     ['06.permissions']='lib.runScripts'
+                     ['07.cleanup']='lib.runScripts'
                    )
     
     term.header "${name^^}"
@@ -55,11 +63,12 @@ function cbf.buildContainer()
 
     # iterate through list
     for dir in $( printf "%s\n" "${!steps[@]}" | sort ); do
-        [ "$dir" = '07.cleanup' ] && [ $DEBUG_TRACE -ne 0 ] && continue
+        [ "$dir" = '07.cleanup' ] && [ "$DEBUG_TRACE" != 0 ] && continue
         [ ! -d "${CBF['action']}/$dir" ] && continue
 
         # get array of files in directory
-        local -a files=( $( cbf.getFiles "${CBF['action']}/$dir" ) )
+        local -a files=( $( lib.getFiles "${CBF['action']}/$dir" ) )
+        files+=( $( lib.getFiles "${CBF['templates']}/$dir" ) )
         [ ${#files[*]} = 0 ] && continue
 
         # decode action
@@ -67,109 +76,25 @@ function cbf.buildContainer()
         # get .info file, & read for 'notice'
         local info="${CBF['action']}/$dir/.info"
         [ -e "$info" ] || info="${CBF['templates']}/$dir/.info"
-        local notice="$( cbf.readFile "${CBF['templates']}/$dir/.info" )"
+        local notice="$( lib.readFile "${CBF['templates']}/$dir/.info" )"
 
         # show notice if there are files to process
         $LOG "${notice}${LF}" 'task'
 
         # perform required actions
-        if [[ "$timezone" = null && "$dir" = '02.packages' ]]; then
+        if [[ "$timezone" = null && "$dir" = '01.packages' ]]; then
             package.updateIndexes
         fi
+        
+        # copy definition files to environment folder
+        if [ "$dir" = '02.users_groups' ] || [ "$dir" = '03.downloads' ]; then
+            for file in ${files} ; do
+                lib.copyFileToRuntimeEnvironment "$file"
+            done 
+        fi
+        
+        # perform desired action
         "$action" "${files[*]}"
-    done
-}
-
-#############################################################################
-function cbf.getFiles()
-{
-    local -r dir=${1:?'Input parameter "dir" must be defined'}
-
-    IFS=$'\r\n'
-    [ -d "$dir" ] && find "$dir"  -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort
-}
-
-#############################################################################
-function cbf.indirectReference()
-{
-    local -r hash=${1:?'Input parameter "hash" must be defined'}
-    local -r key=${2:?'Input parameter "key" must be defined'}
-    set +o nounset
-    local -r default="$3"
-
-    local val=$( eval "echo \${$hash[$key]}" )
-    [ -z "$val" ] && val="$default"
-    echo "$val"
-    set -o nounset
-}
-
-#############################################################################
-function cbf.readFile()
-{
-    local -r file=${1:?'Input parameter "file" must be defined'}
-    
-    if [ -e "$file" ]; then
-        cat $file
-    else
-        echo 'File does not exist'
-    fi
-}
-
-######################################################################
-function cbf.relativize()
-{
-    local from="$1"
-    local to="$2"
-
-    from=${from//\/\//\/}
-    from=${from%/}
-    IFS=/
-    dirs=(${from#/})
-    for to; do
-        to=${to//\/\//\/}
-        to=${to%/}
-        local commonPrefix=/
-        for d in "${dirs[@]}"; do
-            case "$to/" in "$commonPrefix$d/"*) ;;
-                *) break;;
-            esac
-            commonPrefix+="$d/"
-        done
-        local ancestor="${from#${commonPrefix%/}}"
-        ancestor=${ancestor//[^\/]/}
-        ancestor=${ancestor//\//..\/}
-    done
-    echo -n "$ancestor${to#$commonPrefix}"
-}
-
-#############################################################################
-function cbf.makeScript()
-{
-    local -a file=${1:?'Input parameter "file" must be defined'}
-    local tmpScript="/tmp/runScript.$( basename "$file" )"
-
-cat << EOF > "$tmpScript"
-#!/bin/bash
-set -o errexit
-set -o nounset  
-source "${CBF['bin']}/init.libraries" "${CBF['lib']}" 
-cd /tmp
-[ "${CBF['debug']}" != "0" ] && set -o verbose  
-source "$file"
-EOF
-    chmod 755 "$tmpScript"
-    eval "$tmpScript"
-}
-
-#############################################################################
-function cbf.runScripts()
-{
-    local -a files=${1:?'Input parameter "files" must be defined'}
- 
-    for file in ${files} ; do
-        chmod 755 "$file"
-        $LOG "..executing ${file}${LF}" 'info'
-        cbf.makeScript "$file" || $LOG ">>>>> issue while executing $( basename "$file" ) <<<<<${LF}" 'warn'
     done
 }
 
