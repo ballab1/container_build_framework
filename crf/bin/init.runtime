@@ -12,32 +12,38 @@ if [ "${#BASHLIBS[@]}" -eq 0 ]; then
 fi
 
 # when nothing exists in 'BASHLIBS' populate it with names of files 'source'd from crf folder
-for src in $(find "${lib_base}"/bashlib -maxdepth 1 -mindepth 1 ! -name '.*'  -print) ; do
-    declare name="$( basename "$src" )"
-    declare _name="${name//./_}"
-    [ -z "${BASHLIBS[$_name]}" ] || continue
-    BASHLIBS[$_name]="$src"
-    [ -e /tmp/bashlibs ] || touch /tmp/bashlibs
-    if grep -sq "$_name" /tmp/bashlibs; then
-        echo "$_name" >> /tmp/bashlibs
-        echo "..loading library: ${src}"
-    fi
-    source "$src"
-done
+declare -a files=( $(find "${lib_base}"/bashlib -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
+if [ "${#files[@]}" -gt 0 ]; then
+    for src in ${files[@]} ; do
+        declare name="$( basename "$src" )"
+        declare _name="${name//./_}"
+        [ -z "${BASHLIBS[$_name]}" ] || continue
+        BASHLIBS[$_name]="$src"
+        [ -e /tmp/bashlibs ] || touch /tmp/bashlibs
+        if grep -sq "$_name" /tmp/bashlibs; then
+            echo "$_name" >> /tmp/bashlibs
+            echo "..loading library: ${src}"
+        fi
+        source "$src"
+    done
+fi
 
 
-for src in $(find "${lib_base}"/environment -maxdepth 1 -mindepth 1 ! -name '.*' -print) ; do
-    declare name="$( basename "$src" )"
-    declare _name="${name//./_}"
-    [ -z "${ENVIRON[$_name]}" ] || continue
-    ENVIRON[$_name]="$src"
-    [ -e /tmp/environ ] || touch /tmp/environ
-    if grep -sq "$_name" /tmp/environ; then
-        echo "$_name" >> /tmp/environ
-        echo "..loading environment: ${src}"
-    fi
-    source "$src"
-done
+files=( $(find "${lib_base}"/environment -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
+if [ "${#files[@]}" -gt 0 ]; then
+    for src in ${files[@]} ; do
+        declare name="$( basename "$src" )"
+        declare _name="${name//./_}"
+        [ -z "${ENVIRON[$_name]}" ] || continue
+        ENVIRON[$_name]="$src"
+        [ -e /tmp/environ ] || touch /tmp/environ
+        if grep -sq "$_name" /tmp/environ; then
+            echo "$_name" >> /tmp/environ
+            echo "..loading environment: ${src}"
+        fi
+        source "$src"
+    done
+fi
 
 [ "$__init" = 1 ] && crf.__init "$lib_base"
 set -o nounset

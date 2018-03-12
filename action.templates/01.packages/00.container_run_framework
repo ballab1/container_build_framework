@@ -3,11 +3,19 @@
 # copy runtime framework (only copy updates)
 mkdir -p "${CBF['crt_base']}"
 cd "${CBF['crf_base']}"
+
+#ensure crf directories exist
+for dir in $(find . -maxdepth 1 -mindepth 1 -type d ! -name '.*'); do
+    mkdir -p "${CBF['crt_base']}/$dir"
+done
+
+# copy runtime framework (only copy updates)
 for file in $(find . -type f ! -name '.*'); do
     if [ -e "${CBF['crt_base']}/$file" ]; then
         diff "$file" "${CBF['crt_base']}/$file"
         [ $? -ne 0 ] || continue
     fi
+    mkdir -p "$( dirname "${CBF['crt_base']}/$file" )"
     cp "$file" "${CBF['crt_base']}/$file"
 done
 
