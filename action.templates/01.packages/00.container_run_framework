@@ -5,19 +5,21 @@ mkdir -p "${CBF['crt_base']}"
 cd "${CBF['crf_base']}"
 
 #ensure crf directories exist
-for dir in $(find . -maxdepth 1 -mindepth 1 -type d ! -name '.*'); do
+while read -r dir; do
     mkdir -p "${CBF['crt_base']}/$dir"
-done
+done < <(find . -maxdepth 1 -mindepth 1 -type d ! -name '.*')
+
+declare -i val
 
 # copy runtime framework (only copy updates)
-for file in $(find . -type f ! -name '.*'); do
+while read -r file ; do
     if [ -e "${CBF['crt_base']}/$file" ]; then
-        diff "$file" "${CBF['crt_base']}/$file"
-        [ $? -ne 0 ] || continue
+        $( ! cmp -s "$file" "${CBF['crt_base']}/$file" ) || continue
+        echo "updating "${CBF['crt_base']}/$file"
     fi
     mkdir -p "$( dirname "${CBF['crt_base']}/$file" )"
     cp "$file" "${CBF['crt_base']}/$file"
-done
+done< <(find . -type f ! -name '.*')
 
 # create docker-entrypoint.sh from copy default entrypoint script if none exists
 if [ ! -e "${CBF['base']}/usr/local/bin/docker-entrypoint.sh" ]; then
