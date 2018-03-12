@@ -38,5 +38,9 @@ function package.installTimezone()
 #############################################################################
 function package.updateIndexes()
 {
-     apk update
+    case "${CBF['os_id']}" in
+        alpine)        apk update;;
+        centos)        yum update -y;;
+        ubuntu)        apt-get update -y;;
+    esac
 }
