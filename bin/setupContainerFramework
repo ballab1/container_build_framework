@@ -35,8 +35,7 @@ function setupCBF.removeSymlinks()
     local actionFolders=${1:?"must pass parameter 'actionFolders' to 'function ${FUNCNAME[0]}()'"}
     local templatesFolder=${2:?"must pass parameter 'templatesFolder' to 'function ${FUNCNAME[0]}()'"}
 
-    local -a dirs=( $( find "$templatesFolder" -maxdepth 1 -mindepth 1 -type d ! -name '.*' ) )
-    for template in ${dirs[@]}; do
+    while read -r template; do
     
         local actionDir="${actionFolders}/$( basename "$template" )"
         if [ ! -d "$actionDir" ]; then
@@ -45,12 +44,13 @@ function setupCBF.removeSymlinks()
         fi
         
         cd "${actionDir}"
-        for fl in $(find "${template}" -maxdepth 1 -type f ! -name '.*') ;do
+        while read -r fl;do
             local file="$( basename "$fl" )"
             [ ! -f "$file" ] || rm "$file"
             [ ! -h "$file" ] || rm "$file"
-        done
-    done
+        done < <(find "${template}" -maxdepth 1 -type f ! -name '.*')
+        
+    done < <( find "$templatesFolder" -maxdepth 1 -mindepth 1 -type d ! -name '.*' )
 }
 
 ######################################################################
@@ -130,19 +130,19 @@ function setupCBF.setupProjectFiles()
     [ ! -e Dockerfile ] && setupCBF.verifyDepententContainerExists
 
     # ensure our folder structure exists
-    for abs_dir in $(find "${CBF['cbfbase']}/project.templates" -mindepth 1 -type d); do
+    while read -r abs_dir; do
         local dir="$( lib.relativize "${CBF['cbfbase']}/project.templates" "$abs_dir" )"
         mkdir -p "${top}/$dir"  
-    done
+    done< <(find "${CBF['cbfbase']}/project.templates" -mindepth 1 -type d)
 
     # copy any missing files from project templates
-    for abs_file in $(find "${CBF['cbfbase']}/project.templates" -type f); do
+    while read -r abs_file; do
         local file="$( lib.relativize "${CBF['cbfbase']}/project.templates" "$abs_file" )"
         if [ ! -e "$file" ]; then
             sed "s|newcontainer|${projectName}|gi" "$abs_file" > "$file"
             echo "  created: ${file}"
         fi
-    done
+    done< <(find "${CBF['cbfbase']}/project.templates" -type f)
 }
 
 ######################################################################
