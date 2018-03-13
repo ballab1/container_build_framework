@@ -64,7 +64,6 @@ function cbf.buildContainer()
     # iterate through list
     for dir in $( printf "%s\n" "${!steps[@]}" | sort ); do
         [ "$dir" = '07.cleanup' ] && [ "$DEBUG_TRACE" != 0 ] && continue
-        [ ! -d "${CBF['action']}/$dir" ] && continue
 
         # get array of files in directory
         local -a files=( $( lib.getFiles "${CBF['action']}/$dir" ) )
@@ -86,14 +85,9 @@ function cbf.buildContainer()
             package.updateIndexes
         fi
         
-        # copy definition files to environment folder
-        if [ "$dir" = '02.users_groups' ] || [ "$dir" = '03.downloads' ]; then
-            for file in ${files[@]} ; do
-                lib.copyFileToRuntimeEnvironment "$file"
-            done 
-        fi
-        
         # perform desired action
+        echo "$action: (unsorted)"
+        printf "    %s\n" "${files[@]}"
         "$action" "${files[*]}"
     done
 }
