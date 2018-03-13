@@ -15,7 +15,7 @@ declare -i val
 while read -r file ; do
     if [ -e "${CBF['crt_base']}/$file" ]; then
         $( ! cmp -s "$file" "${CBF['crt_base']}/$file" ) || continue
-        echo "updating "${CBF['crt_base']}/$file""
+        echo "updating "${CBF['crt_base']}/$file"
     fi
     mkdir -p "$( dirname "${CBF['crt_base']}/$file" )"
     cp "$file" "${CBF['crt_base']}/$file"
