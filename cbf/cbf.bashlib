@@ -54,7 +54,7 @@ function cbf.buildContainer()
     
     term.header "${name^^}"
     if [ "$timezone" = null ]; then
-        [ -e /etc/TZ ] && export TZ="$( cat /etc/TZ )"
+        [ ! -e /etc/TZ ] || export TZ="$( cat /etc/TZ )"
     else
         export TZ="$timezone"
         package.installTimezone "$timezone"
@@ -63,12 +63,12 @@ function cbf.buildContainer()
 
     # iterate through list
     for dir in $( printf "%s\n" "${!steps[@]}" | sort ); do
-        [ "$dir" = '07.cleanup' ] && [ "$DEBUG_TRACE" != 0 ] && continue
+        [ "$dir" != '07.cleanup' ] || [ "$DEBUG_TRACE" = 0 ] || continue
 
         # get array of files in directory
         local -a files=( $( lib.getFiles "${CBF['action']}/$dir" ) )
         files+=( $( lib.getFiles "${CBF['templates']}/$dir" ) )
-        [ ${#files[*]} = 0 ] && continue
+        [ ${#files[*]} -gt 0 ] || continue
 
         # decode action
         local action="${steps[$dir]}"
@@ -100,9 +100,9 @@ function cbf.makeScript()
 
 cat << EOF > "$tmpScript"
 #!/bin/bash
-[ -e "${CBF['bin']}/init.libraries" ] && source "${CBF['bin']}/init.libraries" "${CBF['lib']}" 
-[ -e "${CRF['bin']}/init.runtime" ] && source "${CRF['bin']}/init.runtime" 
-[ "${CBF['debug']}" != "0" ] && set -o verbose  
+[ ! -e "${CBF['bin']}/init.libraries" ] || source "${CBF['bin']}/init.libraries" "${CBF['lib']}" 
+[ ! -e "${CRF['bin']}/init.runtime" ] || source "${CRF['bin']}/init.runtime" 
+[ "${CBF['debug']}" = "0" ] || set -o verbose  
 set -o errexit
 set -o nounset
 cd /tmp

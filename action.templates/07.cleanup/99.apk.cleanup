@@ -6,5 +6,5 @@ if [ "${CBF['os_id']}" = 'alpine' ]; then
     declare -r cacheDir=/var/cache/apk
     declare -a files=( cbf.getFiles "$cacheDir" )
 
-    [ ${#files[@]} -gt 0 ] &&  rm -rf "$cacheDir"/*
+    [ ${#files[@]} -eq 0 ] || rm -rf "$cacheDir"/*
 fi

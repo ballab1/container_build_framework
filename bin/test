@@ -46,7 +46,7 @@ function test.main()
         test.installBatsModules "$temporaryDir"
     fi
     "${test['BATS']}" -t "$( cd "$tests_to_run" && pwd )"
-    [ "${#tmpUserDir}" -gt 0 ] && rm -rf "$tmpUserDir"
+    [ ! "${#tmpUserDir}" -gt 0 ] || rm -rf "$tmpUserDir"
 }
 
 #############################################################################

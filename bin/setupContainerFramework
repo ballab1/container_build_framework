@@ -59,7 +59,7 @@ function setupCBF.migrateOldFx()
     local actionFolders=${1:?"must pass parameter 'actionFolders' to 'function ${FUNCNAME[0]}()'"}
 
     # migrate old framework
-    [ -d "${CBF['base']}/container_lib" ] && rm -rf "${CBF['base']}/container_lib"
+    [ ! -d "${CBF['base']}/container_lib" ] || rm -rf "${CBF['base']}/container_lib"
     mv "${CBF['base']}/container" "$actionFolders"
 
     cd "$actionFolders"
@@ -127,7 +127,7 @@ function setupCBF.setupProjectFiles()
     echo "setting files for superProject: $projectName"
     projectName=${projectName,,}
 
-    [ ! -e Dockerfile ] && setupCBF.verifyDepententContainerExists
+    [ -e Dockerfile ] || setupCBF.verifyDependentContainerExists
 
     # ensure our folder structure exists
     while read -r abs_dir; do
@@ -151,14 +151,14 @@ function setupCBF.updateFiles()
     local old=${1:?"must pass parameter 'old' to 'function ${FUNCNAME[0]}()'"}
     local new=${2:?"must pass parameter 'new' to 'function ${FUNCNAME[0]}()'"}
     
-    [ -d "$old" ] && mv "$old" "$new"
+    [ ! -d "$old" ] || mv "$old" "$new"
     for file in $(find . -type f -name '0*'); do
         sed -i "s|\${TOOLS}/${old}|\\$\\{CBF['action']\\}/${new}|g" "$file"
     done
 }
 
 ######################################################################
-function setupCBF.verifyDepententContainerExists()
+function setupCBF.verifyDependentContainerExists()
 {
     if [ -z "$(  docker images --filter 'reference=base_container:*' -q --format '{{.Repository}}:{{.Tag}}' )" ];then
         $LOG "The Docker image on which this project depends does not exist${LF}" 'error'
