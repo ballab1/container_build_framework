@@ -35,9 +35,9 @@ set -o errexit
 set -o nounset
 #set -o xtrace
 #set -o verbose
-[ -e "/usr/local/crf/bin/init.runtime" ] && source /usr/local/crf/bin/init.runtime 
+[ ! -e "/usr/local/crf/bin/init.runtime" ] || source /usr/local/crf/bin/init.runtime 
 cd /tmp
-[ "${CRF['debug']}" != "0" ] && set -o verbose  
+[ "${CRF['debug']}" = "0" ] || set -o verbose  
 source "$file"
 EOF
     chmod 755 "$tmpScript"

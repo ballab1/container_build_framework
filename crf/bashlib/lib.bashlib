@@ -102,7 +102,7 @@ function lib.indirectReference()
     local -r default="$3"
 
     local val=$( eval "echo \${$hash[$key]}" )
-    [ -z "$val" ] && val="$default"
+    [ -n "$val" ] || val="$default"
     echo "$val"
     set -o nounset
 }
