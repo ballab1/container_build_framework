@@ -24,5 +24,6 @@ done< <(find . -type f ! -name '.*')
 # create docker-entrypoint.sh from copy default entrypoint script if none exists
 if [ ! -e "${CBF['base']}/usr/local/bin/docker-entrypoint.sh" ]; then
     mkdir -p /usr/local/bin
+    echo 'Creating docker-entrypoint.sh'
     sed "s/newcontainer/${CONTAINER_NAME}/gi" "${CBF['crf_bin']}/default.entrypoint" > /usr/local/bin/docker-entrypoint.sh
 fi
