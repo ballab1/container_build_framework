@@ -55,11 +55,12 @@ function crf.prepareEnvironment()
     if [ ${#files[*]} -gt 0 ]; then
 
         # execute files in sorted order
-        for file in $( printf "%s\n" ${files[@]} | sort ); do
+        while read -r file; do
             chmod 755 "$file"
             $LOG "..executing ${file}${LF}" 'info'
             crf.makeScript "$file"
-        done
+        done< <( printf "%s\n" ${files[@]} | sort )
+        
         $LOG "Finished executing startup scripts${LF}" 'info'
     fi
 }
