@@ -25,6 +25,10 @@ function lib.copyFileToRuntimeStartup()
 }
 
 #############################################################################
+# usage: lib.file_env VAR [DEFAULT]
+#    ie: lib.file_env 'XYZ_DB_PASSWORD' 'example'
+# (will allow for "$XYZ_DB_PASSWORD_FILE" to fill in the value of
+#  "$XYZ_DB_PASSWORD" from a file, especially for Docker's secrets feature) 
 function lib.file_env()
 {
     local -r var="${1:?'Input parameter "var" must be defined'}"
