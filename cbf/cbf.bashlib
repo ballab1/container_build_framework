@@ -43,13 +43,13 @@ function cbf.buildContainer()
     local -r timezone=${2:-null}
     
     # list of 'notice, directory, action' to perform
-    local -A steps=( ['01.packages']='lib.runScripts'
+    local -A steps=( ['01.packages']='cbf.runScripts'
                      ['02.users_groups']='uidgid.check'
                      ['03.downloads']='download.getPackages'
-                     ['04.applications']='lib.runScripts'
-                     ['05.customizations']='lib.runScripts'
-                     ['06.permissions']='lib.runScripts'
-                     ['07.cleanup']='lib.runScripts'
+                     ['04.applications']='cbf.runScripts'
+                     ['05.customizations']='cbf.runScripts'
+                     ['06.permissions']='cbf.runScripts'
+                     ['07.cleanup']='cbf.runScripts'
                    )
     
     term.header "${name^^}"
@@ -88,7 +88,7 @@ function cbf.buildContainer()
         
         # copy definition files to environment folder
         if [ "$dir" = '02.users_groups' ] || [ "$dir" = '03.downloads' ]; then
-            for file in ${files} ; do
+            for file in ${files[@]} ; do
                 lib.copyFileToRuntimeEnvironment "$file"
             done 
         fi
@@ -96,6 +96,54 @@ function cbf.buildContainer()
         # perform desired action
         "$action" "${files[*]}"
     done
+}
+
+#############################################################################
+function cbf.makeScript()
+{
+    local file=${1:?'Input parameter "file" must be defined'}
+    local tmpScript="/tmp/runScript.$( basename "$file" )"
+
+cat << EOF > "$tmpScript"
+#!/bin/bash
+[ -e "${CBF['bin']}/init.libraries" ] && source "${CBF['bin']}/init.libraries" "${CBF['lib']}" 
+[ -e "${CRF['bin']}/init.runtime" ] && source "${CRF['bin']}/init.runtime" 
+[ "${CBF['debug']}" != "0" ] && set -o verbose  
+set -o errexit
+set -o nounset
+cd /tmp
+source "$file"
+EOF
+    chmod 755 "$tmpScript"
+    if ! eval "$tmpScript" ; then
+        $LOG ">>>>> issue while executing $( basename "$file" ) <<<<<${LF}" 'warn'
+        [ "${CBF['debug']}" = "2" ] || trap.die "unable to execute $file"
+    fi
+}
+
+#############################################################################
+function cbf.runScripts()
+{
+    local -a files=${1:?'Input parameter "files" must be defined'}
+
+    # create a hash to sort the files by name & remove any templates that have been overriden
+    local -A hash
+    set +o nounset
+    for file in ${files[@]}; do
+        local name="$( basename "$file" )"
+        local _name="${name//./_}"
+        [[ -n "${hash[$_name]}"  &&  "${hash[$_name]}" =~ */action.templates/* ]] && continue
+        hash[$_name]="$file"
+    done
+    set +o xtrace
+
+    # execute scritps in sorted order
+    while read -r _name ; do
+        local file="${hash[$_name]}"
+        chmod 755 "$file"
+        $LOG "..executing ${file}${LF}" 'info'
+        cbf.makeScript "$file"
+    done< <( printf "%s\n" ${!hash[@]} | sort )
 }
 
 #############################################################################
