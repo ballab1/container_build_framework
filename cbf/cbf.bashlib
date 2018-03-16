@@ -33,6 +33,11 @@ function cbf.__init()
         CBF['crf_base']="${cbf_base}/crf"
         CBF['crf_bin']="${CBF['crf_base']}/bin"
         CBF['crt_base']="/usr/local/crf"
+        
+        
+       #now parse some info from our Dockerfile
+       #ENTRYPOINT cmd is used
+       #Both VOLUME and USER are used
     fi
 }
 
