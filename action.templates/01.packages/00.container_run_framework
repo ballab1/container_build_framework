@@ -25,5 +25,11 @@ done< <(find . -type f ! -name '.*')
 if [ ! -e "${CBF['base']}/usr/local/bin/docker-entrypoint.sh" ]; then
     mkdir -p /usr/local/bin
     echo 'Creating docker-entrypoint.sh'
-    sed "s/newcontainer/${CONTAINER_NAME}/gi" "${CBF['crf_bin']}/default.entrypoint" > /usr/local/bin/docker-entrypoint.sh
+    cp "${CBF['crf_bin']}/default.entrypoint" /usr/local/bin/docker-entrypoint.sh
+elif [ ! -e "${CBF['base']}/override.entrypoint" ]; then
+    echo 'Potential conflict detected with existing file: /usr/local/bin/docker-entrypoint.sh'
+    echo "To prevent this error, either remove the file: ${CBF['base']}/override.entrypoint, or create an override: ${CBF['base']}/override.entrypoint"
+    exit 1
 fi
+
+sed -i "s|^declare -rx CONTAINER_NAME=.*$|declare -rx CONTAINER_NAME=${CONTAINER_NAME}|" /usr/local/bin/docker-entrypoint.sh

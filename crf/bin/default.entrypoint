@@ -1,9 +1,10 @@
 #!/bin/bash
 
-declare -r config_entry='newcontainer-setup'
+declare -rx CONTAINER_NAME=newcontainer
+declare -r config_entry="${CONTAINER_NAME}-setup"
 source /usr/local/crf/bin/init.runtime
 
-if [[ "$1" = 'newcontainer' ]]; then
+if [[ "$1" = "${CONTAINER_NAME}" ]]; then
     # this is the primary (default) codepath invoked by the Dockerfile
     printf "\e[32m>>>>>>>> entering \e[33m'%s'\e[0m\n" "$1"
 

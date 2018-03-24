@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -r dirlist='/bin /usr/local/bin /usr/bin /sbin'
+declare -r dirlist='/usr/local/bin /usr/bin /sbin'
 
 for dir in ${dirlist}; do
     mkdir -p "$dir" && chmod -R 777 "$dir"
