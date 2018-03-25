@@ -1,4 +1,5 @@
-FROM alpine:3.6
+ARG FROM_BASE=alpine:3.6
+FROM $FROM_BASE
 
 # name and version of this docker image
 ARG CONTAINER_NAME=NewContainer
