@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "args: $*"
+
 declare -rx CONTAINER_NAME=newcontainer
 declare -r config_entry="${CONTAINER_NAME}-setup"
 source /usr/local/crf/bin/init.runtime
