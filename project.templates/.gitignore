@@ -3,6 +3,7 @@
 *.iml
 *.tgz
 *.zip
+build/container_build_framework
 
 # OSX
 .DS_Store
