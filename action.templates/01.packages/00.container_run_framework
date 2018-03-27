@@ -22,8 +22,21 @@ while read -r file ; do
 done< <(find . -type f ! -name '.*')
 
 # create docker-entrypoint.sh from copy default entrypoint script if none exists
-if [ ! -e "${CBF['base']}/usr/local/bin/docker-entrypoint.sh" ]; then
-    mkdir -p /usr/local/bin
-    echo 'Creating docker-entrypoint.sh'
-    sed "s/newcontainer/${CONTAINER_NAME}/gi" "${CBF['crf_bin']}/default.entrypoint" > /usr/local/bin/docker-entrypoint.sh
+declare props=/tmp/container.properties
+if [ -e "$props" ]; then
+    while IFS='=' read -r key value; do
+        case "$key" in
+            entrypoint) declare entrypoint="$val";;
+            command)    declare cmd="$val";;
+            volumes)    declare volumes="$val";;
+            user)       declare user="$val";;
+            workdir)    declare workdir="$val";;
+        esac
+    done < "$props"
+    
+    if [ "$entrypoint" ] && [ ! -e "${CBF['base']}/usr/local/bin/docker-entrypoint.sh" ]; then
+        mkdir -p /usr/local/bin
+        echo 'Creating docker-entrypoint.sh'
+        sed "s/newcontainer/${CONTAINER_NAME}/gi" "${CBF['crf_bin']}/default.entrypoint" > /usr/local/bin/docker-entrypoint.sh
+    fi
 fi
