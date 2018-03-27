@@ -108,6 +108,17 @@ function lib.indirectReference()
 }
 
 #############################################################################
+function lib.primaryPid
+{
+    local -r cmdName=${1:?'Input parameter "cmdName" must be defined'}
+
+    ps -o pid,ppid,comm | \
+    grep "$cmdName" | \
+    grep -v 'grep' | \
+    awk '{ pids[$1]=$2 } END { for (pid in pids) { id = pids[pid]; if (! pids[id]) { print pid } } }'
+}
+
+#############################################################################
 function lib.readFile()
 {
     local -r file=${1:?'Input parameter "file" must be defined'}

@@ -41,6 +41,7 @@ function package.updateIndexes()
     case "${CBF['os_id']}" in
         alpine)        apk update;;
         centos)        yum update -y;;
+        fedora)        dnf -y update && dnf clean all;;
         ubuntu)        apt-get update -y;;
     esac
 }
