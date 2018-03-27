@@ -1,5 +1,12 @@
 #!/bin/bash
 
+##########################################################
+#
+#  ensure that files in the executable folders are executable!
+#
+##########################################################
+
+
 declare -r dirlist='/usr/local/bin /usr/bin /sbin'
 
 for dir in ${dirlist}; do

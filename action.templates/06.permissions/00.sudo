@@ -1,5 +1,13 @@
 #!/bin/bash
 
+##########################################################
+#
+#  if 'sudo' was installed, make sure we can use it, 
+#  and that any definitions created in /etc/sudoers.d have correct permissions
+#
+##########################################################
+
+
 declare -r SUDO=/usr/bin/sudo
 if [ -e "$SUDO" ]; then
     chown root "$SUDO"

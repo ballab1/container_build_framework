@@ -33,8 +33,10 @@ function lib.createFileForRuntimeEnvironment()
     fi
 
     echo "creating $envFile"
-    echo "#!/bin/bash" > "$envFile"
-    echo "# this file is generated!!  DO NOT MODIFY" >> "$envFile"
+    cat << "EOF" > "$envFile"
+#!/bin/bash
+# this file is generated!!  DO NOT MODIFY
+EOF
     
     for var in ${vars[@]}; do
         local val="${!var}"
@@ -96,12 +98,12 @@ function lib.getFiles()
 #############################################################################
 function lib.indirectReference()
 {
-    local -r hash=${1:?'Input parameter "hash" must be defined'}
+    local -r ahash=${1:?'Input parameter "ahash" must be defined'}
     local -r key=${2:?'Input parameter "key" must be defined'}
     set +o nounset
     local -r default="$3"
 
-    local val=$( eval "echo \${$hash[$key]}" )
+    local val=$( eval "echo \${$ahash[$key]}" )
     [ -n "$val" ] || val="$default"
     echo "$val"
     set -o nounset
@@ -135,6 +137,7 @@ function lib.relativize()
 {
     local from="$1"
     local to="$2"
+    local OIFS=$IFS
 
     from=${from//\/\//\/}
     from=${from%/}
@@ -154,6 +157,7 @@ function lib.relativize()
         ancestor=${ancestor//[^\/]/}
         ancestor=${ancestor//\//..\/}
     done
+    IFS=$OIFS
     echo -n "$ancestor${to#$commonPrefix}"
 }
 

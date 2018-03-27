@@ -1,5 +1,12 @@
 #!/bin/bash
 
+##########################################################
+#
+#  setup the 'container runtime framework' (CRF)
+#
+##########################################################
+
+
 # copy runtime framework (only copy updates)
 mkdir -p "${CBF['crt_base']}"
 cd "${CBF['crf_base']}"
@@ -22,8 +29,9 @@ while read -r file ; do
 done< <(find . -type f ! -name '.*')
 
 
-# this may get refactored into processing of 'container.properties'
+# create docker-entrypoint.sh from copy default entrypoint script if none exists to invoke the CRF
 if [ ! -e "${CBF['base']}/override.entrypoint" ]; then
+    # this may get refactored into processing of 'container.properties'
     if [ ! -e /usr/local/bin/docker-entrypoint.sh ]; then
         mkdir -p /usr/local/bin
         echo 'Creating docker-entrypoint.sh'
@@ -38,7 +46,8 @@ if [ ! -e "${CBF['base']}/override.entrypoint" ]; then
 fi    
 
 
-# create docker-entrypoint.sh from copy default entrypoint script if none exists
+
+# setup some variables based on runtime properties in the Dockerfile 
 declare props=/tmp/container.properties
 if [ -e "$props" ]; then
     while IFS='=' read -r key value; do

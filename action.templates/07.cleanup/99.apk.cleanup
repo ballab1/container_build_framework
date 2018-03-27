@@ -1,5 +1,12 @@
 #!/bin/bash
 
+##########################################################
+#
+#  cleanup files in our cache
+#
+##########################################################
+
+
 if [ "${CBF['os_id']}" = 'alpine' ]; then
     ( apk info .build-deps > /dev/null 2>&1 ) && apk del .build-deps
 
