@@ -125,7 +125,7 @@ function cbf.runScripts()
 {
     local -a files=${1:?'Input parameter "files" must be defined'}
 
-    # create a hash to sort the files by name & remove any templates that have been overriden
+    # create a hash to sort the files by name & remove any templates that have been overridden
     local -A ahash
     set +o nounset
     for file in ${files[@]}; do
