@@ -1,14 +1,12 @@
 #!/bin/bash
 
-#set -o xtrace
 set -o errexit
 set -o nounset 
-#set -o verbose
 
 declare NAME=${1:?'Input parameter "NAME" must be defined'} 
 declare TZ="${2:-null}"
 
-if [ -d '/tmp/container_build_framework' ]; then
+if [ "$(pwd)" = '/tmp' ]; then
     # load our libraries
     source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/init.libraries"
 

@@ -62,10 +62,12 @@ function lib.copyFileToRuntimeStartup()
 }
 
 #############################################################################
+#
 # usage: lib.file_env VAR [DEFAULT]
 #    ie: lib.file_env 'XYZ_DB_PASSWORD' 'example'
 # (will allow for "$XYZ_DB_PASSWORD_FILE" to fill in the value of
 #  "$XYZ_DB_PASSWORD" from a file, especially for Docker's secrets feature) 
+#
 function lib.file_env()
 {
     local -r var="${1:?'Input parameter "var" must be defined'}"
@@ -90,9 +92,11 @@ function lib.file_env()
 function lib.getFiles()
 {
     local -r dir=${1:?'Input parameter "dir" must be defined'}
-
+    local OIFS=$IFS
+    
     IFS=$'\r\n'
     [ ! -d "$dir" ] || find "$dir"  -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort
+    IFS=$OIFS
 }
 
 #############################################################################
@@ -107,6 +111,22 @@ function lib.indirectReference()
     [ -n "$val" ] || val="$default"
     echo "$val"
     set -o nounset
+}
+
+#############################################################################
+function lib.intersect()
+{
+    local -r a1=${1:?'Input parameter "a1" must be defined'}
+    local -r a2=${2:?'Input parameter "a2" must be defined'}
+
+    # find entries of a1 which are in a2
+    local -a common=()
+    for item in $a1; do
+        if [[ "$a2" =~ "$item" ]]; then
+            common+=($item)
+        fi
+    done
+    [ ${#common[*]} -eq 0 ] || echo "${common[*]}"
 }
 
 #############################################################################
@@ -126,9 +146,9 @@ function lib.readFile()
     local -r file=${1:?'Input parameter "file" must be defined'}
     
     if [ -e "$file" ]; then
-        cat $file
+        cat "$file"
     else
-        echo 'File does not exist'
+        echo "File: '$file' does not exist"
     fi
 }
 

@@ -4,6 +4,16 @@
 #   package.bashlib
 #
 #############################################################################
+
+function package.checkIfInstalled()
+{
+    local -r todo=${1:?'Input parameter "todo" must be defined'}
+    
+    local installed=$(lib.intersect "$todo" "$( package.packageList )")
+    [ -z "$installed" ] || trap.die "attempting to reinstall following packages: '$installed'"
+}
+
+#############################################################################
 function package.install()
 {
     local -r pkg=${1:?'Input parameter "pkg" must be defined'}
@@ -33,6 +43,17 @@ function package.installTimezone()
     echo "$tz" > /etc/TZ
     cp "/usr/share/zoneinfo/$tz" /etc/timezone
     cp "/usr/share/zoneinfo/$tz" /etc/localtime
+}
+
+#############################################################################
+function package.packageList()
+{
+    case "${CBF['os_id']}" in
+        alpine)        apk info;;
+        centos)        yum list | awk '{print $1 }';;
+        fedora)        dnf --help;;
+        ubuntu)        apt-get --help;;
+    esac
 }
 
 #############################################################################

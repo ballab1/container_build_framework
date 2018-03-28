@@ -11,9 +11,11 @@ LABEL org_name=$CONTAINER_NAME \
 # set to non zero for the framework to show verbose action scripts
 ARG DEBUG_TRACE=0
 
-
-# Add configuration and customizations
+# Add CBF, configuration and customizations
+ARG CBF_VERSION=${CBF_VERSION:-v2.0}
+ADD "https://github.com/ballab1/container_build_framework/archive/${CBF_VERSION}.tar.gz" /tmp/
 COPY build /tmp/
+
 
 # build content
 RUN set -o verbose \
