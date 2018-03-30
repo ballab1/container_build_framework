@@ -134,15 +134,22 @@ function cbf.runScripts()
         [[ -n "${ahash[$_name]}"  &&  "${ahash[$_name]}" =~ */action.templates/* ]] && continue
         ahash[$_name]="$file"
     done
-    set +o xtrace
+    set -o nounset
 
     # execute scritps in sorted order
-    while read -r _name ; do
+    local -i todo=${#ahash[@]}
+    local -i isdone=0
+    for _name in $( printf "%s\n" ${!ahash[@]} | sort ); do
         local file="${ahash[$_name]}"
         chmod 755 "$file"
         $LOG "..executing ${file}${LF}" 'info'
-        cbf.makeScript "$file"
-    done< <( printf "%s\n" ${!ahash[@]} | sort )
+        ( cbf.makeScript "$file" )
+        (( isdone++ )) || true
+    done
+    if [ $todo -ne $isdone ]; then
+        echo "count before: $todo.  count after: $isdone.  hash: ${ahash[@]}"
+        trap.die "failed to execute all scripts"
+    fi
 }
 
 #############################################################################
