@@ -182,3 +182,19 @@ function lib.relativize()
 }
 
 #############################################################################
+function lib.updateConfigFile()
+{
+    local param=$1
+    local attr=$2
+    local config_file=$3
+
+    if [[ "$param" ]]; then
+        if grep --silent "$attr" "config_file" ; then
+            sed -i "s|^$attr=.*$|$attr=$param|" "$config_file" 
+        else
+            echo "$attr=$param" >> "$config_file"
+        fi
+    fi
+}
+
+#############################################################################
