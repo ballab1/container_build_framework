@@ -1,0 +1,58 @@
+#!/bin/bash
+
+##################################################################################
+#
+#  module:  bashlib/timer.sh
+#  purpose: provide simple interface to time functionality and report times  
+#
+##################################################################################
+
+# calculate the elapsed time for an event
+function timer.elapsed()
+{
+    local -r start=${1:?'Input parameter "start" must be defined'}
+    local -r finish=${2:?'Input parameter "finish" must be defined'}
+
+    echo $((finish - start))
+} 
+
+#----------------------------------------------------------------------------
+# calculate the elapsed time for an event
+function timer.fmt_elapsed()
+{
+    local -ir elapsed=${1:?'Input parameter "elapsed" must be defined'}
+
+    printf '%02d:%02d:%02d' $((elapsed / 3600)) $((elapsed % 3600 / 60)) $((elapsed % 60))
+} 
+
+#----------------------------------------------------------------------------
+# log elapse time result 
+function timer.log_elapsed()
+{
+    local -r name=${1:?'Input parameter "name" must be defined'}
+    local -ir elapsed=${2:?'Input parameter "elapsed" must be defined'}
+    
+    printf "Time elapsed (%s): %s" "$name" "$(timer.fmt_elapsed $elapsed)"
+}
+
+#----------------------------------------------------------------------------
+# get the timestamp of a file in seconds
+function timer.gettimestamp()
+{
+    local -r tfile=$(mktemp /tmp/foo.XXXXXXXXX)
+    stat --format=%Y "$tfile"
+    rm "$tfile"
+} 
+
+#----------------------------------------------------------------------------
+# Path to the build status file
+function timer.tracking_file()
+{
+    local -r output_base=${1:?'Input parameter "output_base" must be defined'}
+    local -r org=${2:?'Input parameter "org" must be defined'}
+    local -r repo=${3:?'Input parameter "repo" must be defined'}
+
+    mkdir -p "$output_base/tracking"
+    printf '%s/tracking/.%s.%s' "$output_base" "$org" "$repo"
+} 
+#----------------------------------------------------------------------------
