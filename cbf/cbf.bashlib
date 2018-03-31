@@ -144,7 +144,7 @@ function cbf.runScripts()
         chmod 755 "$file"
         $LOG "..executing ${file}${LF}" 'info'
         ( cbf.makeScript "$file" )
-        (( isdone++ )) || true
+        (( isdone++ )) || :
     done
     if [ $todo -ne $isdone ]; then
         echo "count before: $todo.  count after: $isdone.  hash: ${ahash[@]}"

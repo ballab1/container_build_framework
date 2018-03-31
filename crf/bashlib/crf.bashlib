@@ -54,14 +54,22 @@ function crf.prepareEnvironment()
     local -a files=( $( lib.getFiles "${CRF['startup']}" ) )
     if [ ${#files[*]} -gt 0 ]; then
 
-        # execute files in sorted order
-        while read -r file; do
+        # execute scritps in sorted order
+        local -i todo=${#files[@]}
+        local -i isdone=0
+        for _name in $( printf "%s\n" ${!files[@]} | sort ); do
+            local file="${files[$_name]}"
             chmod 755 "$file"
             $LOG "..executing ${file}${LF}" 'info'
-            crf.makeScript "$file"
-        done< <( printf "%s\n" ${files[@]} | sort )
-        
-        $LOG "Finished executing startup scripts${LF}" 'info'
+            ( crf.makeScript "$file" )
+            (( isdone++ )) || :
+        done
+        if [ $todo -ne $isdone ]; then
+            $LOG "count before: $todo.  count after: $isdone.  files: ${files[@]}${LF}" 'info'
+#            trap.die "failed to execute all scripts"
+        else
+            $LOG "Finished executing startup scripts${LF}" 'info'
+        fi 
     fi
 }
 
