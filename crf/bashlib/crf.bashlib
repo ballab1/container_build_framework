@@ -10,6 +10,7 @@ declare -A CRF
 
 function crf.__init()
 {
+    set +o nounset
     # this function is usually called from bin/init.libraries
     if [ "${#CRF[@]}" -eq 0 ]; then
         CRF=()
@@ -20,6 +21,7 @@ function crf.__init()
         CRF['startup']="${CRF['base']}/startup"
         CRF['debug']=${DEBUG_TRACE:-0}
     fi
+    set -o nounset
 }
 
 

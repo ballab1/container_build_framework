@@ -155,8 +155,8 @@ function lib.readFile()
 ######################################################################
 function lib.relativize()
 {
-    local from="$1"
-    local to="$2"
+    local from="${1:?'Input parameter "from" must be defined'}"
+    local to="${2:?'Input parameter "to" must be defined'}"
     local OIFS=$IFS
 
     from=${from//\/\//\/}
@@ -184,8 +184,8 @@ function lib.relativize()
 #############################################################################
 function lib.updateConfigFile()
 {
-    local param=$1
-    local attr=$2
+    local -r param="${1:?'Input parameter "param" must be defined'}"
+    local -r attr="${2:?'Input parameter "attr" must be defined'}"
     local config_file=$3
 
     if [[ "$param" ]]; then
