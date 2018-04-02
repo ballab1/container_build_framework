@@ -7,15 +7,6 @@
 #
 ##################################################################################
 
-# calculate the elapsed time for an event
-function timer.elapsed()
-{
-    local -r start=${1:?'Input parameter "start" must be defined'}
-    local -r finish=${2:?'Input parameter "finish" must be defined'}
-
-    echo $((finish - start))
-} 
-
 #----------------------------------------------------------------------------
 # calculate the elapsed time for an event
 function timer.fmt_elapsed()
@@ -37,12 +28,28 @@ function timer.log_elapsed()
 
 #----------------------------------------------------------------------------
 # get the timestamp of a file in seconds
-function timer.gettimestamp()
+function timer.getTimestamp()
 {
     local -r tfile=$(mktemp /tmp/foo.XXXXXXXXX)
-    stat --format=%Y "$tfile"
+    stat -c %Y "$tfile"
     rm "$tfile"
 } 
+
+#----------------------------------------------------------------------------
+function timer.measureCmd()
+{
+    local -r name=${1:?'Input parameter "cmd" must be defined'}
+    local -r cmd=${2:?'Input parameter "cmd" must be defined'}
+    local -a args=${3:?'Input parameter "args" must be defined'}
+
+    local -i start_tm=$( timer.getTimestamp ) 
+    "$cmd" ${args[@]}
+    local -i finish_tm=$( timer.getTimestamp ) 
+    local -i elapsed_tm=$((finish_tm - start_tm)) 
+    local fmt_tm=$( timer.fmt_elapsed $elapsed_tm )
+
+    printf "Time elapsed (%s): %s" "$name" "$fmt_tm"
+}
 
 #----------------------------------------------------------------------------
 # Path to the build status file

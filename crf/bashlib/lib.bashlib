@@ -122,9 +122,12 @@ function lib.intersect()
     # find entries of a1 which are in a2
     local -a common=()
     for item in $a1; do
-        if [[ "$a2" =~ "$item" ]]; then
-            common+=($item)
-        fi
+        for ref in $a2; do
+            if [ $item = $ref ]; then
+                common+=($item)
+                break
+            fi
+        done
     done
     [ ${#common[*]} -eq 0 ] || echo "${common[*]}"
 }
