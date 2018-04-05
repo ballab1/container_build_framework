@@ -46,9 +46,10 @@ function uidgid.createUserAndGroup()
     $LOG "INFO: group/gid (${wanted}):  is currently (${nameMatch})/(${idMatch})${LF}" 'info'
 
     if [[ $wanted != $nameMatch  ||  $wanted != $idMatch ]]; then
-        if [[ -n "$nameMatch"  &&  $(getent passwd ${user} | wc -l) -gt 0 ]]; then
-            $LOG "update group:  ${group}${LF}" 'info'
-            /usr/sbin/groupmod --gid "${gid}" "${group}"
+        if [[ "$idMatch" ]]; then
+            local oldName=$( getent group "${gid}" | awk -F ':' '{ printf "%s",$1 }' )
+            $LOG "renaming group:  ${oldName} to ${group}${LF}" 'info'
+            /usr/sbin/groupmod --new-name "$group" "$oldName"
         else
             $LOG "create group:  ${group}${LF}" 'info'
             [[ "$nameMatch"  &&  $wanted != $nameMatch ]] && groupdel "$( getent group ${group} |  cut -d: -f1 )"
