@@ -7,10 +7,28 @@
 
 function package.checkIfInstalled()
 {
-    local -r todo=${1:?'Input parameter "todo" must be defined'}
+    local -r PKGS=${1:?'Input parameter "PKGS" must be defined'}
     
-    local installed=$(lib.intersect "$todo" "$( package.packageList )")
+    local installed=$(lib.intersect "$PKGS" "$( package.packageList )")
     [ -z "$installed" ] || trap.die "attempting to reinstall following packages: '$installed'"
+    
+    # now verify that packages are actually valid for installation
+    for pkg in $PKGS; do 
+        package.checkPackage &>/dev/null || { echo "Package $pkg not found"; exit 1; }
+    done 
+}
+
+#############################################################################
+function package.checkPackage()
+{
+    local -r pkg=${1:?'Input parameter "pkg" must be defined'}
+
+    case "${CBF['os_id']}" in
+        alpine)        apk info $pkg;;
+        centos)        yum info $pkg;;
+        fedora)        dnf info $pkg;;
+        ubuntu)        apt-get info $pkg;;
+    esac
 }
 
 #############################################################################
@@ -18,19 +36,18 @@ function package.install()
 {
     local -r pkg=${1:?'Input parameter "pkg" must be defined'}
     
-    IFS=$'\r\n'
-    local -a contents=( $(< "$pkg") )
-    $LOG "Installing ${pkg} - ${#contents[*]} lines read${LF}" 'task'
+    $LOG "Installing ${pkg}${LF}" 'task'
 
-    if [ "${contents[1]:0:5}" = 'cmd: ' ]; then
-        local comment="${contents[0]}"
-        local cmd="${contents[1]:5}"
-        contents=( ${contents[@]:2} )
-        $LOG "..${comment}:  '${cmd} ${contents}'${LF}" 'info'
-        eval $cmd $contents || $LOG "..issue while installing ${contents}${LF}" 'warn'
-    else
-        $LOG "..package file not formatted correctly ${pkg}${LF}" 'warn'
-    fi
+    source $pkg
+    : ${OPTS:=''}
+    package.checkIfInstalled "$PKGS"
+
+    case "${CBF['os_id']}" in
+        alpine)        apk add --no-cache $OPTS $PKGS;;
+        centos)        yum install -y $OPTS $PKGS; yum clean all;;
+        fedora)        dnf install -y $OPTS $PKGS && dnf clean all;;
+        ubuntu)        apt-get install -y $OPTS $PKGS;;
+    esac
 }
 
 #############################################################################
@@ -60,14 +77,11 @@ function package.packageList()
 function package.runScripts()
 {
     local -a files=${1:?'Input parameter "files" must be defined'}
-    local -a filteredFiles=()
 
     for file in ${files[@]}; do
         local _extension="${file##*.}"
-        [ "$_extension" != "${CBF['os_id']}" ] || filteredFiles+=( file )
+        [ "$_extension" != "${CBF['os_id']}" ] || ( package.install "$file" )
     done
-
-    lib.runScripts "${filteredFiles[*]}"
 }
 
 #############################################################################
