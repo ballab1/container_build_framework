@@ -8,3 +8,4 @@
 #  this folder by the build process and are 'sourced' at runtime by /usr/local/bin/docker-entrypoint.sh  
 
 export WORKING_DIR=/
+export CONTAINER_NAME=$CONTAINER_NAME

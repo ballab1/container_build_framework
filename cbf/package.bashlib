@@ -57,6 +57,20 @@ function package.packageList()
 }
 
 #############################################################################
+function package.runScripts()
+{
+    local -a files=${1:?'Input parameter "files" must be defined'}
+    local -a filteredFiles=()
+
+    for file in ${files[@]}; do
+        local _extension="${file##*.}"
+        [ "$_extension" != "${CBF['os_id']}" ] || filteredFiles+=( file )
+    done
+
+    lib.runScripts "${filteredFiles[*]}"
+}
+
+#############################################################################
 function package.updateIndexes()
 {
     case "${CBF['os_id']}" in

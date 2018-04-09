@@ -16,7 +16,6 @@ while read -r dir; do
     mkdir -p "${CBF['crt_base']}/$dir"
 done < <(find . -maxdepth 1 -mindepth 1 -type d ! -name '.*')
 
-declare -i val
 
 # copy runtime framework (only copy updates)
 while read -r file ; do
@@ -27,6 +26,7 @@ while read -r file ; do
     mkdir -p "$( dirname "${CBF['crt_base']}/$file" )"
     cp "$file" "${CBF['crt_base']}/$file"
 done< <(find . -type f ! -name '.*')
+lib.updateRuntimeEnvironment "CONTAINER_NAME"  
 
 
 # create docker-entrypoint.sh from copy default entrypoint script if none exists to invoke the CRF
@@ -52,6 +52,7 @@ fi
 # setup some variables based on runtime properties in the Dockerfile 
 declare props=/tmp/container.properties
 if [ -e "$props" ]; then
+    declare -i val
     while IFS='=' read -r key value; do
         case "$key" in
             entrypoint) declare entrypoint="$val";;

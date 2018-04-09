@@ -21,31 +21,6 @@ function lib.copyFileToRuntimeEnvironment()
 }
 
 #############################################################################
-function lib.createFileForRuntimeEnvironment()
-{
-    local -r file="${1:?'Input parameter "file" must be defined'}"
-    local -a vars="${2:?'Input parameter "vars" must be defined'}"
-    local -r envFile="${CRF['env']}/$( basename "$file")" 
-
-    if [ -e "$envFile" ]; then
-        $LOG "Attempt to overwrite file '$envFile' will likely result in unintentend consequences${LF}" 'error'
-        exit 1
-    fi
-
-    echo "creating $envFile"
-    cat << "EOF" > "$envFile"
-#!/bin/bash
-# this file is generated!!  DO NOT MODIFY
-EOF
-    
-    for var in ${vars[@]}; do
-        local val="${!var}"
-        [ "$val" = "${val%[[:space:]]*}" ] || val="\"$val\""
-        printf "export %s=%s\n" "$var" "$val" >> "$envFile"
-    done
-}
-
-#############################################################################
 function lib.copyFileToRuntimeStartup()
 {
     local -r file="${1:?'Input parameter "file" must be defined'}"
@@ -198,6 +173,24 @@ function lib.updateConfigFile()
             echo "$attr=$param" >> "$config_file"
         fi
     fi
+}
+
+#############################################################################
+function lib.updateRuntimeEnvironment()
+{
+    local -a vars="${1:?'Input parameter "vars" must be defined'}"
+    
+    local -r envFile="${CRF['bin']}/rt.environment"
+    for var in ${vars[@]}; do
+        local val="${!var}"
+        [ "$val" = "${val%[[:space:]]*}" ] || val="\"$val\""
+        
+        if grep --silent "export ${var}=" "envFile" ; then
+            sed -i "s|export $attr=.*$|export $var=$val|" "$envFile" 
+        else
+            printf "export %s=%s\n" "$var" "$val" >> "$envFile"
+        fi
+    done
 }
 
 #############################################################################

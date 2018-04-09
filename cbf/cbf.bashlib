@@ -48,7 +48,8 @@ function cbf.buildContainer()
     local -r timezone=${2:-null}
     
     # list of 'notice, directory, action' to perform
-    local -A steps=( ['01.packages']='cbf.runScripts'
+    local -A steps=( ['00.setup']='cbf.runScripts'
+                     ['01.packages']='package.runScripts'
                      ['02.users_groups']='uidgid.check'
                      ['03.downloads']='download.getPackages'
                      ['04.applications']='cbf.runScripts'
