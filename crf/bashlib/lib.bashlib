@@ -186,7 +186,7 @@ function lib.updateRuntimeEnvironment()
         [ "$val" = "${val%[[:space:]]*}" ] || val="\"$val\""
         
         if grep -q "export ${var}=" "$envFile" ; then
-            sed -i "s|export $attr=.*$|export $var=$val|" "$envFile" 
+            sed -i "s|export ${var}=.*$|export $var=$val|" "$envFile" 
         else
             printf "export %s=%s\n" "$var" "$val" >> "$envFile"
         fi
