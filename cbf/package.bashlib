@@ -13,21 +13,20 @@ function package.checkIfInstalled()
     [ -z "$installed" ] || trap.die "attempting to reinstall following packages: '$installed'"
     
     # now verify that packages are actually valid for installation
+    local -r checker=$( package.checkPackage )
     for pkg in $PKGS; do 
-        package.checkPackage &>/dev/null || { echo "Package $pkg not found"; exit 1; }
+        eval $checker "$pkg" &>/dev/null || { echo "Package $pkg not found"; exit 1; }
     done 
 }
 
 #############################################################################
 function package.checkPackage()
 {
-    local -r pkg=${1:?'Input parameter "pkg" must be defined'}
-
     case "${CBF['os_id']}" in
-        alpine)        apk info $pkg;;
-        centos)        yum info $pkg;;
-        fedora)        dnf info $pkg;;
-        ubuntu)        apt-get info $pkg;;
+        alpine)        echo 'apk info';;
+        centos)        echo 'yum info';;
+        fedora)        echo 'dnf info';;
+        ubuntu)        echo 'apt-get info';;
     esac
 }
 
