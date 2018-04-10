@@ -15,7 +15,7 @@ function package.checkIfInstalled()
     # now verify that packages are actually valid for installation
     local -r checker=$( package.checkPackage )
     for pkg in $PKGS; do 
-        eval $checker "$pkg" &>/dev/null || { echo "Package $pkg not found"; exit 1; }
+        eval $checker "$pkg" &>/dev/null || trap.die "Package $pkg not found"
     done 
 }
 

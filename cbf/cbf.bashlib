@@ -117,7 +117,7 @@ EOF
     chmod 755 "$tmpScript"
     if ! eval "$tmpScript" ; then
         $LOG ">>>>> issue while executing $( basename "$file" ) <<<<<${LF}" 'warn'
-        [ "${CBF['debug']}" = "2" ] || trap.die "unable to execute $file"
+        trap.die "unable to execute $file"
     fi
 }
 
