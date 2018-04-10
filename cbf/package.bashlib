@@ -33,11 +33,11 @@ function package.checkPackage()
 #############################################################################
 function package.install()
 {
-    local -r pkg=${1:?'Input parameter "pkg" must be defined'}
+    local -r defnFile=${1:?'Input parameter "defnFile" must be defined'}
     
     $LOG "Installing ${pkg}${LF}" 'task'
 
-    source $pkg
+    source $defnFile
     : ${OPTS:=''}
     package.checkIfInstalled "$PKGS"
 
