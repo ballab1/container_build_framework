@@ -35,7 +35,7 @@ function package.install()
 {
     local -r defnFile=${1:?'Input parameter "defnFile" must be defined'}
     
-    $LOG "Installing ${pkg}${LF}" 'task'
+    $LOG "Installing ${defnFile}${LF}" 'task'
 
     source $defnFile
     : ${OPTS:=''}
