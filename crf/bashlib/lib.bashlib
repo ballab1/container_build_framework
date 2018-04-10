@@ -167,7 +167,7 @@ function lib.updateConfigFile()
     local config_file=$3
 
     if [[ "$param" ]]; then
-        if grep --silent "$attr" "config_file" ; then
+        if grep -q "$attr" "config_file" ; then
             sed -i "s|^$attr=.*$|$attr=$param|" "$config_file" 
         else
             echo "$attr=$param" >> "$config_file"
@@ -185,7 +185,7 @@ function lib.updateRuntimeEnvironment()
         local val="${!var}"
         [ "$val" = "${val%[[:space:]]*}" ] || val="\"$val\""
         
-        if grep --silent "export ${var}=" "envFile" ; then
+        if grep -q "export ${var}=" "envFile" ; then
             sed -i "s|export $attr=.*$|export $var=$val|" "$envFile" 
         else
             printf "export %s=%s\n" "$var" "$val" >> "$envFile"
