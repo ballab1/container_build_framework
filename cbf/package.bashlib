@@ -14,9 +14,12 @@ function package.checkIfInstalled()
     
     # now verify that packages are actually valid for installation
     local -r checker=$( package.checkPackage )
-    for pkg in $PKGS; do 
-        eval $checker "$pkg" &>/dev/null || trap.die "Package $pkg not found"
+
+set -o xtrace
+    for pkg in $PKGS; do
+        eval $checker "${pkg%%=*}" &>/dev/null || trap.die "Package $pkg not found"
     done 
+set +o xtrace
 }
 
 #############################################################################
@@ -37,7 +40,8 @@ function package.install()
     
     $LOG "Installing ${defnFile}${LF}" 'task'
 
-    source $defnFile
+    source "${CRF['bin']}/init.runtime"
+    source "$defnFile"
     : ${OPTS:=''}
     package.checkIfInstalled "$PKGS"
 
@@ -54,7 +58,6 @@ function package.installTimezone()
 {
     local -r tz=${1:?'Input parameter "tz" must be defined'}
     
-    package.updateIndexes
     apk add --no-cache tzdata
     echo "$tz" > /etc/TZ
     cp "/usr/share/zoneinfo/$tz" /etc/timezone

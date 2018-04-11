@@ -63,6 +63,8 @@ function cbf.buildContainer()
         [ ! -e /etc/TZ ] || export TZ="$( cat /etc/TZ )"
     else
         export TZ="$timezone"
+        lib.updateRuntimeEnvironment 'TZ'
+        package.updateIndexes
         package.installTimezone "$timezone"
     fi
 

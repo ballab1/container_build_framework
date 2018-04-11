@@ -20,6 +20,11 @@ function crf.__init()
         CRF['lib']="${CRF['base']}/bashlib"
         CRF['startup']="${CRF['base']}/startup"
         CRF['debug']=${DEBUG_TRACE:-0}
+        if [ -e /etc/os-release ]; then
+            CRF['os_id']=$( cat /etc/os-release | grep -e '^ID=' | awk -F'=' '{ print $2 }' )
+        else
+            CRF['os_id']=windows
+        fi
     fi
     set -o nounset
 }
