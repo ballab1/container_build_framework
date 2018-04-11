@@ -164,7 +164,7 @@ function lib.updateConfigFile()
 {
     local -r param="${1:?'Input parameter "param" must be defined'}"
     local -r attr="${2:?'Input parameter "attr" must be defined'}"
-    local config_file=$3
+    local -r config_file="${3:?'Input parameter "config_file" must be defined'}"
 
     if [[ "$param" ]]; then
         if grep -q "$attr" "config_file" ; then
@@ -185,10 +185,10 @@ function lib.updateRuntimeEnvironment()
         local val="${!var}"
         [ "$val" = "${val%[[:space:]]*}" ] || val="\"$val\""
         
-        if grep -q "export ${var}=" "$envFile" ; then
-            sed -i "s|export ${var}=.*$|export $var=$val|" "$envFile" 
+        if grep -q "^export ${var}=" "$envFile" ; then
+            sed -i "s|^export ${var}=.*$|export $var=\${${var}:-$val}|" "$envFile" 
         else
-            printf "export %s=%s\n" "$var" "$val" >> "$envFile"
+            printf "export %s=\${${var}:-%s}\n" "$var" "$val" >> "$envFile"
         fi
     done
 }
