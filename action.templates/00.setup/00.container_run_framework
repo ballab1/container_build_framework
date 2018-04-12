@@ -21,7 +21,7 @@ done < <(find . -maxdepth 1 -mindepth 1 -type d ! -name '.*')
 while read -r file ; do
     declare action='creating'
     if [ -e "${CBF['crt_base']}/$file" ]; then
-        [ "$( basename $file )" != 'rt.environment" ] || continue
+        [ "$( basename "$file" )" != 'rt.environment' ] || continue
         $( ! cmp -s "$file" "${CBF['crt_base']}/$file" ) || continue
         action='updating'
     fi
