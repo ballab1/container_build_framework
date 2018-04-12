@@ -179,18 +179,23 @@ function lib.updateConfigFile()
 function lib.updateRuntimeEnvironment()
 {
     local -a vars="${1:?'Input parameter "vars" must be defined'}"
-    
+
     local -r envFile="${CRF['bin']}/rt.environment"
+echo "\nrt.environment before changes:"
+cat "$envFile"
+echo "\nchanging '${vars}'"
     for var in ${vars[@]}; do
         local val="${!var}"
         [ "$val" = "${val%[[:space:]]*}" ] || val="\"$val\""
         
-        if grep -q "^export ${var}=" "$envFile" ; then
+        if /usr/bin/grep -q "^export ${var}=" "$envFile" ; then
             sed -i "s|^export ${var}=.*$|export $var=$val|" "$envFile" 
         else
             printf "export %s=%s\n" "$var" "$val" >> "$envFile"
         fi
     done
+echo "rt.environment after changes:"
+cat "\n$envFile"
 }
 
 #############################################################################
