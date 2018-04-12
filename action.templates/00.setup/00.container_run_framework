@@ -19,7 +19,7 @@ done < <(find . -maxdepth 1 -mindepth 1 -type d ! -name '.*')
 
 # copy runtime framework (only copy updates)
 while read -r file ; do
-    local action='creating'
+    declare action='creating'
     if [ -e "${CBF['crt_base']}/$file" ]; then
         $( ! cmp -s "$file" "${CBF['crt_base']}/$file" ) || continue
         action='updating'
