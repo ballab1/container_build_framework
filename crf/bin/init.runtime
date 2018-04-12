@@ -1,5 +1,6 @@
 #!/bin/bash
 
+declare __CRF_OPTIONS=$(set +o)
 set +o nounset
 
 declare lib_base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
@@ -49,5 +50,5 @@ if [ "${#files[@]}" -gt 0 ]; then
 fi
 
 [ "$__init" = 1 ] && crf.__init "$lib_base"
-set -o nounset
 unset lib_base
+eval "$__CRF_OPTIONS"

@@ -10,7 +10,9 @@ declare -A CRF
 
 function crf.__init()
 {
+    local SAVED_OPTIONS=$(set +o)
     set +o nounset
+
     # this function is usually called from bin/init.libraries
     if [ "${#CRF[@]}" -eq 0 ]; then
         CRF=()
@@ -26,7 +28,7 @@ function crf.__init()
             CRF['os_id']=windows
         fi
     fi
-    set -o nounset
+    eval "$SAVED_OPTIONS"
 }
 
 

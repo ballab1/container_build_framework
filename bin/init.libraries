@@ -1,5 +1,6 @@
 #!/bin/bash
 
+declare __CBF_OPTIONS=$(set +o)
 set +o nounset
 
 declare __init
@@ -24,4 +25,4 @@ done
 [ "$__init" = 1 ] && cbf.__init "$base/cbf"
 
 unset base
-set -o nounset
+eval "$__CBF_OPTIONS"

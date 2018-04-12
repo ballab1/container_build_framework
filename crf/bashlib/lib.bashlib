@@ -79,13 +79,14 @@ function lib.indirectReference()
 {
     local -r ahash=${1:?'Input parameter "ahash" must be defined'}
     local -r key=${2:?'Input parameter "key" must be defined'}
+    local SAVED_OPTIONS=$(set +o)
     set +o nounset
     local -r default="$3"
 
     local val=$( eval "echo \${$ahash[$key]}" )
     [ -n "$val" ] || val="$default"
     echo "$val"
-    set -o nounset
+    eval "$SAVED_OPTIONS"
 }
 
 #############################################################################

@@ -126,6 +126,7 @@ EOF
 function cbf.runScripts()
 {
     local -a files=${1:?'Input parameter "files" must be defined'}
+    local SAVED_OPTIONS=$(set +o)
 
     # create a hash to sort the files by name & remove any templates that have been overridden
     local -A ahash
@@ -136,7 +137,7 @@ function cbf.runScripts()
         [[ -n "${ahash[$_name]}"  &&  "${ahash[$_name]}" =~ */action.templates/* ]] && continue
         ahash[$_name]="$file"
     done
-    set -o nounset
+    eval "$SAVED_OPTIONS"
 
     # execute scritps in sorted order
     local -i todo=${#ahash[@]}
