@@ -109,7 +109,6 @@ function cbf.makeScript()
 cat << EOF > "$tmpScript"
 #!/bin/bash
 [ ! -e "${CBF['bin']}/init.libraries" ] || source "${CBF['bin']}/init.libraries" "${CBF['lib']}" 
-[ ! -e "${CRF['bin']}/init.runtime" ] || source "${CRF['bin']}/init.runtime" 
 [ "${CBF['debug']}" = "0" ] || set -o verbose  
 set -o errexit
 set -o nounset
