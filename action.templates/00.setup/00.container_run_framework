@@ -20,7 +20,7 @@ done < <(find . -maxdepth 1 -mindepth 1 -type d ! -name '.*')
 # copy runtime framework (only copy updates)
 while read -r file ; do
     if [ -e "${CBF['crt_base']}/$file" ]; then
-        $( ! cmp -s "$file" "${CBF['crt_base']}/$file" ) || continue
+        $( cmp -s "$file" "${CBF['crt_base']}/$file" ) || continue
         echo "updating ${CBF['crt_base']}/$file"
     fi
     mkdir -p "$( dirname "${CBF['crt_base']}/$file" )"
