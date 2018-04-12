@@ -181,7 +181,7 @@ function lib.updateRuntimeEnvironment()
     local -a vars="${1:?'Input parameter "vars" must be defined'}"
 
     local -r envFile="${CRF['bin']}/rt.environment"
-echo "rt.environment before changes:"
+echo 'rt.environment before changes:'
 cat "$envFile"
 echo "changing '${vars}'"
     for var in ${vars[@]}; do
@@ -194,7 +194,7 @@ echo "changing '${vars}'"
             printf "export %s=%s\n" "$var" "$val" >> "$envFile"
         fi
     done
-echo "rt.environment after changes:"
+echo 'rt.environment after changes:'
 cat "$envFile"
 }
 
