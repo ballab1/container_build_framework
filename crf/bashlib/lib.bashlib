@@ -177,54 +177,15 @@ function lib.updateConfigFile()
 }
 
 #############################################################################
-function lib.updateRuntimeEnvironment_X()
-{
-    local -a vars="${1:?'Input parameter "vars" must be defined'}"
-
-    local -r envFile="${CRF['bin']}/rt.environment"
-echo 'rt.environment before changes:'
-cat "$envFile"
-echo "changing '${vars}'"
-    for var in ${vars[@]}; do
-        local val="${!var}"
-        [ "$val" = "${val%[[:space:]]*}" ] || val="\"$val\""
-        
-        if grep -q "^export ${var}=" "$envFile" ; then
-            sed -i "s|^export ${var}=.*$|export $var=$val|" "$envFile" 
-        else
-            printf "export %s=%s\n" "$var" "$val" >> "$envFile"
-        fi
-    done
-echo 'rt.environment after changes:'
-cat "$envFile" 
-}
-
-#############################################################################
-function lib.updateRuntimeEnvironment_Y()
-{
-    local ahash="${1:?'Input parameter "vars" must be defined'}"
-    local -r envFile="${CRF['bin']}/rt.environment"
-    local _vars="$( eval "echo \${!$ahash[@]}" )"
-
-    for var in $_vars; do
-        local val="$( eval "echo \${$ahash[$var]}" )"
-        [ "$val" = "${val%[[:space:]]*}" ] || val="\"$val\""
-        
-        if grep -q "^export ${var}=" "$envFile" ; then
-            sed -i "s|^export ${var}=.*$|export $var=$val|" "$envFile" 
-        else
-            printf "export %s=%s\n" "$var" "$val" >> "$envFile"
-        fi
-    done
-}
-
-
-#############################################################################
 function lib.updateRuntimeEnvironment()
 {
     local -a in_array="${1:?'Input parameter "in_array" must be defined'}"
     local -r envFile="${CRF['bin']}/rt.environment"
 
+echo 'before-----------------------------------------------------'
+cat /usr/local/crf/bin/rt.environment
+echo 'before-----------------------------------------------------'
+set -o xtrace
     for line in $in_array; do
         local var=${line%%=*}
         if grep -q "^${var}=" "$envFile" ; then
@@ -233,6 +194,10 @@ function lib.updateRuntimeEnvironment()
             printf "%s\n" "$line" >> "$envFile"
         fi
     done
+set +o xtrace
+echo 'after -----------------------------------------------------'
+cat /usr/local/crf/bin/rt.environment
+echo 'after -----------------------------------------------------'
 }
 
 #############################################################################
