@@ -25,5 +25,6 @@ done
 
 [ "$__init" = 1 ] && cbf.__init "$base/cbf"
 
-unset base
 eval "$__CBF_OPTIONS"
+unset base
+unset __CBF_OPTIONS
