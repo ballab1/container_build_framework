@@ -22,7 +22,7 @@ for src in $(find "${base}/cbf" -maxdepth 1 -mindepth 1  -name '*.bashlib') ; do
     source "$src"
 done
 
-[ "$__init" = 1 ] && cbf.__init "$base/cbf"
+[ "$__init" = 1 ] && cbf.__init "$base/cbf" "$@"
 
 unset base
 eval "$__CBF_OPTIONS"
