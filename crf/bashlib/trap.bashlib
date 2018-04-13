@@ -6,8 +6,8 @@
 #----------------------------------------------------------------------------
 
 # global exceptions
-declare -i dying=0
-declare -i pipe_error=0
+declare -ix dying=0
+declare -ix pipe_error=0
 
 #----------------------------------------------------------------------------
 # Exit on any error

@@ -5,5 +5,5 @@
 #
 # this script is indirectly 'sourced' at runtime by /usr/local/bin/docker-entrypoint.sh  
 
-export CONTAINER_NAME=${CONTAINER_NAME}
-export WORKING_DIR=${WORKING_DIR:-/}
+declare -x CONTAINER_NAME=${CONTAINER_NAME}
+declare -x WORKING_DIR=${WORKING_DIR:-/}
