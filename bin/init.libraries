@@ -16,7 +16,7 @@ set -o xtrace
 for src in $(find "${__base}/cbf" -maxdepth 1 -mindepth 1  -name '*.bashlib') ; do
     declare _filename="$( basename "$src" )"
     [ -e "$_cbfTracker" ] || touch "$_cbfTracker"
-    if grep -sq "$_filename" "$_cbfTracker"; then
+    if ! grep -sq "$_filename" "$_cbfTracker"; then
         echo "$_filename" >> "$_cbfTracker"
         echo "..loading library: ${src}"
         source "$src"
