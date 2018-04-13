@@ -12,7 +12,6 @@ declare __base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 [ ! -e "$__base/crf/bin/init.runtime" ] || source "$__base/crf/bin/init.runtime"
 
-set -o xtrace
 for src in $(find "${__base}/cbf" -maxdepth 1 -mindepth 1  -name '*.bashlib') ; do
     declare _filename="$( basename "$src" )"
     [ -e "$_cbfTracker" ] || touch "$_cbfTracker"
