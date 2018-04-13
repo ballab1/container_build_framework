@@ -4,7 +4,7 @@ declare __CBF_OPTIONS=$(set +o)
 set +o nounset
 
 declare -r _cbfTracker=/tmp/bashlibs.loaded
-declare __init=$( ! -e "$_cbfTracker" )
+declare __init=( ! -e "$_cbfTracker" )
 
 
 declare __base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
