@@ -13,6 +13,9 @@ function cbf.__init()
     # this function is usually called from bin/init.libraries
     local -r lib_base=${1:?'Input parameter "lib_base" must be defined'}
 
+    local SAVED_OPTIONS=$(set +o)
+    set +o nounset
+
     if [ "${#CBF[@]}" -eq 0 ]; then
         CBF=()
         local cbf_base="$( cd "$( dirname "$lib_base" )" && pwd )"
@@ -39,6 +42,7 @@ function cbf.__init()
        #ENTRYPOINT cmd is used
        #Both VOLUME and USER are used
     fi
+    eval "$SAVED_OPTIONS"
 }
 export -f cbf.__init
 

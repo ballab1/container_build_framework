@@ -26,11 +26,11 @@ if [ "${#_files[@]}" -gt 0 ]; then
         [ -z "${BASHLIBS[$_hash_lookup]}" ] || continue
         BASHLIBS[$_hash_lookup]="$src"
         [ -e "$_tracker" ] || touch "$_tracker"
-        if grep -sq "$_hash_lookup" "$_tracker"; then
+        if ! grep -sq "$_hash_lookup" "$_tracker"; then
             echo "$_hash_lookup" >> "$_tracker"
             echo "..loading library: ${src}"
+            source "$src"
         fi
-        source "$src"
     done
 fi
 
@@ -45,11 +45,11 @@ if [ "${#_files[@]}" -gt 0 ]; then
         [ -z "${ENVIRON[$_hash_lookup]}" ] || continue
         ENVIRON[$_hash_lookup]="$src"
         [ -e "$_tracker" ] || touch "$_tracker"
-        if grep -sq "$_hash_lookup" "$_tracker"; then
+        if ! grep -sq "$_hash_lookup" "$_tracker"; then
             echo "$_hash_lookup" >> "$_tracker"
             echo "..loading environment: ${src}"
+            source "$src"
         fi
-        source "$src"
     done
 fi
 
