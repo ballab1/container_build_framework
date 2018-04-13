@@ -1,5 +1,5 @@
 #!/bin/bash
-[ $DEBUG_TRACE = 0 ] || echo 'Loading rt.environment ==================================================='
+[ "$DEBUG_TRACE" = 0 ] || echo 'Loading rt.environment ==================================================='
 #
 # This script should contain all appropriate environment variables for the runtime environment
 #
