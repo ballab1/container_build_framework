@@ -19,6 +19,7 @@ function package.checkIfInstalled()
         eval $checker "${pkg%%=*}" &>/dev/null || trap.die "Package $pkg not found"
     done 
 }
+export -f package.checkIfInstalled
 
 #############################################################################
 function package.checkPackage()
@@ -30,6 +31,7 @@ function package.checkPackage()
         ubuntu)        echo 'apt-get info';;
     esac
 }
+export -f package.checkPackage
 
 #############################################################################
 function package.install()
@@ -50,6 +52,7 @@ function package.install()
         ubuntu)        apt-get install -y $OPTS $PKGS;;
     esac
 }
+export -f package.install
 
 #############################################################################
 function package.installTimezone()
@@ -61,6 +64,7 @@ function package.installTimezone()
     cp "/usr/share/zoneinfo/$tz" /etc/timezone
     cp "/usr/share/zoneinfo/$tz" /etc/localtime
 }
+export -f package.installTimezone
 
 #############################################################################
 function package.packageList()
@@ -72,6 +76,7 @@ function package.packageList()
         ubuntu)        apt-get --help;;
     esac
 }
+export -f package.packageList
 
 #############################################################################
 function package.runScripts()
@@ -83,6 +88,7 @@ function package.runScripts()
         [ "$_extension" != "${CBF['os_id']}" ] || ( package.install "$file" )
     done
 }
+export -f package.runScripts
 
 #############################################################################
 function package.updateIndexes()
@@ -94,3 +100,4 @@ function package.updateIndexes()
         ubuntu)        apt-get update -y;;
     esac
 }
+export -f package.updateIndexes

@@ -40,6 +40,7 @@ function cbf.__init()
        #Both VOLUME and USER are used
     fi
 }
+export -f cbf.__init
 
 #############################################################################
 function cbf.buildContainer()
@@ -100,6 +101,7 @@ function cbf.buildContainer()
         "$action" "${files[*]}"
     done
 }
+export -f cbf.buildContainer
 
 #############################################################################
 function cbf.makeScript()
@@ -109,19 +111,22 @@ function cbf.makeScript()
 
 cat << EOF > "$tmpScript"
 #!/bin/bash
-[ ! -e "${CBF['bin']}/init.libraries" ] || source "${CBF['bin']}/init.libraries"
+[ ! -e "${CBF['bin']}/init.libraries" ] || source "${CBF['bin']}/init.libraries" 
 [ "$DEBUG_TRACE" = "0" ] || set -o verbose  
 set -o errexit
 set -o nounset
 cd /tmp
 source "$file"
 EOF
+    chmod 755 "$file"
     chmod 755 "$tmpScript"
-    if ! eval "$tmpScript" ; then
+    if ( ! eval "$tmpScript" ) ; then
         $LOG ">>>>> issue while executing $( basename "$file" ) <<<<<${LF}" 'warn'
         trap.die "unable to execute $file"
     fi
+    set +o xtrace
 }
+export -f cbf.makeScript
 
 #############################################################################
 function cbf.runScripts()
@@ -155,5 +160,6 @@ function cbf.runScripts()
         trap.die "failed to execute all scripts"
     fi
 }
+export -f cbf.runScripts
 
 #############################################################################

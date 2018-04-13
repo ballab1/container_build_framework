@@ -19,6 +19,7 @@ function lib.copyFileToRuntimeEnvironment()
     # copy file
     [ ! -e "$file" ] || cp "$file" "$envFile"
 }
+export -f lib.copyFileToRuntimeEnvironment
 
 #############################################################################
 function lib.copyFileToRuntimeStartup()
@@ -35,6 +36,7 @@ function lib.copyFileToRuntimeStartup()
     # copy file
     [ ! -e "$file" ] || cp "$file" "$startFile"
 }
+export -f lib.copyFileToRuntimeStartup
 
 #############################################################################
 #
@@ -62,6 +64,7 @@ function lib.file_env()
     export "$var"="$val"
     unset "$fileVar"
 }
+export -f lib.file_env
 
 #############################################################################
 function lib.getFiles()
@@ -73,6 +76,7 @@ function lib.getFiles()
     [ ! -d "$dir" ] || find "$dir"  -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort
     IFS=$OIFS
 }
+export -f lib.getFiles
 
 #############################################################################
 function lib.indirectReference()
@@ -88,6 +92,7 @@ function lib.indirectReference()
     echo "$val"
     eval "$SAVED_OPTIONS"
 }
+export -f lib.indirectReference
 
 #############################################################################
 function lib.intersect()
@@ -107,6 +112,7 @@ function lib.intersect()
     done
     [ ${#common[*]} -eq 0 ] || echo "${common[*]}"
 }
+export -f lib.intersect
 
 #############################################################################
 function lib.primaryPid
@@ -118,6 +124,7 @@ function lib.primaryPid
     grep -v 'grep' | \
     awk '{ pids[$1]=$2 } END { for (pid in pids) { id = pids[pid]; if (! pids[id]) { print pid } } }'
 }
+export -f lib.primaryPid
 
 #############################################################################
 function lib.readFile()
@@ -130,6 +137,7 @@ function lib.readFile()
         echo "File: '$file' does not exist"
     fi
 }
+export -f lib.readFile
 
 ######################################################################
 function lib.relativize()
@@ -159,6 +167,7 @@ function lib.relativize()
     IFS=$OIFS
     echo -n "$ancestor${to#$commonPrefix}"
 }
+export -f lib.relativize
 
 #############################################################################
 function lib.updateConfigFile()
@@ -175,6 +184,7 @@ function lib.updateConfigFile()
         fi
     fi
 }
+export -f lib.updateConfigFile
 
 #############################################################################
 function lib.updateRuntimeEnvironment()
@@ -191,5 +201,4 @@ function lib.updateRuntimeEnvironment()
         fi
     done
 }
-
-#############################################################################
+export -f lib.updateRuntimeEnvironment

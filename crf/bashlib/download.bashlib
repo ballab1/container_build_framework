@@ -49,7 +49,7 @@ function download.getFile()
     done
     exit 1
 }
-
+export -f download.getFile
 
 #############################################################################
 function download.getPackages()
@@ -62,3 +62,4 @@ function download.getPackages()
         eval download.getFile "$file" || $LOG ">>>>> issue while downloading $( basename "$file" ) <<<<<${LF}" 'warn'
     done
 }
+export -f download.getPackages

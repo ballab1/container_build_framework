@@ -31,6 +31,7 @@ function term.codes()
 
     printf "\e[%dm" $code
 }
+export -f term.codes
 
 ############################################################################# 
 function term.decode()
@@ -51,6 +52,7 @@ function term.decode()
         printf "\e[%d;%dm" ${FOREGROUND[$fg]} ${BACKGROUND[$bg]}
     fi
 }
+export -f term.decode
 
 #############################################################################
 function term.header()
@@ -62,6 +64,7 @@ function term.header()
     $LOG "Building container: $( term.decode 'white' )${name}${LF}" 'lt_blue'
     $LOG "${bars}${LF}" 'blue'
 }
+export -f term.header
 
 #############################################################################
 function term.log()
@@ -71,3 +74,4 @@ function term.log()
 
     printf "%s%s%s" $( term.decode $msg_type ) "$msg" $( term.decode 'reset' )
 }
+export -f term.log

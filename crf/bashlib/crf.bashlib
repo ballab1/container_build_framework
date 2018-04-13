@@ -29,7 +29,7 @@ function crf.__init()
     fi
     eval "$SAVED_OPTIONS"
 }
-
+export -f crf.__init
 
 #############################################################################
 function crf.makeScript()
@@ -48,13 +48,15 @@ cd /tmp
 [ "$DEBUG_TRACE" = "0" ] || set -o verbose  
 source "$file"
 EOF
+    chmod 755 "$file"
     chmod 755 "$tmpScript"
-    if ! eval "$tmpScript" ; then
+    if ( ! eval "$tmpScript" ) ; then
         $LOG ">>>>> issue while executing $( basename "$file" ) <<<<<${LF}" 'warn'
         exit 1
     fi
     rm "$tmpScript"
 }
+export -f crf.makeScript
 
 #############################################################################
 function crf.prepareEnvironment()
@@ -80,5 +82,4 @@ function crf.prepareEnvironment()
         fi 
     fi
 }
-
-#############################################################################
+export -f crf.prepareEnvironment

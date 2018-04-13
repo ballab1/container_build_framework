@@ -16,6 +16,7 @@ function uidgid.check()
         eval uidgid.createUserAndGroup "$file" || $LOG "..*** issue while executing $( basename "$file" ) ***${LF}" 'warn'
     done
 }
+export -f uidgid.check
 
 #############################################################################
 function uidgid.createUserAndGroup()
@@ -87,4 +88,5 @@ function uidgid.createUserAndGroup()
             fi
         fi
     fi
-} 
+}
+export -f -f uidgid.createUserAndGroup

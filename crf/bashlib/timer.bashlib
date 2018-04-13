@@ -15,6 +15,7 @@ function timer.fmt_elapsed()
 
     printf '%02d:%02d:%02d' $((elapsed / 3600)) $((elapsed % 3600 / 60)) $((elapsed % 60))
 } 
+export -f timer.fmt_elapsed
 
 #----------------------------------------------------------------------------
 # log elapse time result 
@@ -25,6 +26,7 @@ function timer.log_elapsed()
     
     printf "Time elapsed (%s): %s" "$name" "$(timer.fmt_elapsed $elapsed)"
 }
+export -f timer.log_elapsed
 
 #----------------------------------------------------------------------------
 # get the timestamp of a file in seconds
@@ -34,6 +36,7 @@ function timer.getTimestamp()
     stat -c %Y "$tfile"
     rm "$tfile"
 } 
+export -f timer.getTimestamp
 
 #----------------------------------------------------------------------------
 function timer.measureCmd()
@@ -50,6 +53,7 @@ function timer.measureCmd()
 
     printf "Time elapsed (%s): %s" "$name" "$fmt_tm"
 }
+export -f timer.measureCmd
 
 #----------------------------------------------------------------------------
 # Path to the build status file
@@ -62,4 +66,4 @@ function timer.tracking_file()
     mkdir -p "$output_base/tracking"
     printf '%s/tracking/.%s.%s' "$output_base" "$org" "$repo"
 } 
-#----------------------------------------------------------------------------
+export -f timer.tracking_file

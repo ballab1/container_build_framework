@@ -11,7 +11,7 @@
 mkdir -p "${CBF['crt_base']}"
 cd "${CBF['crf_base']}"
 
-#ensure crf directories exist
+# ensure crf directories exist
 while read -r dir; do
     mkdir -p "${CBF['crt_base']}/$dir"
 done < <(find . -maxdepth 1 -mindepth 1 -type d ! -name '.*')
@@ -29,6 +29,8 @@ while read -r file ; do
     mkdir -p "$( dirname "${CBF['crt_base']}/$file" )"
     cp "$file" "${CBF['crt_base']}/$file"
 done< <(find . -type f ! -name '.*')
+
+# update container name in runtime environment
 lib.updateRuntimeEnvironment  "CONTAINER_NAME=\"\${CONTAINER_NAME:-$CONTAINER_NAME}\""
 
 
