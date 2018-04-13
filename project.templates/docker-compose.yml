@@ -6,7 +6,6 @@ services:
             args:
                 CONTAINER_NAME: newContainer
                 CONTAINER_VERSION: 1.0.0
-                DEBUG_TRACE: 0
                 FROM_BASE: alpine:3.6
             cache_from:
                 - alpine:3.6
@@ -14,8 +13,8 @@ services:
             context: .
             dockerfile: Dockerfile
         container_name: newContainer
-#        environment:
-#            WEBDAV_USER: ${CFG_MYSQL_USER}
+        environment:
+            DEBUG_TRACE: ${DEBUG_TRACE:-0}
         hostname: newContainer
         image: newContainer:20180311
         logging:

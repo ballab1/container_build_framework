@@ -12,7 +12,6 @@ function crf.__init()
 {
     local SAVED_OPTIONS=$(set +o)
     set +o nounset
-    local -r dbglvl=${1:-0} 
 
     # this function is usually called from bin/init.libraries
     if [ "${#CRF[@]}" -eq 0 ]; then
@@ -22,7 +21,6 @@ function crf.__init()
         CRF['env']="${CRF['base']}/environment" 
         CRF['lib']="${CRF['base']}/bashlib"
         CRF['startup']="${CRF['base']}/startup"
-        CRF['debug']=$dbglvl
         if [ -e /etc/os-release ]; then
             CRF['os_id']=$( cat /etc/os-release | grep -e '^ID=' | awk -F'=' '{ print $2 }' )
         else
@@ -45,9 +43,9 @@ set -o errexit
 set -o nounset
 #set -o xtrace
 #set -o verbose
-[ ! -e "/usr/local/crf/bin/init.runtime" ] || source /usr/local/crf/bin/init.runtime "${CRF['debug']}"
+[ ! -e "/usr/local/crf/bin/init.runtime" ] || source /usr/local/crf/bin/init.runtime
 cd /tmp
-[ "${CRF['debug']}" = "0" ] || set -o verbose  
+[ "$DEBUG_TRACE" = "0" ] || set -o verbose  
 source "$file"
 EOF
     chmod 755 "$tmpScript"

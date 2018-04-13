@@ -12,10 +12,10 @@ Environment Variable | contents
 --- | ---
  CBF['base'] | base folder. In the build container, this is '/tmp'. In the git workspace, this is the 'build' folder.
  CBF['bin'] | cbf bin folder. this contains the _setupContainerFramework_ script and test script.
- CBF['debug'] | when set to 1 (from DEBUG_TRACE build arguement) causes action scripts to be verbose.
  CBF['action'] | project actions folder. This contains the folders over which the framework iterates.
  CBF['lib'] | cbf library folder. This contains the framework bashlib scripts.
  CBF['templates'] | action template folders. This is the framework copy of the `action_folders`
+ CBF['os_id'] | string representing OS. {ex: alpine, centos, windows, ubuntu, fedora }
  
 These environment variables may be used to source any of the scripts in the action folders using "${CBF['action']}" or from the `action_folders` directories using "${CBF['action']}".
 Any script language may be used in the any of the `action_folders', other than *02.users_groups* and *03.downloads*.

@@ -53,7 +53,7 @@ function trap.die()
     dying+=1
 
     ( $LOG "${LF}FATAL ERROR: $*${LF}" 'error' ) >&2
-    [ "${CBF['debug']}" = "2" ] || exit $status
+    [ "$DEBUG_TRACE" = "2" ] || exit $status
 }  
 
 # trap ERR to provide an error handler whenever a command exits nonzero

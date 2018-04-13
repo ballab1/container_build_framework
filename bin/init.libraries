@@ -11,8 +11,9 @@ if [ "${#BASHLIBS[@]}" -eq 0 ]; then
 fi
 
 declare base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
+: ${DEBUG_TRACE:=0}
 
-[ ! -e "$base/crf/bin/init.runtime" ] || source "$base/crf/bin/init.runtime" "$@"
+[ ! -e "$base/crf/bin/init.runtime" ] || source "$base/crf/bin/init.runtime"
 
 for src in $(find "${base}/cbf" -maxdepth 1 -mindepth 1  -name '*.bashlib') ; do
     declare name="$( basename "$src" )"
@@ -22,7 +23,7 @@ for src in $(find "${base}/cbf" -maxdepth 1 -mindepth 1  -name '*.bashlib') ; do
     source "$src"
 done
 
-[ "$__init" = 1 ] && cbf.__init "$base/cbf" "$@"
+[ "$__init" = 1 ] && cbf.__init "$base/cbf"
 
 unset base
 eval "$__CBF_OPTIONS"
