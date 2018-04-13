@@ -29,7 +29,8 @@ while read -r file ; do
     mkdir -p "$( dirname "${CBF['crt_base']}/$file" )"
     cp "$file" "${CBF['crt_base']}/$file"
 done< <(find . -type f ! -name '.*')
-lib.updateRuntimeEnvironment "CONTAINER_NAME"  
+declare -A _V=( [CONTAINER_NAME]="$CONTAINER_NAME" )
+lib.updateRuntimeEnvironment '_V'
 
 
 # create docker-entrypoint.sh from copy default entrypoint script if none exists to invoke the CRF

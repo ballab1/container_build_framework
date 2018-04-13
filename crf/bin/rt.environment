@@ -1,4 +1,6 @@
 #!/bin/bash
+echo '=========================================================================='
+echo 'Loading rt.environment'
 #
 # This script should contain all appropriate environment variables for the runtime environment
 #

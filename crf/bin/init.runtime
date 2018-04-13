@@ -6,7 +6,6 @@ set +o nounset
 declare lib_base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
 declare __init
 
-echo 'Loading rt.environment'
 source "${lib_base}/bin/rt.environment"
 
 if [ "${#BASHLIBS[@]}" -eq 0 ]; then

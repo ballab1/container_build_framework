@@ -177,7 +177,7 @@ function lib.updateConfigFile()
 }
 
 #############################################################################
-function lib.updateRuntimeEnvironment()
+function lib.updateRuntimeEnvironment_X()
 {
     local -a vars="${1:?'Input parameter "vars" must be defined'}"
 
@@ -196,7 +196,26 @@ echo "changing '${vars}'"
         fi
     done
 echo 'rt.environment after changes:'
-cat "$envFile"
+cat "$envFile" 
+}
+
+#############################################################################
+function lib.updateRuntimeEnvironment()
+{
+    local ahash="${1:?'Input parameter "vars" must be defined'}"
+    local -r envFile="${CRF['bin']}/rt.environment"
+    local _vars="$( eval "echo \${!$ahash[@]}" )"
+
+    for var in $_vars; do
+        local val="$( eval "echo \${$ahash[$var]}" )"
+        [ "$val" = "${val%[[:space:]]*}" ] || val="\"$val\""
+        
+        if grep -q "^export ${var}=" "$envFile" ; then
+            sed -i "s|^export ${var}=.*$|export $var=$val|" "$envFile" 
+        else
+            printf "export %s=%s\n" "$var" "$val" >> "$envFile"
+        fi
+    done
 }
 
 #############################################################################
