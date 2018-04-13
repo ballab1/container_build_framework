@@ -228,7 +228,7 @@ function lib.updateRuntimeEnvironment()
     for line in $in_array; do
         local var=${line%%=*}
         if grep -q "^${var}=" "$envFile" ; then
-            sed -i "s|^.*$|$line|" "$envFile" 
+            sed -i "s|^${var}=.*$|$line|" "$envFile" 
         else
             printf "%s\n" "$line" >> "$envFile"
         fi
