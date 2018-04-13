@@ -3,10 +3,10 @@
 declare __CRF_OPTIONS=$(set +o)
 set +o nounset
 
-declare lib_base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
+declare _libbase="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
 declare __init
 
-source "${lib_base}/bin/rt.environment"
+source "${_libbase}/bin/rt.environment"
 
 if [ "${#BASHLIBS[@]}" -eq 0 ]; then
     export -A BASHLIBS=()
@@ -14,17 +14,20 @@ if [ "${#BASHLIBS[@]}" -eq 0 ]; then
     __init=1
 fi
 
-# when nothing exists in 'BASHLIBS' populate it with names of files 'source'd from crf folder
-declare -a files=( $(find "${lib_base}"/bashlib -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
-if [ "${#files[@]}" -gt 0 ]; then
-    for src in ${files[@]} ; do
-        declare name="$( basename "$src" )"
-        declare _name="${name//./_}"
-        [ -z "${BASHLIBS[$_name]}" ] || continue
-        BASHLIBS[$_name]="$src"
-        [ -e /tmp/bashlibs ] || touch /tmp/bashlibs
-        if grep -sq "$_name" /tmp/bashlibs; then
-            echo "$_name" >> /tmp/bashlibs
+# when nothing exists in 'BASHLIBS' populate it with names of _files 'source'd from crf folder
+declare _tracker
+declare -a _files=( $(find "${_libbase}"/bashlib -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
+if [ "${#_files[@]}" -gt 0 ]; then
+    set -o xtrace
+    _tracker=/tmp/bashlibs.loaded
+    for src in ${_files[@]} ; do
+        declare _filename="$( basename "$src" )"
+        declare _hash_lookup="${_filename//./_}"
+        [ -z "${BASHLIBS[$_hash_lookup]}" ] || continue
+        BASHLIBS[$_hash_lookup]="$src"
+        [ -e "$_tracker" ] || touch "$_tracker"
+        if grep -sq "$_hash_lookup" "$_tracker"; then
+            echo "$_hash_lookup" >> "$_tracker"
             echo "..loading library: ${src}"
         fi
         source "$src"
@@ -32,23 +35,31 @@ if [ "${#files[@]}" -gt 0 ]; then
 fi
 
 
-files=( $(find "${lib_base}"/environment -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
-if [ "${#files[@]}" -gt 0 ]; then
-    for src in ${files[@]} ; do
-        declare name="$( basename "$src" )"
-        declare _name="${name//./_}"
-        [ -z "${ENVIRON[$_name]}" ] || continue
-        ENVIRON[$_name]="$src"
-        [ -e /tmp/environ ] || touch /tmp/environ
-        if grep -sq "$_name" /tmp/environ; then
-            echo "$_name" >> /tmp/environ
+_files=( $(find "${_libbase}"/environment -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
+if [ "${#_files[@]}" -gt 0 ]; then
+    set -o xtrace
+    _tracker=/tmp/environ.loaded
+    for src in ${_files[@]} ; do
+        declare _filename="$( basename "$src" )"
+        declare _hash_lookup="${_filename//./_}"
+        [ -z "${ENVIRON[$_hash_lookup]}" ] || continue
+        ENVIRON[$_hash_lookup]="$src"
+        [ -e "$_tracker" ] || touch "$_tracker"
+        if grep -sq "$_hash_lookup" "$_tracker"; then
+            echo "$_hash_lookup" >> "$_tracker"
             echo "..loading environment: ${src}"
         fi
         source "$src"
     done
 fi
 
-[ "$__init" = 1 ] && crf.__init
 eval "$__CRF_OPTIONS"
-unset lib_base
+
 unset __CRF_OPTIONS
+unset _filename
+unset _files
+unset _hash_lookup
+unset _libbase
+unset _tracker
+
+[ "$__init" = 1 ] && crf.__init

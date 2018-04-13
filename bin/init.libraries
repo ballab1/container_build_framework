@@ -10,21 +10,33 @@ if [ "${#BASHLIBS[@]}" -eq 0 ]; then
     __init=1
 fi
 
-declare base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
+declare __base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
 : ${DEBUG_TRACE:=0}
 
-[ ! -e "$base/crf/bin/init.runtime" ] || source "$base/crf/bin/init.runtime"
+[ ! -e "$__base/crf/bin/init.runtime" ] || source "$__base/crf/bin/init.runtime"
 
-for src in $(find "${base}/cbf" -maxdepth 1 -mindepth 1  -name '*.bashlib') ; do
-    declare name="$( basename "$src" )"
-    declare _name="${name//./_}"
-    [ -z "${BASHLIBS[$_name]}" ] || continue
-    BASHLIBS[$_name]="$src"
+set -o xtrace
+declare _tracker=/tmp/bashlibs.loaded
+for src in $(find "${__base}/cbf" -maxdepth 1 -mindepth 1  -name '*.bashlib') ; do
+    declare _filename="$( basename "$src" )"
+    declare _hashlookup="${_filename//./_}"
+    [ -z "${BASHLIBS[$_hashlookup]}" ] || continue
+    BASHLIBS[$_hashlookup]="$src"
+    [ -e "$_tracker" ] || touch "$_tracker"
+    if grep -sq "$_hash_lookup" "$_tracker"; then
+        echo "$_hash_lookup" >> "$_tracker"
+        echo "..loading library: ${src}"
+    fi
     source "$src"
 done
 
-[ "$__init" = 1 ] && cbf.__init "$base/cbf"
-
 eval "$__CBF_OPTIONS"
-unset base
+
 unset __CBF_OPTIONS
+unset _filename
+unset _hashlookup
+unset _tracker
+
+[ "$__init" = 1 ] && cbf.__init "$__base/cbf"
+
+unset __base
