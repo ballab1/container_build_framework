@@ -4,15 +4,9 @@ declare __CRF_OPTIONS=$(set +o)
 set +o nounset
 
 declare _libbase="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
-declare __init
 
 source "${_libbase}/bin/rt.environment"
 
-if [ "${#BASHLIBS[@]}" -eq 0 ]; then
-    export -A BASHLIBS=()
-    export -A ENVIRON=()
-    __init=1
-fi
 
 # when nothing exists in 'BASHLIBS' populate it with names of _files 'source'd from crf folder
 declare _tracker
@@ -22,12 +16,9 @@ if [ "${#_files[@]}" -gt 0 ]; then
     _tracker=/tmp/bashlibs.loaded
     for src in ${_files[@]} ; do
         declare _filename="$( basename "$src" )"
-        declare _hash_lookup="${_filename//./_}"
-        [ -z "${BASHLIBS[$_hash_lookup]}" ] || continue
-        BASHLIBS[$_hash_lookup]="$src"
         [ -e "$_tracker" ] || touch "$_tracker"
-        if ! grep -sq "$_hash_lookup" "$_tracker"; then
-            echo "$_hash_lookup" >> "$_tracker"
+        if ! grep -sq "$_filename" "$_tracker"; then
+            echo "$_filename" >> "$_tracker"
             echo "..loading library: ${src}"
             source "$src"
         fi
@@ -35,18 +26,18 @@ if [ "${#_files[@]}" -gt 0 ]; then
 fi
 
 
+declare __init=0
+_tracker=/tmp/environ.loaded
+[ -e "$_tracker" ] || __init=1
+
 _files=( $(find "${_libbase}"/environment -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
 if [ "${#_files[@]}" -gt 0 ]; then
     set -o xtrace
-    _tracker=/tmp/environ.loaded
     for src in ${_files[@]} ; do
         declare _filename="$( basename "$src" )"
-        declare _hash_lookup="${_filename//./_}"
-        [ -z "${ENVIRON[$_hash_lookup]}" ] || continue
-        ENVIRON[$_hash_lookup]="$src"
         [ -e "$_tracker" ] || touch "$_tracker"
-        if ! grep -sq "$_hash_lookup" "$_tracker"; then
-            echo "$_hash_lookup" >> "$_tracker"
+        if ! grep -sq "$_filename" "$_tracker"; then
+            echo "$_filename" >> "$_tracker"
             echo "..loading environment: ${src}"
             source "$src"
         fi
@@ -58,7 +49,6 @@ eval "$__CRF_OPTIONS"
 unset __CRF_OPTIONS
 unset _filename
 unset _files
-unset _hash_lookup
 unset _libbase
 unset _tracker
 
