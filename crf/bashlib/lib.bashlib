@@ -191,7 +191,7 @@ set -o xtrace
         if grep -q "^${var}=" "$envFile" ; then
             sed -i "s|^${var}=.*$|$line|" "$envFile" 
         else
-            printf "%s\n" "$line" >> "$envFile"
+            echo "$line" >> "$envFile"
         fi
     done
 set +o xtrace
