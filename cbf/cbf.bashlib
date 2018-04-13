@@ -12,7 +12,6 @@ function cbf.__init()
 {
     # this function is usually called from bin/init.libraries
     local -r lib_base=${1:?'Input parameter "lib_base" must be defined'}
-    local -r dbglvl=${2:?'Input parameter "dbglvl" must be defined'}
 
     if [ "${#CBF[@]}" -eq 0 ]; then
         CBF=()
@@ -21,7 +20,7 @@ function cbf.__init()
         CBF['bin']="${cbf_base}/bin"
         CBF['lib']="$lib_base"
         CBF['templates']="${cbf_base}/action.templates"
-
+        
         CBF['base']="$( cd "$( dirname "$cbf_base" )" && pwd )"
         CBF['action']="${CBF['base']}/action_folders"
 
