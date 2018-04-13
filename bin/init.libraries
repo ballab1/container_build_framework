@@ -3,7 +3,7 @@
 declare __CBF_OPTIONS=$(set +o)
 set +o nounset
 
-declare -r _cbfTracker=/tmp/bashlibs.loaded
+declare _cbfTracker=/tmp/bashlibs.loaded
 declare __init=( ! -e "$_cbfTracker" )
 
 
