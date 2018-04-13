@@ -9,16 +9,16 @@ source "${_libbase}/bin/rt.environment"
 
 
 # when nothing exists in 'BASHLIBS' populate it with names of _files 'source'd from crf folder
-declare _tracker
+declare _crfTracker
 declare -a _files=( $(find "${_libbase}"/bashlib -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
 if [ "${#_files[@]}" -gt 0 ]; then
     set -o xtrace
-    _tracker=/tmp/bashlibs.loaded
+    _crfTracker=/tmp/bashlibs.loaded
     for src in ${_files[@]} ; do
         declare _filename="$( basename "$src" )"
-        [ -e "$_tracker" ] || touch "$_tracker"
-        if ! grep -sq "$_filename" "$_tracker"; then
-            echo "$_filename" >> "$_tracker"
+        [ -e "$_crfTracker" ] || touch "$_crfTracker"
+        if ! grep -sq "$_filename" "$_crfTracker"; then
+            echo "$_filename" >> "$_crfTracker"
             echo "..loading library: ${src}"
             source "$src"
         fi
@@ -27,17 +27,17 @@ fi
 
 
 declare __init=0
-_tracker=/tmp/environ.loaded
-[ -e "$_tracker" ] || __init=1
+_crfTracker=/tmp/environ.loaded
+[ -e "$_crfTracker" ] || __init=1
 
 _files=( $(find "${_libbase}"/environment -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
 if [ "${#_files[@]}" -gt 0 ]; then
     set -o xtrace
     for src in ${_files[@]} ; do
         declare _filename="$( basename "$src" )"
-        [ -e "$_tracker" ] || touch "$_tracker"
-        if ! grep -sq "$_filename" "$_tracker"; then
-            echo "$_filename" >> "$_tracker"
+        [ -e "$_crfTracker" ] || touch "$_crfTracker"
+        if ! grep -sq "$_filename" "$_crfTracker"; then
+            echo "$_filename" >> "$_crfTracker"
             echo "..loading environment: ${src}"
             source "$src"
         fi
@@ -47,9 +47,9 @@ fi
 eval "$__CRF_OPTIONS"
 
 unset __CRF_OPTIONS
+unset _crfTracker
 unset _filename
 unset _files
 unset _libbase
-unset _tracker
 
 [ "$__init" = 1 ] && crf.__init

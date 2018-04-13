@@ -3,9 +3,8 @@
 declare __CBF_OPTIONS=$(set +o)
 set +o nounset
 
-declare _tracker=/tmp/bashlibs.loaded
-declare __init=0
-[ -e "$_tracker" ] || __init=1
+declare -r _cbfTracker=/tmp/bashlibs.loaded
+declare __init=[ ! -e "$_cbfTracker" ]
 
 
 declare __base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
@@ -16,9 +15,9 @@ declare __base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 set -o xtrace
 for src in $(find "${__base}/cbf" -maxdepth 1 -mindepth 1  -name '*.bashlib') ; do
     declare _filename="$( basename "$src" )"
-    [ -e "$_tracker" ] || touch "$_tracker"
-    if grep -sq "$_filename" "$_tracker"; then
-        echo "$_filename" >> "$_tracker"
+    [ -e "$_cbfTracker" ] || touch "$_cbfTracker"
+    if grep -sq "$_filename" "$_cbfTracker"; then
+        echo "$_filename" >> "$_cbfTracker"
         echo "..loading library: ${src}"
         source "$src"
     fi
@@ -27,8 +26,8 @@ done
 eval "$__CBF_OPTIONS"
 
 unset __CBF_OPTIONS
+unset _cbfTracker
 unset _filename
-unset _tracker
 
 [ "$__init" = 1 ] && cbf.__init "$__base/cbf"
 
