@@ -3,7 +3,7 @@
 declare __CBF_OPTIONS=$(set +o)
 set +o nounset
 
-declare -r _tracker=/tmp/bashlibs.loaded
+declare _tracker=/tmp/bashlibs.loaded
 declare __init=0
 [ -e "$_tracker" ] || __init=1
 
