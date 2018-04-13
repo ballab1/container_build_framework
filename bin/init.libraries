@@ -12,7 +12,7 @@ fi
 
 declare base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
 
-[ ! -e "$base/crf/bin/init.runtime" ] || source "$base/crf/bin/init.runtime" 
+[ ! -e "$base/crf/bin/init.runtime" ] || source "$base/crf/bin/init.runtime" "$@"
 
 for src in $(find "${base}/cbf" -maxdepth 1 -mindepth 1  -name '*.bashlib') ; do
     declare name="$( basename "$src" )"

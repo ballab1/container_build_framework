@@ -48,6 +48,6 @@ if [ "${#files[@]}" -gt 0 ]; then
     done
 fi
 
-[ "$__init" = 1 ] && crf.__init "$lib_base"
+[ "$__init" = 1 ] && crf.__init "$@"
 unset lib_base
 eval "$__CRF_OPTIONS"
