@@ -188,10 +188,10 @@ echo 'before-----------------------------------------------------'
 set -o xtrace
     for line in $in_array; do
         local var=${line%%=*}
-        if grep -q "^${var}=" "$envFile" ; then
-            sed -i "s|^${var}=.*$|$line|" "$envFile" 
+        if grep -q "^export ${var}=" "$envFile" ; then
+            sed -i "s|^export ${var}=.*$|$line|" "$envFile" 
         else
-            echo "$line" >> "$envFile"
+            echo "export $line" >> "$envFile"
         fi
     done
 set +o xtrace
