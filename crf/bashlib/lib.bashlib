@@ -189,7 +189,7 @@ set -o xtrace
     for line in $in_array; do
         local var=${line%%=*}
         if grep -q "^export ${var}=" "$envFile" ; then
-            sed -i "s|^export ${var}=.*$|$line|" "$envFile" 
+            sed -i "s|^export ${var}=.*$|export $line|" "$envFile" 
         else
             echo "export $line" >> "$envFile"
         fi
