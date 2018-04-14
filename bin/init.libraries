@@ -29,6 +29,8 @@ unset _cbfTracker
 unset _filename
 
 cbf.__init "$__base/cbf"
+[ "$( cbf.CBFBASE )" ] || trap.die 'error when setting up container build framework'
+[ "$( cbf.CRT_BASE )" ] || trap.die 'error when setting up container build framework'
 
 unset __base
 unset __init

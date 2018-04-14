@@ -6,7 +6,6 @@
 #
 ##########################################################
 
-set -x
 # copy runtime framework (only copy updates)
 mkdir -p "$( cbf.CRT_BASE )"
 cd "$( cbf.CRF_BASE )"

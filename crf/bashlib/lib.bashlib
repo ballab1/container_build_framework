@@ -79,6 +79,16 @@ function lib.getFiles()
 export -f lib.getFiles
 
 #############################################################################
+function lib.getProperty()
+{
+    local -r prop=${1:?'Input parameter "prop" must be defined'}
+    local -r file=${2:?'Input parameter "file" must be defined'}
+    
+    grep -e "$prop" "$file" | sed -e "s/${prop}//"
+}
+export -f lib.getProperty
+
+#############################################################################
 function lib.indirectReference()
 {
     local -r ahash=${1:?'Input parameter "ahash" must be defined'}
@@ -123,6 +133,7 @@ function lib.OSid()
         echo 'windows'
     fi
 }
+export -f lib.OSid
 
 #############################################################################
 function lib.primaryPid
