@@ -11,7 +11,7 @@ declare -xr CRF=/usr/local/crf/CRF.properties
 function crf.__init()
 {
     # this function is usually called from bin/init.libraries
-    if [ ! -e "CRF" ]; then
+    if [ ! -e "$CRF" ]; then
         local -r crf_base="$( dirname "$CRF" )" 
         mkdir -p "$crf_base"
         touch "$CRF"
