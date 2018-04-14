@@ -13,6 +13,7 @@ if [ "$(pwd)" != '/tmp' ]; then
 fi
 
 # load our libraries
+[ ! -e /tmp/bashlibs.loaded ] || rm /tmp/bashlibs.loaded
 source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/init.libraries"
 
 # build our container

@@ -59,8 +59,8 @@ function setupCBF.migrateOldFx()
     local actionFolders=${1:?"must pass parameter 'actionFolders' to 'function ${FUNCNAME[0]}()'"}
 
     # migrate old framework
-    [ ! -d "${CBF['base']}/container_lib" ] || rm -rf "${CBF['base']}/container_lib"
-    mv "${CBF['base']}/container" "$actionFolders"
+    [ ! -d "$( cbf.BASE']}/container_lib" ] || rm -rf "${CBF['base )/container_lib"
+    mv "$( cbf.BASE )/container" "$actionFolders"
 
     cd "$actionFolders"
     
@@ -89,16 +89,16 @@ function setupCBF.main()
 {
     # load our libraries
     source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/init.libraries"
-    source "${CBF['crf_bin']}/init.runtime"
+    source "$( cbf.CRF_BIN )/init.runtime"
 
     # scan lib folders and create links for any files found
-    setupCBF.createStructure "${CBF['action']}" "${CBF['templates']}"
+    setupCBF.createStructure "$( cbf.ACTION']}" "${CBF['templates )"
 
     # create link for build script
-    cd "${CBF['base']}"
+    cd "$( cbf.BASE )"
     [ ! -e build.sh ] || rm build.sh
     [ ! -h build.sh ] || rm build.sh
-    local relativePath="$( lib.relativize "${CBF['base']}" "${CBF['bin']}" )"
+    local relativePath="$( lib.relativize "$( cbf.BASE']}" "$( cbf.BIN )" )"
     echo "Creating link to ${relativePath}/build.sh"
     cat << "EOF" > build.sh
 #!/bin/bash
@@ -111,9 +111,9 @@ EOF
 ######################################################################
 function setupCBF.getSuperProjectDir()
 {   
-    cd "${CBF['base']}/.."
+    cd "$( cbf.BASE )/.."
     pwd
-#    cd "${CBF['bin']}"
+#    cd "$( cbf.BIN )"
 #    local top="$(git rev-parse --show-superproject-working-tree)"
 #    if [ "$top" ]; then
 #    
@@ -134,18 +134,18 @@ function setupCBF.setupProjectFiles()
 
     # ensure our folder structure exists
     while read -r abs_dir; do
-        local dir="$( lib.relativize "${CBF['cbfbase']}/project.templates" "$abs_dir" )"
+        local dir="$( lib.relativize "$( cbf.CBFBASE )/project.templates" "$abs_dir" )"
         mkdir -p "${top}/$dir"  
-    done< <(find "${CBF['cbfbase']}/project.templates" -mindepth 1 -type d)
+    done< <(find "$( cbf.CBFBASE )/project.templates" -mindepth 1 -type d)
 
     # copy any missing files from project templates
     while read -r abs_file; do
-        local file="$( lib.relativize "${CBF['cbfbase']}/project.templates" "$abs_file" )"
+        local file="$( lib.relativize "$( cbf.CBFBASE )/project.templates" "$abs_file" )"
         if [ ! -e "$file" ]; then
             sed "s|newcontainer|${projectName}|gi" "$abs_file" > "$file"
             echo "  created: ${file}"
         fi
-    done< <(find "${CBF['cbfbase']}/project.templates" -type f)
+    done< <(find "$( cbf.CBFBASE )/project.templates" -type f)
 }
 
 ######################################################################

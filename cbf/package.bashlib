@@ -24,7 +24,7 @@ export -f package.checkIfInstalled
 #############################################################################
 function package.checkPackage()
 {
-    case "${CBF['os_id']}" in
+    case "$( lib.OSid )" in
         alpine)        echo 'apk info';;
         centos)        echo 'yum info';;
         fedora)        echo 'dnf info';;
@@ -40,12 +40,12 @@ function package.install()
     
     $LOG "Installing ${defnFile}${LF}" 'task'
 
-    source "${CRF['bin']}/init.runtime"
+    source "$( crf.BIN )/init.runtime"
     source "$defnFile"
     : ${OPTS:=''}
     package.checkIfInstalled "$PKGS"
 
-    case "${CBF['os_id']}" in
+    case "$( lib.OSid )" in
         alpine)        apk add --no-cache $OPTS $PKGS;;
         centos)        yum install -y $OPTS $PKGS; yum clean all;;
         fedora)        dnf install -y $OPTS $PKGS && dnf clean all;;
@@ -69,7 +69,7 @@ export -f package.installTimezone
 #############################################################################
 function package.packageList()
 {
-    case "${CBF['os_id']}" in
+    case "$( lib.OSid )" in
         alpine)        apk info;;
         centos)        yum list | awk '{print $1 }';;
         fedora)        dnf --help;;
@@ -85,7 +85,7 @@ function package.runScripts()
 
     for file in ${files[@]}; do
         local _extension="${file##*.}"
-        [ "$_extension" != "${CBF['os_id']}" ] || ( package.install "$file" )
+        [ "$_extension" != "$( lib.OSid )" ] || ( package.install "$file" )
     done
 }
 export -f package.runScripts
@@ -93,7 +93,7 @@ export -f package.runScripts
 #############################################################################
 function package.updateIndexes()
 {
-    case "${CBF['os_id']}" in
+    case "$( lib.OSid )" in
         alpine)        apk update;;
         centos)        yum update -y;;
         fedora)        dnf -y update && dnf clean all;;

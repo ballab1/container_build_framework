@@ -8,7 +8,7 @@
 function lib.copyFileToRuntimeEnvironment()
 {
     local -r file="${1:?'Input parameter "file" must be defined'}"
-    local -r envFile="${CRF['env']}/$( basename "$file")"
+    local -r envFile="$( crf.ENV )/$( basename "$file")"
     
     if [ -e "$envFile" ]; then
         $LOG "Attempt to overwrite file '$envFile' will likely result in unintentend consequences${LF}" 'error'
@@ -25,7 +25,7 @@ export -f lib.copyFileToRuntimeEnvironment
 function lib.copyFileToRuntimeStartup()
 {
     local -r file="${1:?'Input parameter "file" must be defined'}"
-    local -r startFile="${CRF['startup']}/$( basename "$file")"
+    local -r startFile="$( crf.STARTUP )/$( basename "$file")"
     
     if [ -e "$startFile" ]; then
         $LOG "Attempt to overwrite file '$startFile' will likely result in unintentend consequences${LF}" 'error'
@@ -115,6 +115,16 @@ function lib.intersect()
 export -f lib.intersect
 
 #############################################################################
+function lib.OSid()
+{
+    if [ -e /etc/os-release ]; then
+        echo "$( cat /etc/os-release | grep -e '^ID=' | awk -F'=' '{ print $2 }' )"
+    else
+        echo 'windows'
+    fi
+}
+
+#############################################################################
 function lib.primaryPid
 {
     local -r cmdName=${1:?'Input parameter "cmdName" must be defined'}
@@ -190,7 +200,7 @@ export -f lib.updateConfigFile
 function lib.updateRuntimeEnvironment()
 {
     local -a in_array="${1:?'Input parameter "in_array" must be defined'}"
-    local -r envFile="${CRF['bin']}/rt.environment"
+    local -r envFile="$( crf.BIN )/rt.environment"
     local -r prefix='declare -x'
 
     for line in $in_array; do

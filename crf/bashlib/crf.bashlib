@@ -6,31 +6,65 @@
 #############################################################################
 
 
-declare -Ax CRF
+declare -xr CRF=/usr/local/crf/CRF.properties
 
 function crf.__init()
 {
-    local SAVED_OPTIONS=$(set +o)
-    set +o nounset
-
     # this function is usually called from bin/init.libraries
-    if [ "${#CRF[@]}" -eq 0 ]; then
-        CRF=()
-        CRF['base']="/usr/local/crf"
-        CRF['bin']="${CRF['base']}/bin"
-        CRF['env']="${CRF['base']}/environment" 
-        CRF['lib']="${CRF['base']}/bashlib"
-        CRF['startup']="${CRF['base']}/startup"
-        if [ -e /etc/os-release ]; then
-            CRF['os_id']=$( cat /etc/os-release | grep -e '^ID=' | awk -F'=' '{ print $2 }' )
-        else
-            CRF['os_id']='windows'
-        fi
+    if [ ! -e "CRF" ]; then
+        local -r crf_base="$( dirname "$CRF" )" 
+        mkdir -p "$crf_base"
+        touch "$CRF"
+        printf 'BASE=%s\n' "$crf_base" >> "$CRF"
+        printf 'BIN=%s\n' "${crf_base}/bin" >> "$CRF"
+        printf 'ENV=%s\n' "${crf_base}/environment" >> "$CRF"
+        printf 'LIB=%s\n' "${crf_base}/bashlib" >> "$CRF"
+        printf 'STARTUP=%s\n' "${crf_base}/startup" >> "$CRF"
+        cat "$CRF"
     fi
-    eval "$SAVED_OPTIONS"
 }
 export -f crf.__init
 
+#############################################################################
+function crf.BASE()
+{
+    local id="^${FUNCNAME[0]##*.}="
+    grep -e '$id' "$CRF" | sed -e "s/${id}//"
+}
+export -f crf.BASE
+
+#############################################################################
+function crf.BIN()
+{
+    local id="^${FUNCNAME[0]##*.}="
+    grep -e '$id' "$CRF" | sed -e "s/${id}//"
+}
+export -f crf.BIN
+
+#############################################################################
+function crf.ENV()
+{
+    local id="^${FUNCNAME[0]##*.}="
+    grep -e '$id' "$CRF" | sed -e "s/${id}//"
+}
+export -f crf.ENV
+
+#############################################################################
+function crf.LIB()
+{
+    local id="^${FUNCNAME[0]##*.}="
+    grep -e '$id' "$CRF" | sed -e "s/${id}//"
+}
+export -f crf.LIB
+
+#############################################################################
+function crf.STARTUP()
+{
+    local id="^${FUNCNAME[0]##*.}="
+    grep -e '$id' "$CRF" | sed -e "s/${id}//"
+}
+export -f crf.STARTUP
+  
 #############################################################################
 function crf.makeScript()
 {
@@ -63,7 +97,7 @@ export -f crf.makeScript
 #############################################################################
 function crf.prepareEnvironment()
 {
-    local -a files=( $( lib.getFiles "${CRF['startup']}" ) )
+    local -a files=( $( lib.getFiles "$( crf.STARTUP )" ) )
     if [ ${#files[*]} -gt 0 ]; then
 
         # execute scritps in sorted order
