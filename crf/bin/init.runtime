@@ -24,10 +24,9 @@ if [ -e "${_libbase}/bashlib" ]; then
 fi
 
 # load our environment
-_files=( "${_libbase}/bin/rt.environment" )
-if [ -e "${_libbase}/environment" ]; then
-    _files+=( $(find "${_libbase}/environment" -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
-fi
+_files=()
+[ ! -e "${_libbase}/bin/rt.environment"] || _files=( "${_libbase}/bin/rt.environment" )
+[ ! -e "${_libbase}/environment" ] || _files+=( $(find "${_libbase}/environment" -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
 for src in ${_files[@]} ; do
     [ "$DEBUG_TRACE" = 0 ] || echo "..loading environment: ${src}"
     source "$src"
