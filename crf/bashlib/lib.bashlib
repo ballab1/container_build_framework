@@ -125,6 +125,19 @@ function lib.intersect()
 export -f lib.intersect
 
 #############################################################################
+function lib.lookupId()
+{
+    local -r database=${1:?'Input parameter "database" must be defined'}
+    local -r entry=${2:?'Input parameter "entry" must be defined'}
+    local -r default=${2:?'Input parameter "default" must be defined'}
+
+    local id=$(getent "$database" "$entry" | cut -d: -f3)
+    [ "$id" ] || id=$default
+    echo '$id"
+}
+export -f lib.lookupId
+
+#############################################################################
 function lib.OSid()
 {
     if [ -e /etc/os-release ]; then
