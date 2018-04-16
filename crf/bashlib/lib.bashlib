@@ -114,8 +114,8 @@ function lib.intersect()
     local -a common=()
     for item in $a1; do
         for ref in $a2; do
-            if [ $item = $ref ]; then
-                common+=($item)
+            if [ "$item" = "$ref" ]; then
+                common+=( "$item" )
                 break
             fi
         done
@@ -133,7 +133,7 @@ function lib.lookupId()
 
     local id=$(getent "$database" "$entry" | cut -d: -f3)
     [ "$id" ] || id=$default
-    echo '$id"
+    echo "$id"
 }
 export -f lib.lookupId
 
@@ -141,7 +141,7 @@ export -f lib.lookupId
 function lib.OSid()
 {
     if [ -e /etc/os-release ]; then
-        echo "$( cat /etc/os-release | grep -e '^ID=' | awk -F'=' '{ print $2 }' )"
+        grep -e '^ID=' /etc/os-release | awk -F'=' '{ print $2 }'
     else
         echo 'windows'
     fi
@@ -181,12 +181,12 @@ function lib.relativize()
     local OIFS=$IFS
 
     from=${from//\/\//\/}
-    from=${from%/}
+    from="${from%/}"
     IFS=/
-    dirs=(${from#/})
+    dirs=("${from#/}")
     for to; do
-        to=${to//\/\//\/}
-        to=${to%/}
+        to="${to//\/\//\/}"
+        to="${to%/}"
         local commonPrefix=/
         for d in "${dirs[@]}"; do
             case "$to/" in "$commonPrefix$d/"*) ;;
@@ -227,7 +227,7 @@ function lib.updateRuntimeEnvironment()
     local -r envFile="$( crf.BIN )/rt.environment"
     local -r prefix='declare -x'
 
-    for line in ${in_array[@]}; do
+    for line in "${in_array[@]}"; do
         local var=${line%%=*}
         if grep -q "^${prefix} ${var}=" "$envFile" ; then
             sed -i "s|^${prefix} ${var}=.*$|${prefix} $line|" "$envFile" 
