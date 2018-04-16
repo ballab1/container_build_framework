@@ -7,7 +7,7 @@ declare _libbase=/usr/local/crf
 
 # when nothing exists in 'BASHLIBS' populate it with names of _files 'source'd from crf folder
 declare _crfTracker=/tmp/bashlibs.loaded
-declare -a -files
+declare -a _files
 if [ -e "${_libbase}/bashlib" ]; then
     _files=( $(find "${_libbase}/bashlib" -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
     if [ "${#_files[@]}" -gt 0 ]; then
