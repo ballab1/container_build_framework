@@ -27,7 +27,7 @@ ACTION=${_base}/action_folders
 CRF_BASE=$crf_base
 CRF_BIN=${crf_base}/bin
 CRT_BASE=/usr/local/crf
-EOF        
+EOF
        [ "$DEBUG_TRACE" == 0 ] || cat "$CBF"
     
        #now parse some info from our Dockerfile
