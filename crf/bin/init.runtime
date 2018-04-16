@@ -7,23 +7,27 @@ declare _libbase=/usr/local/crf
 
 # when nothing exists in 'BASHLIBS' populate it with names of _files 'source'd from crf folder
 declare _crfTracker=/tmp/bashlibs.loaded
-declare -a _files=( $(find "${_libbase}"/bashlib -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
-if [ "${#_files[@]}" -gt 0 ]; then
-    for src in ${_files[@]} ; do
-        declare _filename="$( basename "$src" )"
-        [ -e "$_crfTracker" ] || touch "$_crfTracker"
-        if ! grep -sq "$_filename" "$_crfTracker"; then
-            echo "$_filename" >> "$_crfTracker"
-            [ "$DEBUG_TRACE" = 0 ] || echo "..loading library: ${src}"
-            source "$src"
-        fi
-    done
+declare -a -files
+if [ -e "${_libbase}/bashlib" ]; then
+    _files=( $(find "${_libbase}/bashlib" -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
+    if [ "${#_files[@]}" -gt 0 ]; then
+        for src in ${_files[@]} ; do
+            declare _filename="$( basename "$src" )"
+            [ -e "$_crfTracker" ] || touch "$_crfTracker"
+            if ! grep -sq "$_filename" "$_crfTracker"; then
+                echo "$_filename" >> "$_crfTracker"
+                [ "$DEBUG_TRACE" = 0 ] || echo "..loading library: ${src}"
+                source "$src"
+            fi
+        done
+    fi
 fi
 
-
 # load our environment
-_files=( $(find "${_libbase}"/environment -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
-_files+=( "${_libbase}/bin/rt.environment" )
+_files=( "${_libbase}/bin/rt.environment" )
+if [ -e "${_libbase}/environment" ]; then
+    _files+=( $(find "${_libbase}/environment" -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
+fi
 for src in ${_files[@]} ; do
     [ "$DEBUG_TRACE" = 0 ] || echo "..loading environment: ${src}"
     source "$src"
