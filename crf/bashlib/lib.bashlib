@@ -5,38 +5,34 @@
 #
 #############################################################################
 
-function lib.copyFileToRuntimeEnvironment()
+function lib.copyFileToRuntime()
 {
-    local -r file="${1:?'Input parameter "file" must be defined'}"
-    local -r envFile="$( crf.ENV )/$( basename "$file")"
+    local -r loc="${1^^:?'Input parameter "loc" must be defined'}"
+    local -r file="${2:?'Input parameter "file" must be defined'}"
+    case "$loc" in
+        BIN)         : ;;
+        ENV)         : ;; 
+        LIB)         : ;;
+        STARTUP)     : ;;
+        *)  $LOG "Invalid runtime location '$loc' specified${LF}" 'error'
+            exit 1;;
+    esac
     
-    if [ -e "$envFile" ]; then
-        $LOG "Attempt to overwrite file '$envFile' will likely result in unintentend consequences${LF}" 'error'
+    local -r rtFile="$( "crf.$loc" )/$( basename "$file" )"
+    if [ -e "$rtFile" ]; then
+        $LOG "Attempt to overwrite file '$rtFile' will likely result in unintentend consequences${LF}" 'error'
         exit 1
     fi
-
-    echo "copying $file"
-    # copy file
-    [ ! -e "$file" ] || cp "$file" "$envFile"
-}
-export -f lib.copyFileToRuntimeEnvironment
-
-#############################################################################
-function lib.copyFileToRuntimeStartup()
-{
-    local -r file="${1:?'Input parameter "file" must be defined'}"
-    local -r startFile="$( crf.STARTUP )/$( basename "$file")"
-    
-    if [ -e "$startFile" ]; then
-        $LOG "Attempt to overwrite file '$startFile' will likely result in unintentend consequences${LF}" 'error'
-        exit 1
+    local -r srcFile="$( cbf.BASE )/usr/local/crf/$( basename "$( "crf.$loc" )" )/$( basename "$file" )"
+    if [ -e "$srcFile" ]; then
+        echo "copying $rtFile"
+        # copy file
+        cp "$srcFile" "$rtFile"
+    else
+        $LOG "Attempt to copy non-existent file '$srcFile' to ${rtFile}${LF}" 'warning'
     fi
-
-    echo "copying $file"
-    # copy file
-    [ ! -e "$file" ] || cp "$file" "$startFile"
 }
-export -f lib.copyFileToRuntimeStartup
+export -f lib.copyFileToRuntime
 
 #############################################################################
 #

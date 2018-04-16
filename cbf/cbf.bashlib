@@ -13,20 +13,21 @@ function cbf.__init()
     # this function is usually called from bin/init.libraries
     local -r lib_base=${1:?'Input parameter "lib_base" must be defined'}
     if [ ! -e "$CBF" ]; then
-        touch "$CBF"
         local cbf_base="$( cd "$( dirname "$lib_base" )" && pwd )"
-        printf 'CBFBASE=%s\n' "$cbf_base" >> "$CBF"
-        printf 'BIN=%s\n' "${cbf_base}/bin" >> "$CBF"
-        printf 'LIB=%s\n' "$lib_base" >> "$CBF"
-        printf 'TEMPLATES=%s\n' "${cbf_base}/action.templates" >> "$CBF"
         local -r _base="$( cd "$( dirname "$cbf_base" )" && pwd )"
-        printf 'BASE=%s\n' "$_base" >> "$CBF"
-        printf 'ACTION=%s\n' "${_base}/action_folders" >> "$CBF"
         local -r crf_base="${cbf_base}/crf"
-        printf 'CRF_BASE=%s\n' "$crf_base" >> "$CBF"
-        printf 'CRF_BIN=%s\n' "${crf_base}/bin" >> "$CBF"
-        printf 'CRT_BASE=%s\n' "/usr/local/crf" >> "$CBF"
-        
+
+        cat << EOF > "$CBF"
+CBFBASE=$cbf_base
+BIN=${cbf_base}/bin
+LIB=$lib_base
+TEMPLATES=${cbf_base}/action.templates
+BASE=$_base
+ACTION=${_base}/action_folders
+CRF_BASE=$crf_base
+CRF_BIN=${crf_base}/bin
+CRT_BASE=/usr/local/crf
+EOF        
        [ "$DEBUG_TRACE" == 0 ] || cat "$CBF"
     
        #now parse some info from our Dockerfile
