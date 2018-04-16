@@ -59,7 +59,12 @@ function package.installTimezone()
 {
     local -r tz=${1:?'Input parameter "tz" must be defined'}
     
-    apk add --no-cache tzdata
+    case "$( lib.OSid )" in
+        alpine)        apk add --no-cache tzdata;;
+        centos)        yum install -y tzdata; yum clean all;;
+        fedora)        dnf install -y tzdata && dnf clean all;;
+        ubuntu)        apt-get install -y tzdata;;
+    esac
     echo "$tz" > /etc/TZ
     cp "/usr/share/zoneinfo/$tz" /etc/timezone
     cp "/usr/share/zoneinfo/$tz" /etc/localtime

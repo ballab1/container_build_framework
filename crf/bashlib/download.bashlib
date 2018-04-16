@@ -57,7 +57,7 @@ function download.getPackages()
     local -a files=${1:?'Input parameter "files" must be defined'}
 
     for file in ${files} ; do
-        lib.copyFileToRuntimeEnvironment "$file"
+        lib.copyFileToRuntime 'ENV' "$file"
         cd /tmp
         eval download.getFile "$file" || $LOG ">>>>> issue while downloading $( basename "$file" ) <<<<<${LF}" 'warn'
     done

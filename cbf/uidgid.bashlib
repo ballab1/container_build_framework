@@ -10,7 +10,7 @@ function uidgid.check()
     local -a files=${1:?'Input parameter "files" must be defined'}
 
     for file in ${files} ; do
-        lib.copyFileToRuntimeEnvironment "$file"
+        lib.copyFileToRuntime 'ENV' "$file"
         chmod 755 "$file"
         $LOG "..executing ${file}${LF}" 'info'
         eval uidgid.createUserAndGroup "$file" || $LOG "..*** issue while executing $( basename "$file" ) ***${LF}" 'warn'
