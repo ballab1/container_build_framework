@@ -10,7 +10,7 @@ declare _libbase="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 [ ! -d "${_libbase}/bashlib" ] || _files+=( $(find "${_libbase}/bashlib" -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
 [ ! -d /usr/local/crf/bashlib ] || _files+=( $(find "/usr/local/crf/bashlib" -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
 
-sdeclare _crfTracker=/tmp/bashlibs.loaded
+declare _crfTracker=/tmp/bashlibs.loaded
 if [ "${#_files[@]}" -gt 0 ]; then
     for src in ${_files[@]} ; do
         declare _filename="$( basename "$src" )"
