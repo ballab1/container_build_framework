@@ -3,21 +3,11 @@
 declare __CRF_OPTIONS=$(set +o)
 set +o nounset
 
-declare _libbase="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
-
-
-# load our environment
-declare -a _files=( $(find "${_libbase}"/environment -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
-_files+=( "${_libbase}/bin/rt.environment" )
-for src in ${_files[@]} ; do
-    [ "$DEBUG_TRACE" = 0 ] || echo "..loading environment: ${src}"
-    source "$src"
-done
-
+declare _libbase=/usr/local/crf  
 
 # when nothing exists in 'BASHLIBS' populate it with names of _files 'source'd from crf folder
 declare _crfTracker=/tmp/bashlibs.loaded
-_files=( $(find "${_libbase}"/bashlib -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
+declare -a _files=( $(find "${_libbase}"/bashlib -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
 if [ "${#_files[@]}" -gt 0 ]; then
     for src in ${_files[@]} ; do
         declare _filename="$( basename "$src" )"
@@ -29,6 +19,15 @@ if [ "${#_files[@]}" -gt 0 ]; then
         fi
     done
 fi
+
+
+# load our environment
+_files=( $(find "${_libbase}"/environment -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
+_files+=( "${_libbase}/bin/rt.environment" )
+for src in ${_files[@]} ; do
+    [ "$DEBUG_TRACE" = 0 ] || echo "..loading environment: ${src}"
+    source "$src"
+done
 
 eval "$__CRF_OPTIONS"
 
