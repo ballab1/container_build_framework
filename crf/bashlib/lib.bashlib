@@ -28,7 +28,7 @@ function lib.copyFileToRuntime()
     local srcFile="$file"
     [ -e "$srcFile" ] || srcFile="$( cbf.BASE )/usr/local/crf/$( basename "$( "crf.$loc" )" )/$( basename "$file" )"
     if [ -e "$srcFile" ]; then
-        echo "copying $rtFile"
+        echo "copying $srcFile to $rtFile"
         # copy file
         cp "$srcFile" "$rtFile"
     else
