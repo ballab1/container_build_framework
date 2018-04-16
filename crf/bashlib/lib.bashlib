@@ -23,7 +23,10 @@ function lib.copyFileToRuntime()
         $LOG "Attempt to overwrite file '$rtFile' will likely result in unintentend consequences${LF}" 'error'
         exit 1
     fi
-    local -r srcFile="$( cbf.BASE )/usr/local/crf/$( basename "$( "crf.$loc" )" )/$( basename "$file" )"
+    
+    # use input file if it exists, otherwise determine if file exists in coresponding '/usr/local/crf' folder
+    local srcFile="$file"
+    [ -e "$srcFile" ] || srcFile="$( cbf.BASE )/usr/local/crf/$( basename "$( "crf.$loc" )" )/$( basename "$file" )"
     if [ -e "$srcFile" ]; then
         echo "copying $rtFile"
         # copy file
