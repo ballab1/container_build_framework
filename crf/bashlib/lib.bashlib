@@ -227,13 +227,13 @@ function lib.updateRuntimeEnvironment()
     local -r envFile="$( crf.BIN )/rt.environment"
     local -r prefix='declare -x'
 
-    for line in "${in_array[@]}"; do
-        local var=${line%%=*}
+    while read -r line ; do
+        local var="${line%%=*}"
         if grep -q "^${prefix} ${var}=" "$envFile" ; then
             sed -i "s|^${prefix} ${var}=.*$|${prefix} $line|" "$envFile" 
         else
             echo "${prefix} $line" >> "$envFile"
         fi
-    done
+    done < ${in_array[@]}
 }
 export -f lib.updateRuntimeEnvironment
