@@ -21,7 +21,7 @@ if [ "${#_files[@]}" -gt 0 ]; then
         [ -e "$_cbfTracker" ] || touch "$_cbfTracker"
         if ! grep -sq "$_filename" "$_cbfTracker"; then
             echo "$_filename" >> "$_cbfTracker"
-            [ "$DEBUG_TRACE" = 0 ] || echo "  loading library: ${src}"
+            echo "    loading library: ${src}"
             source "$src"
         fi
     done
