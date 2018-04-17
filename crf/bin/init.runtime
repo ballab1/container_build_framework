@@ -17,8 +17,7 @@ if [ "${#_files[@]}" -gt 0 ]; then
         [ -e "$_crfTracker" ] || touch "$_crfTracker"
         if ! grep -sq "$_filename" "$_crfTracker"; then
             echo "$_filename" >> "$_crfTracker"
-            # [ "$DEBUG_TRACE" = 0 ] || echo "  loading library: ${src}"
-            echo "  loading library: ${src}"
+            [ "$DEBUG_TRACE" = 0 ] || echo "  loading library: ${src}"
             source "$src"
         fi
     done
