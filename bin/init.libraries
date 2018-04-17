@@ -5,12 +5,10 @@ set +o nounset
 
 : ${DEBUG_TRACE:=0}
 
-declare __base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
-[ ! -e "${__base}/crf/bin/init.runtime" ] || source "${__base}/crf/bin/init.runtime"
-
 
 # when nothing exists in 'BASHLIBS' populate it with names of _files 'source'd from crf folder
 declare -a _files=() 
+declare __base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
 [ ! -d "${__base}/cbf" ] || _files+=( $(find "${__base}/cbf" -maxdepth 1 -mindepth 1 -name '*.bashlib') )
 [ ! -d /tmp/usr/local/crf/bashlib ] || _files+=( $(find "/tmp/usr/local/crf/bashlib" -maxdepth 1 -mindepth 1 -name '*.bashlib') ) 
 
@@ -28,6 +26,8 @@ if [ "${#_files[@]}" -gt 0 ]; then
 fi
 
 eval "$__CBF_OPTIONS"
+
+[ ! -e "${__base}/crf/bin/init.runtime" ] || source "${__base}/crf/bin/init.runtime"
 
 unset __CBF_OPTIONS
 unset _cbfTracker
