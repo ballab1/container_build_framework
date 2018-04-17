@@ -17,8 +17,8 @@ if [ "${#_files[@]}" -gt 0 ]; then
         [ -e "$_crfTracker" ] || touch "$_crfTracker"
         if ! grep -sq "$_filename" "$_crfTracker"; then
             echo "$_filename" >> "$_crfTracker"
-            [ "$DEBUG_TRACE" = 0 ] || echo "..loading library: ${src}"
-            echo "..loading library: ${src}"
+            # [ "$DEBUG_TRACE" = 0 ] || echo "  loading library: ${src}"
+            echo "  loading library: ${src}"
             source "$src"
         fi
     done
@@ -31,8 +31,8 @@ _files=()
 [ ! -d "${_libbase}/environment" ] || _files+=( $(find "${_libbase}/environment" -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
 if [ "${#_files[@]}" -gt 0 ]; then
     for src in ${_files[@]} ; do
-        [ "$DEBUG_TRACE" = 0 ] || echo "..loading environment: ${src}"
-        echo "..loading environment: ${src}"
+        # [ "$DEBUG_TRACE" = 0 ] || echo "  loading environment: ${src}"
+        echo "  loading environment: ${src}"
         source "$src"
     done
 fi
