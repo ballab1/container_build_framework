@@ -47,7 +47,7 @@ function package.install()
 
     case "$( lib.OSid )" in
         alpine)        apk add --no-cache $OPTS $PKGS;;
-        centos)        yum install -y $OPTS $PKGS; yum clean all;;
+        centos)        yum install -y RPM_EXCLUDE_VALUE $PKGS; yum clean all;;
         fedora)        dnf install -y $OPTS $PKGS && dnf clean all;;
         ubuntu)        apt-get install -y $OPTS $PKGS;;
     esac
