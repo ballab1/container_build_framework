@@ -1,18 +1,5 @@
 #!/bin/bash
 
-
-##############################################################################################################
-function loadFiles()
-{
-    local files=${1:?i'Input parameter "files" must be defined'}
-
-    for src in ${files} ; do
-        echo "    loading environment: ${src}"
-        source "$src"
-    done
-}
-##############################################################################################################
-
 declare __CRF_OPTIONS=$(set +o)
 set +o nounset
 
@@ -39,13 +26,17 @@ fi
 
 # load our environment
 _files=()
-if [ -d "${_libbase}/environment" ]; then
-    _files+=( $(find "${_libbase}/environment" -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
-    [ "${#_files[@]}" -eq 0 ] || loadFiles "${_files[*]}"
+[ !-d "${_libbase}/environment" ] || _files+=( $(find "${_libbase}/environment" -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
+[ !-d /usr/local/crf/environment" ] || _files+=( $(find /usr/local/crf/environment" -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
+if [ "${#_files[@]}" -gt 0 ]; then
+    for src in ${_files[@]} ; do
+        echo "    loading: ${src}"
+        source "$src"
+    done
 fi
-if [ -e "${_libbase}/bin/rt.environment" ]; then
-    _files=( "${_libbase}/bin/rt.environment" )
-    [ "${#_files[@]}" -eq 0 ] || loadFiles "${_files[*]}"
+if [ -e /usr/local/crf/bin/rt.environment ]; then
+        echo "    loading: /usr/local/crf/bin/rt.environment"
+        source /usr/local/crf/bin/rt.environment 
 fi
 
 eval "$__CRF_OPTIONS"
