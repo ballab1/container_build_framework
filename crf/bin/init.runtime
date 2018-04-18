@@ -5,13 +5,14 @@ set +o nounset
 
 declare -a _files=()
 declare _crfTracker
-set -o xtrace
 # when nothing exists in 'BASHLIBS' populate it with names of _files 'source'd from crf folder
-declare -a _libbase=( /tmp/usr/local/crf /usr/local/crf )
+declare -a _libbase=( "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
+                       /tmp/usr/local/crf 
+                       /usr/local/crf
+                     )
 for dir in ${_libbase[@]}; do
     [ ! -d "${dir}/bashlib" ] || _files+=( $(find "${dir}/bashlib" -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
 done
-set +o xtrace
 if [ "${#_files[@]}" -gt 0 ]; then
     _crfTracker=/tmp/bashlibs.loaded
     for src in ${_files[@]} ; do
@@ -28,11 +29,9 @@ fi
 
 # load our environment
 _files=()
-set -o xtrace
 for dir in ${_libbase[@]}; do
     [ ! -d "${dir}/environment" ] || _files+=( $(find "${dir}/environment" -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
 done
-set +o xtrace
 if [ "${#_files[@]}" -gt 0 ]; then
     _crfTracker=/tmp/environment.loaded
     for src in ${_files[@]} ; do
