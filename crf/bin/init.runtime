@@ -19,7 +19,7 @@ if [ "${#_files[@]}" -gt 0 ]; then
     for src in ${_files[@]} ; do
         declare _filename="$( basename "$src" )"
         [ -e "$_crfTracker" ] || touch "$_crfTracker"
-        grep -sq "$_filename" "$_crfTracker" || continue
+        [ ! grep -sq "$_filename" "$_crfTracker" ] || continue
         [ $( dirname "$src" ) = '/usr/local/crf/bashlib' ] || echo "$_filename" >> "$_crfTracker"
         echo "    loading library: ${src}"
         source "$src"
