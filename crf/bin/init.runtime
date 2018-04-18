@@ -18,11 +18,10 @@ if [ "${#_files[@]}" -gt 0 ]; then
     for src in ${_files[@]} ; do
         declare _filename="$( basename "$src" )"
         [ -e "$_crfTracker" ] || touch "$_crfTracker"
-        if ! grep -sq "$_filename" "$_crfTracker"; then
-            echo "$_filename" >> "$_crfTracker"
-            echo "    loading library: ${src}"
-            source "$src"
-        fi
+        grep -sq "$_filename" "$_crfTracker" || continue
+        [ $( dirname "$src" ) = '/usr/local/crf/bashlib' ] || echo "$_filename" >> "$_crfTracker"
+        echo "    loading library: ${src}"
+        source "$src"
     done
 fi
 
@@ -37,11 +36,10 @@ if [ "${#_files[@]}" -gt 0 ]; then
     for src in ${_files[@]} ; do
         declare _filename="$( basename "$src" )"
         [ -e "$_crfTracker" ] || touch "$_crfTracker"
-        if ! grep -sq "$_filename" "$_crfTracker"; then
-            echo "$_filename" >> "$_crfTracker"
-            echo "    loading: ${src}"
-            source "$src"
-        fi
+        grep -sq "$_filename" "$_crfTracker" || continue
+        [ $( dirname "$src" ) = '/usr/local/crf/environment' ] || echo "$_filename" >> "$_crfTracker"
+        echo "    loading: ${src}"
+        source "$src"
     done
 fi
 if [ -e /usr/local/crf/bin/rt.environment ]; then
