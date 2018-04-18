@@ -3,6 +3,9 @@
 #
 #   lib.bashlib: container_build_framework
 #
+#  thanks to Stephen R. Scaffidi for relativize
+#        (https://gist.github.com/hercynium/3899407#file-relpath-bash)
+#
 #############################################################################
 
 function lib.copyFileToRuntime()
