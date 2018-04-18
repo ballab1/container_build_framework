@@ -179,7 +179,7 @@ function lib.relativize()
     local to="${2:?'Input parameter "to" must be defined'}"
     local OIFS=$IFS
 
-    from=${from//\/\//\/}
+    from="${from//\/\//\/}"
     from="${from%/}"
     IFS=/
     dirs=("${from#/}")
@@ -194,8 +194,8 @@ function lib.relativize()
             commonPrefix+="$d/"
         done
         local ancestor="${from#${commonPrefix%/}}"
-        ancestor=${ancestor//[^\/]/}
-        ancestor=${ancestor//\//..\/}
+        ancestor="${ancestor//[^\/]/}"
+        ancestor="${ancestor//\//..\/}"
     done
     IFS=$OIFS
     echo -n "$ancestor${to#$commonPrefix}"
