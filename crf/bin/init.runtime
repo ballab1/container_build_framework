@@ -4,14 +4,16 @@ declare __CRF_OPTIONS=$(set +o)
 set +o nounset
 
 declare -a _files=()
+declare _crfTracker
 
 # when nothing exists in 'BASHLIBS' populate it with names of _files 'source'd from crf folder
-declare _libbase="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
-[ ! -d "${_libbase}/bashlib" ] || _files+=( $(find "${_libbase}/bashlib" -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
-[ ! -d /usr/local/crf/bashlib ] || _files+=( $(find "/usr/local/crf/bashlib" -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
+declare -a _libbase=( /tmp/usr/local/crf /usr/local/crf )
+for dir in ${_libbase[@]}; do
+    [ ! -d "${dir}/bashlib" ] || _files+=( $(find "${dir}/bashlib" -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
+done
 
 if [ "${#_files[@]}" -gt 0 ]; then
-    declare _crfTracker=/tmp/bashlibs.loaded
+    _crfTracker=/tmp/bashlibs.loaded
     for src in ${_files[@]} ; do
         declare _filename="$( basename "$src" )"
         [ -e "$_crfTracker" ] || touch "$_crfTracker"
@@ -26,17 +28,24 @@ fi
 
 # load our environment
 _files=()
-[ ! -d "${_libbase}/environment" ] || _files+=( $(find "${_libbase}/environment" -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
-[ ! -d /usr/local/crf/environment ] || _files+=( $(find /usr/local/crf/environment -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
+for dir in ${_libbase[@]}; do
+    [ ! -d "${dir}/environment" ] || _files+=( $(find "${dir}/environment" -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
+done
 if [ "${#_files[@]}" -gt 0 ]; then
+    _crfTracker=/tmp/environment.loaded
     for src in ${_files[@]} ; do
-        echo "    loading: ${src}"
-        source "$src"
+        declare _filename="$( basename "$src" )"
+        [ -e "$_crfTracker" ] || touch "$_crfTracker"
+        if ! grep -sq "$_filename" "$_crfTracker"; then
+            echo "$_filename" >> "$_crfTracker"
+            echo "    loading: ${src}"
+            source "$src"
+        fi
     done
 fi
 if [ -e /usr/local/crf/bin/rt.environment ]; then
-        echo "    loading: /usr/local/crf/bin/rt.environment"
-        source /usr/local/crf/bin/rt.environment 
+    echo "    loading: /usr/local/crf/bin/rt.environment"
+    source /usr/local/crf/bin/rt.environment 
 fi
 
 eval "$__CRF_OPTIONS"
