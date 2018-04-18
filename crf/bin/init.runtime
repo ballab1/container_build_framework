@@ -26,8 +26,8 @@ fi
 
 # load our environment
 _files=()
-[ !-d "${_libbase}/environment" ] || _files+=( $(find "${_libbase}/environment" -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
-[ !-d /usr/local/crf/environment" ] || _files+=( $(find /usr/local/crf/environment" -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
+[ ! -d "${_libbase}/environment" ] || _files+=( $(find "${_libbase}/environment" -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
+[ ! -d /usr/local/crf/environment ] || _files+=( $(find /usr/local/crf/environment" -maxdepth 1 -mindepth 1 ! -name '.*' -print) )
 if [ "${#_files[@]}" -gt 0 ]; then
     for src in ${_files[@]} ; do
         echo "    loading: ${src}"
