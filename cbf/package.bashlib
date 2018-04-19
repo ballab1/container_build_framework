@@ -45,7 +45,6 @@ function package.install()
     source "$defnFile"
     package.checkIfInstalled "${PKGS[*]}"
 
-set -o xtrace
     : ${OPTS:=''}
     case "$( lib.OSid )" in
         alpine)        apk add --no-cache ${OPTS[*]} ${PKGS[*]};;
@@ -53,7 +52,6 @@ set -o xtrace
         fedora)        dnf install -y ${OPTS[*]} ${PKGS[*]} && dnf clean all;;
         ubuntu)        apt-get install -y ${OPTS[*]} ${PKGS[*]};;
     esac
-set +o xtrace
 }
 export -f package.install
 
