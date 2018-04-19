@@ -7,15 +7,15 @@
 
 function package.checkIfInstalled()
 {
-    local -ra PKGS=${1:?'Input parameter "PKGS" must be defined'}
+    local -r pkgs=${1:?'Input parameter "PKGS" must be defined'}
     
-    local installed=$(lib.intersect "$PKGS" "$( package.packageList )")
+    local installed=$(lib.intersect "$pkgs" "$( package.packageList )")
     [ -z "$installed" ] || trap.die "attempting to reinstall following packages: '$installed'"
     
     # now verify that packages are actually valid for installation
     local -r checker=$( package.checkPackage )
 
-    for pkg in ${PKGS[@]}; do
+    for pkg in $pkgs; do
         eval $checker "${pkg%%=*}" &>/dev/null || trap.die "Package $pkg not found"
     done 
 }
@@ -43,8 +43,9 @@ function package.install()
     source "$( crf.BIN )/init.runtime"
     source "$defnFile"
     : ${OPTS:=()}
-    package.checkIfInstalled "${PKGS[*]}"
 set -o xtrace
+    package.checkIfInstalled "${PKGS[*]}"
+
     case "$( lib.OSid )" in
         alpine)        apk add --no-cache ${OPTS[*]} ${PKGS[*]};;
         centos)        yum install -y RPM_EXCLUDE_VALUE ${PKGS[*]}; yum clean all;;
