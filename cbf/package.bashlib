@@ -37,15 +37,16 @@ export -f package.checkPackage
 function package.install()
 {
     local -r defnFile=${1:?'Input parameter "defnFile" must be defined'}
+    local -ra empty=()
     
     $LOG "Installing ${defnFile}${LF}" 'task'
 
     source "$( crf.BIN )/init.runtime"
-set -o xtrace
     source "$defnFile"
-    : ${OPTS:=()}
     package.checkIfInstalled "${PKGS[*]}"
 
+set -o xtrace
+    : ${OPTS:=''}
     case "$( lib.OSid )" in
         alpine)        apk add --no-cache ${OPTS[*]} ${PKGS[*]};;
         centos)        yum install -y RPM_EXCLUDE_VALUE ${PKGS[*]}; yum clean all;;
