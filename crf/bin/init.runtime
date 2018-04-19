@@ -35,11 +35,12 @@ for dir in ${_libbase[@]}; do
 done
 if [ "${#_files[@]}" -gt 0 ]; then
     _crfTracker=/tmp/environment.loaded
+    [ ! -e rm "$_crfTracker" ] || rm "$_crfTracker"
+    touch "$_crfTracker"
     for src in ${_files[@]} ; do
         _filename="$( basename "$src" )"
-        [ -e "$_crfTracker" ] || touch "$_crfTracker"
         if ! grep -sq "$_filename" "$_crfTracker" ; then
-            [ $( dirname "$src" ) = '/usr/local/crf/environment' ] || echo "$_filename" >> "$_crfTracker"
+            echo "$_filename" >> "$_crfTracker"
             echo "    loading: ${src}"
             source "$src"
         fi
