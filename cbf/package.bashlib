@@ -41,9 +41,9 @@ function package.install()
     $LOG "Installing ${defnFile}${LF}" 'task'
 
     source "$( crf.BIN )/init.runtime"
+set -o xtrace
     source "$defnFile"
     : ${OPTS:=()}
-set -o xtrace
     package.checkIfInstalled "${PKGS[*]}"
 
     case "$( lib.OSid )" in
