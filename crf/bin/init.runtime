@@ -15,7 +15,6 @@ declare -a _libbase=( "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 for dir in ${_libbase[@]}; do
     [ ! -d "${dir}/bashlib" ] || _files+=( $(find "${dir}/bashlib" -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
 done
-set -o xtrace
 if [ "${#_files[@]}" -gt 0 ]; then
     _crfTracker=/tmp/bashlibs.loaded
     for src in ${_files[@]} ; do
@@ -28,7 +27,6 @@ if [ "${#_files[@]}" -gt 0 ]; then
         fi
     done
 fi
-set +o xtrace
 
 # load our environment
 _files=()
