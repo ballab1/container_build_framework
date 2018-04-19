@@ -7,7 +7,7 @@
 
 function package.checkIfInstalled()
 {
-    local -r PKGS=${1:?'Input parameter "PKGS" must be defined'}
+    local -ra PKGS=${1:?'Input parameter "PKGS" must be defined'}
     
     local installed=$(lib.intersect "$PKGS" "$( package.packageList )")
     [ -z "$installed" ] || trap.die "attempting to reinstall following packages: '$installed'"
@@ -15,7 +15,7 @@ function package.checkIfInstalled()
     # now verify that packages are actually valid for installation
     local -r checker=$( package.checkPackage )
 
-    for pkg in $PKGS; do
+    for pkg in ${PKGS[@]}; do
         eval $checker "${pkg%%=*}" &>/dev/null || trap.die "Package $pkg not found"
     done 
 }
@@ -42,15 +42,16 @@ function package.install()
 
     source "$( crf.BIN )/init.runtime"
     source "$defnFile"
-    : ${OPTS:=''}
-    package.checkIfInstalled "$PKGS"
-
+    : ${OPTS:=()}
+    package.checkIfInstalled "${PKGS[*]}"
+set -o xtrace
     case "$( lib.OSid )" in
-        alpine)        apk add --no-cache $OPTS $PKGS;;
-        centos)        yum install -y RPM_EXCLUDE_VALUE $PKGS; yum clean all;;
-        fedora)        dnf install -y $OPTS $PKGS && dnf clean all;;
-        ubuntu)        apt-get install -y $OPTS $PKGS;;
+        alpine)        apk add --no-cache ${OPTS[*]} ${PKGS[*]};;
+        centos)        yum install -y RPM_EXCLUDE_VALUE ${PKGS[*]}; yum clean all;;
+        fedora)        dnf install -y ${OPTS[*]} ${PKGS[*]} && dnf clean all;;
+        ubuntu)        apt-get install -y ${OPTS[*]} ${PKGS[*]};;
     esac
+set +o xtrace
 }
 export -f package.install
 
