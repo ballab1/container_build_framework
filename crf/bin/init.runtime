@@ -3,8 +3,10 @@
 declare __CRF_OPTIONS=$(set +o)
 set +o nounset
 
-declare -a _files=()
 declare _crfTracker
+declare _filename
+declare -a _files=()
+
 # when nothing exists in 'BASHLIBS' populate it with names of _files 'source'd from crf folder
 declare -a _libbase=( "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
                        /tmp/usr/local/crf 
@@ -13,19 +15,20 @@ declare -a _libbase=( "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 for dir in ${_libbase[@]}; do
     [ ! -d "${dir}/bashlib" ] || _files+=( $(find "${dir}/bashlib" -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
 done
-set -x
+set -o xtrace
 if [ "${#_files[@]}" -gt 0 ]; then
     _crfTracker=/tmp/bashlibs.loaded
     for src in ${_files[@]} ; do
-        declare _filename="$( basename "$src" )"
+        _filename="$( basename "$src" )"
         [ -e "$_crfTracker" ] || touch "$_crfTracker"
-        [ ! grep -sq "$_filename" "$_crfTracker" ] || continue
-        [ $( dirname "$src" ) = '/usr/local/crf/bashlib' ] || echo "$_filename" >> "$_crfTracker"
-        echo "    loading library: ${src}"
-        source "$src"
+        if ! grep -sq "$_filename" "$_crfTracker" ; then
+            [ $( dirname "$src" ) = '/usr/local/crf/bashlib' ] || echo "$_filename" >> "$_crfTracker"
+            echo "    loading library: ${src}"
+            source "$src"
+        fi
     done
 fi
-set -o xtrace
+set +o xtrace
 
 # load our environment
 _files=()
@@ -35,12 +38,13 @@ done
 if [ "${#_files[@]}" -gt 0 ]; then
     _crfTracker=/tmp/environment.loaded
     for src in ${_files[@]} ; do
-        declare _filename="$( basename "$src" )"
+        _filename="$( basename "$src" )"
         [ -e "$_crfTracker" ] || touch "$_crfTracker"
-        grep -sq "$_filename" "$_crfTracker" || continue
-        [ $( dirname "$src" ) = '/usr/local/crf/environment' ] || echo "$_filename" >> "$_crfTracker"
-        echo "    loading: ${src}"
-        source "$src"
+        if ! grep -sq "$_filename" "$_crfTracker" ; then
+            [ $( dirname "$src" ) = '/usr/local/crf/environment' ] || echo "$_filename" >> "$_crfTracker"
+            echo "    loading: ${src}"
+            source "$src"
+        fi
     done
 fi
 if [ -e /usr/local/crf/bin/rt.environment ]; then
