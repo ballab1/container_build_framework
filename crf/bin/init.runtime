@@ -12,6 +12,10 @@ declare -a _libbase=( "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
                        /tmp/usr/local/crf 
                        /usr/local/crf
                      )
+# make sure _libbase is unique
+_libbase=( $( printf "%s\n" ${_libbase[@]} | sort -u ) )
+
+# find all the libraries
 for dir in ${_libbase[@]}; do
     [ ! -d "${dir}/bashlib" ] || _files+=( $(find "${dir}/bashlib" -maxdepth 1 -mindepth 1 ! -name '.*'  -print) )
 done
