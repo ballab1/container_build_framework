@@ -6,8 +6,8 @@
 #----------------------------------------------------------------------------
 
 # global exceptions
-declare -i dying=0
-declare -i pipe_error=0
+declare -ix dying=0
+declare -ix pipe_error=0
 
 #----------------------------------------------------------------------------
 # Exit on any error
@@ -27,6 +27,7 @@ function trap.catch_error()
     fi
     exit 1
 }
+export -f trap.catch_error
 
 #----------------------------------------------------------------------------
 # Detect when build is aborted
@@ -34,6 +35,7 @@ function trap.catch_int()
 {
     trap.die "${BASH_SOURCE[0]} has been aborted with SIGINT (Ctrl-C)"
 }
+export -f trap.catch_int
 
 #----------------------------------------------------------------------------
 function trap.catch_pipe()
@@ -44,6 +46,7 @@ function trap.catch_pipe()
 
     trap.die "${BASH_SOURCE[0]} has been aborted with SIGPIPE (broken pipe)"
 }
+export -f trap.catch_pipe
 
 #----------------------------------------------------------------------------
 function trap.die()
@@ -53,8 +56,9 @@ function trap.die()
     dying+=1
 
     ( $LOG "${LF}FATAL ERROR: $*${LF}" 'error' ) >&2
-    exit $status
+    [ "$DEBUG_TRACE" = "2" ] || exit $status
 }  
+export -f trap.die
 
 # trap ERR to provide an error handler whenever a command exits nonzero
 trap trap.catch_error ERR

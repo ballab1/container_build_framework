@@ -7,62 +7,103 @@
 
 function package.checkIfInstalled()
 {
-    local -r todo=${1:?'Input parameter "todo" must be defined'}
+    local -r pkgs=${1:?"Input parameter 'PKGS' must be passed to 'function ${FUNCNAME[0]}()'"}
     
-    local installed=$(lib.intersect "$todo" "$( package.packageList )")
+    local installed=$(lib.intersect "$pkgs" "$( package.packageList )")
     [ -z "$installed" ] || trap.die "attempting to reinstall following packages: '$installed'"
+    
+    # now verify that packages are actually valid for installation
+    local -r checker=$( package.checkPackage )
+
+    for pkg in $pkgs; do
+        eval $checker "${pkg%%=*}" &>/dev/null || trap.die "Package $pkg not found"
+    done 
 }
+export -f package.checkIfInstalled
+
+#############################################################################
+function package.checkPackage()
+{
+    case "$( lib.OSid )" in
+        alpine)        echo 'apk info';;
+        centos)        echo 'yum info';;
+        fedora)        echo 'dnf info';;
+        ubuntu)        echo 'apt-get info';;
+    esac
+}
+export -f package.checkPackage
 
 #############################################################################
 function package.install()
 {
-    local -r pkg=${1:?'Input parameter "pkg" must be defined'}
+    local -r defnFile=${1:?"Input parameter 'defnFile' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -ra empty=()
     
-    IFS=$'\r\n'
-    local -a contents=( $(< "$pkg") )
-    $LOG "Installing ${pkg} - ${#contents[*]} lines read${LF}" 'task'
+    $LOG "Installing ${defnFile}${LF}" 'task'
 
-    if [ "${contents[1]:0:5}" = 'cmd: ' ]; then
-        local comment="${contents[0]}"
-        local cmd="${contents[1]:5}"
-        contents=( ${contents[@]:2} )
-        $LOG "..${comment}:  '${cmd} ${contents}'${LF}" 'info'
-        eval $cmd $contents || $LOG "..issue while installing ${contents}${LF}" 'warn'
-    else
-        $LOG "..package file not formatted correctly ${pkg}${LF}" 'warn'
-    fi
+    source "$( crf.BIN )/init.runtime"
+    source "$defnFile"
+    package.checkIfInstalled "${PKGS[*]}"
+
+    : ${OPTS:=''}
+    case "$( lib.OSid )" in
+        alpine)        apk add --no-cache ${OPTS[*]} ${PKGS[*]};;
+        centos)        yum install -y RPM_EXCLUDE_VALUE ${PKGS[*]}; yum clean all;;
+        fedora)        dnf install -y ${OPTS[*]} ${PKGS[*]} && dnf clean all;;
+        ubuntu)        apt-get install -y ${OPTS[*]} ${PKGS[*]};;
+    esac
 }
+export -f package.install
 
 #############################################################################
 function package.installTimezone()
 {
-    local -r tz=${1:?'Input parameter "tz" must be defined'}
+    local -r tz=${1:?"Input parameter 'tz' must be passed to 'function ${FUNCNAME[0]}()'"}
     
-    package.updateIndexes
-    apk add --no-cache tzdata
+    case "$( lib.OSid )" in
+        alpine)        apk add --no-cache tzdata;;
+        centos)        yum install -y tzdata; yum clean all;;
+        fedora)        dnf install -y tzdata && dnf clean all;;
+        ubuntu)        apt-get install -y tzdata;;
+    esac
     echo "$tz" > /etc/TZ
     cp "/usr/share/zoneinfo/$tz" /etc/timezone
     cp "/usr/share/zoneinfo/$tz" /etc/localtime
 }
+export -f package.installTimezone
 
 #############################################################################
 function package.packageList()
 {
-    case "${CBF['os_id']}" in
+    case "$( lib.OSid )" in
         alpine)        apk info;;
         centos)        yum list | awk '{print $1 }';;
         fedora)        dnf --help;;
         ubuntu)        apt-get --help;;
     esac
 }
+export -f package.packageList
+
+#############################################################################
+function package.runScripts()
+{
+    local -a files=${1:?"Input parameter 'files' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    for file in ${files[@]}; do
+        local _extension="${file##*.}"
+        [ "$_extension" != "$( lib.OSid )" ] || ( package.install "$file" )
+    done
+}
+export -f package.runScripts
 
 #############################################################################
 function package.updateIndexes()
 {
-    case "${CBF['os_id']}" in
+    case "$( lib.OSid )" in
         alpine)        apk update;;
         centos)        yum update -y;;
         fedora)        dnf -y update && dnf clean all;;
         ubuntu)        apt-get update -y;;
     esac
 }
+export -f package.updateIndexes

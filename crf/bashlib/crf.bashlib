@@ -6,54 +6,95 @@
 #############################################################################
 
 
-declare -A CRF
+declare -xr CRF=/usr/local/crf/CRF.properties
 
 function crf.__init()
 {
-    set +o nounset
     # this function is usually called from bin/init.libraries
-    if [ "${#CRF[@]}" -eq 0 ]; then
-        CRF=()
-        CRF['base']="/usr/local/crf"
-        CRF['bin']="${CRF['base']}/bin"
-        CRF['lib']="${CRF['base']}/bashlib"
-        CRF['env']="${CRF['base']}/environment"
-        CRF['startup']="${CRF['base']}/startup"
-        CRF['debug']=${DEBUG_TRACE:-0}
+    if [ ! -e "$CRF" ]; then
+        local -r crf_base="$( dirname "$CRF" )" 
+        mkdir -p "$crf_base"
+        cat << EOF > "$CRF"
+BASE=${crf_base}
+BIN=${crf_base}/bin
+ENV=${crf_base}/environment
+LIB=${crf_base}/bashlib
+STARTUP=${crf_base}/startup
+EOF
+        [ "$DEBUG_TRACE" = 0 ] || cat "$CRF"
     fi
-    set -o nounset
 }
+export -f crf.__init
 
+#############################################################################
+function crf.BASE()
+{
+    lib.getProperty "^${FUNCNAME[0]##*.}=" "$CRF"
+}
+export -f crf.BASE
 
+#############################################################################
+function crf.BIN()
+{
+    lib.getProperty "^${FUNCNAME[0]##*.}=" "$CRF"
+}
+export -f crf.BIN
+
+#############################################################################
+function crf.ENV()
+{
+    lib.getProperty "^${FUNCNAME[0]##*.}=" "$CRF"
+}
+export -f crf.ENV
+
+#############################################################################
+function crf.LIB()
+{
+    lib.getProperty "^${FUNCNAME[0]##*.}=" "$CRF"
+}
+export -f crf.LIB
+
+#############################################################################
+function crf.STARTUP()
+{
+    lib.getProperty "^${FUNCNAME[0]##*.}=" "$CRF"
+}
+export -f crf.STARTUP
+  
 #############################################################################
 function crf.makeScript()
 {
-    local file=${1:?'Input parameter "file" must be defined'}
-    local tmpScript="/tmp/runScript.$( basename "$file" )"
+    local file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local tmpScript="/tmp/crfScript.$( basename "$file" )"
 
 cat << EOF > "$tmpScript"
 #!/bin/bash
+# Use the Unofficial Bash Strict Mode
 set -o errexit
 set -o nounset
-#set -o xtrace
-#set -o verbose
-[ ! -e "/usr/local/crf/bin/init.runtime" ] || source /usr/local/crf/bin/init.runtime 
-cd /tmp
-[ "${CRF['debug']}" = "0" ] || set -o verbose  
+set -o pipefail
+IFS=$'\n\t' 
+[ ! -e "/usr/local/crf/bin/init.runtime" ] || source /usr/local/crf/bin/init.runtime
+if [ "$DEBUG_TRACE" != "0" ]; then
+    declare -p > "$tmpScript".env
+    set -o verbose
+fi
 source "$file"
 EOF
-    chmod 755 "$tmpScript"
-    if ! eval "$tmpScript" ; then
+    cd /tmp
+    chmod 755 "$file" "$tmpScript"
+    if ( ! eval "$tmpScript" ) ; then
         $LOG ">>>>> issue while executing $( basename "$file" ) <<<<<${LF}" 'warn'
         exit 1
     fi
     rm "$tmpScript"
 }
+export -f crf.makeScript
 
 #############################################################################
 function crf.prepareEnvironment()
 {
-    local -a files=( $( lib.getFiles "${CRF['startup']}" ) )
+    local -a files=( $( lib.getFiles "$( crf.STARTUP )" ) )
     if [ ${#files[*]} -gt 0 ]; then
 
         # execute scritps in sorted order
@@ -67,12 +108,11 @@ function crf.prepareEnvironment()
             (( isdone++ )) || :
         done
         if [ $todo -ne $isdone ]; then
-            $LOG "count before: $todo.  count after: $isdone.  files: ${files[@]}${LF}" 'info'
+            $LOG "count before: $todo.  count after: $isdone.  files: ${files[*]}${LF}" 'info'
 #            trap.die "failed to execute all scripts"
         else
             $LOG "Finished executing startup scripts${LF}" 'info'
         fi 
     fi
 }
-
-#############################################################################
+export -f crf.prepareEnvironment

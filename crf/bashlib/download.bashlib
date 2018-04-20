@@ -8,7 +8,7 @@
 
 function download.getFile()
 {
-    local -r file=${1:?'Input parameter "file" must be defined'}
+    local -r file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     # load download definition
     source "$file"
@@ -49,16 +49,17 @@ function download.getFile()
     done
     exit 1
 }
-
+export -f download.getFile
 
 #############################################################################
 function download.getPackages()
 {
-    local -a files=${1:?'Input parameter "files" must be defined'}
+    local -a files=${1:?"Input parameter 'files' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     for file in ${files} ; do
-        lib.copyFileToRuntimeEnvironment "$file"
+        lib.copyFileToRuntime 'ENV' "$file"
         cd /tmp
         eval download.getFile "$file" || $LOG ">>>>> issue while downloading $( basename "$file" ) <<<<<${LF}" 'warn'
     done
 }
+export -f download.getPackages

@@ -3,63 +3,42 @@
 #
 #   lib.bashlib: container_build_framework
 #
+#  thanks to Stephen R. Scaffidi for relativize
+#        (https://gist.github.com/hercynium/3899407#file-relpath-bash)
+#
 #############################################################################
 
-function lib.copyFileToRuntimeEnvironment()
+function lib.copyFileToRuntime()
 {
-    local -r file="${1:?'Input parameter "file" must be defined'}"
-    local -r envFile="${CRF['env']}/$( basename "$file")"
+    local -r loc="${1^^:?"Input parameter 'loc' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r file="${2:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    case "$loc" in
+        BIN)         : ;;
+        ENV)         : ;; 
+        LIB)         : ;;
+        STARTUP)     : ;;
+        *)  $LOG "Invalid runtime location '$loc' specified${LF}" 'error'
+            exit 1;;
+    esac
     
-    if [ -e "$envFile" ]; then
-        $LOG "Attempt to overwrite file '$envFile' will likely result in unintentend consequences${LF}" 'error'
+    local -r rtFile="$( "crf.$loc" )/$( basename "$file" )"
+    if [ -e "$rtFile" ]; then
+        $LOG "Attempt to overwrite file '$rtFile' will likely result in unintentend consequences${LF}" 'error'
         exit 1
     fi
-
-    echo "copying $file"
-    # copy file
-    [ ! -e "$file" ] || cp "$file" "$envFile"
-}
-
-#############################################################################
-function lib.createFileForRuntimeEnvironment()
-{
-    local -r file="${1:?'Input parameter "file" must be defined'}"
-    local -a vars="${2:?'Input parameter "vars" must be defined'}"
-    local -r envFile="${CRF['env']}/$( basename "$file")" 
-
-    if [ -e "$envFile" ]; then
-        $LOG "Attempt to overwrite file '$envFile' will likely result in unintentend consequences${LF}" 'error'
-        exit 1
-    fi
-
-    echo "creating $envFile"
-    cat << "EOF" > "$envFile"
-#!/bin/bash
-# this file is generated!!  DO NOT MODIFY
-EOF
     
-    for var in ${vars[@]}; do
-        local val="${!var}"
-        [ "$val" = "${val%[[:space:]]*}" ] || val="\"$val\""
-        printf "export %s=%s\n" "$var" "$val" >> "$envFile"
-    done
-}
-
-#############################################################################
-function lib.copyFileToRuntimeStartup()
-{
-    local -r file="${1:?'Input parameter "file" must be defined'}"
-    local -r startFile="${CRF['startup']}/$( basename "$file")"
-    
-    if [ -e "$startFile" ]; then
-        $LOG "Attempt to overwrite file '$startFile' will likely result in unintentend consequences${LF}" 'error'
-        exit 1
+    # use input file if it exists, otherwise determine if file exists in coresponding '/usr/local/crf' folder
+    local srcFile="$file"
+    [ -e "$srcFile" ] || srcFile="$( cbf.BASE )/usr/local/crf/$( basename "$( "crf.$loc" )" )/$( basename "$file" )"
+    if [ -e "$srcFile" ]; then
+        echo "copying $srcFile to $rtFile"
+        # copy file
+        cp "$srcFile" "$rtFile"
+    else
+        $LOG "Attempt to copy non-existent file '$srcFile' to ${rtFile}${LF}" 'warning'
     fi
-
-    echo "copying $file"
-    # copy file
-    [ ! -e "$file" ] || cp "$file" "$startFile"
 }
+export -f lib.copyFileToRuntime
 
 #############################################################################
 #
@@ -70,7 +49,7 @@ function lib.copyFileToRuntimeStartup()
 #
 function lib.file_env()
 {
-    local -r var="${1:?'Input parameter "var" must be defined'}"
+    local -r var="${1:?"Input parameter 'var' must be passed to 'function ${FUNCNAME[0]}()'"}"
     local def="${2:-}"
 
     local fileVar="${var}_FILE"
@@ -87,66 +66,106 @@ function lib.file_env()
     export "$var"="$val"
     unset "$fileVar"
 }
+export -f lib.file_env
 
 #############################################################################
 function lib.getFiles()
 {
-    local -r dir=${1:?'Input parameter "dir" must be defined'}
+    local -r dir=${1:?"Input parameter 'dir' must be passed to 'function ${FUNCNAME[0]}()'"}
     local OIFS=$IFS
     
     IFS=$'\r\n'
     [ ! -d "$dir" ] || find "$dir"  -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort
     IFS=$OIFS
 }
+export -f lib.getFiles
+
+#############################################################################
+function lib.getProperty()
+{
+    local -r prop=${1:?"Input parameter 'prop' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r file=${2:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
+    
+    grep -e "$prop" "$file" | sed -e "s/${prop}//"
+}
+export -f lib.getProperty
 
 #############################################################################
 function lib.indirectReference()
 {
-    local -r ahash=${1:?'Input parameter "ahash" must be defined'}
-    local -r key=${2:?'Input parameter "key" must be defined'}
+    local -r ahash=${1:?"Input parameter 'ahash' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r key=${2:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local SAVED_OPTIONS=$(set +o)
     set +o nounset
     local -r default="$3"
 
     local val=$( eval "echo \${$ahash[$key]}" )
     [ -n "$val" ] || val="$default"
     echo "$val"
-    set -o nounset
+    eval "$SAVED_OPTIONS"
 }
+export -f lib.indirectReference
 
 #############################################################################
 function lib.intersect()
 {
-    local -r a1=${1:?'Input parameter "a1" must be defined'}
-    local -r a2=${2:?'Input parameter "a2" must be defined'}
+    local -r a1=${1:?"Input parameter 'a1' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r a2=${2:?"Input parameter 'a2' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     # find entries of a1 which are in a2
     local -a common=()
     for item in $a1; do
         for ref in $a2; do
-            if [ $item = $ref ]; then
-                common+=($item)
+            if [ "$item" = "$ref" ]; then
+                common+=( "$item" )
                 break
             fi
         done
     done
     [ ${#common[*]} -eq 0 ] || echo "${common[*]}"
 }
+export -f lib.intersect
+
+#############################################################################
+function lib.lookupId()
+{
+    local -r database=${1:?"Input parameter 'database' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r entry=${2:?"Input parameter 'entry' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r default=${3:?"Input parameter 'default' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    local id=$(getent "$database" "$entry" | cut -d: -f3)
+    [ "$id" ] || id=$default
+    echo "$id"
+}
+export -f lib.lookupId
+
+#############################################################################
+function lib.OSid()
+{
+    if [ -e /etc/os-release ]; then
+        grep -e '^ID=' /etc/os-release | awk -F'=' '{ print $2 }'
+    else
+        echo 'windows'
+    fi
+}
+export -f lib.OSid
 
 #############################################################################
 function lib.primaryPid
 {
-    local -r cmdName=${1:?'Input parameter "cmdName" must be defined'}
+    local -r cmdName=${1:?"Input parameter 'cmdName' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     ps -o pid,ppid,comm | \
     grep "$cmdName" | \
     grep -v 'grep' | \
     awk '{ pids[$1]=$2 } END { for (pid in pids) { id = pids[pid]; if (! pids[id]) { print pid } } }'
 }
+export -f lib.primaryPid
 
 #############################################################################
 function lib.readFile()
 {
-    local -r file=${1:?'Input parameter "file" must be defined'}
+    local -r file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
     
     if [ -e "$file" ]; then
         cat "$file"
@@ -154,21 +173,22 @@ function lib.readFile()
         echo "File: '$file' does not exist"
     fi
 }
+export -f lib.readFile
 
 ######################################################################
 function lib.relativize()
 {
-    local from="${1:?'Input parameter "from" must be defined'}"
-    local to="${2:?'Input parameter "to" must be defined'}"
+    local from="${1:?"Input parameter 'from' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local to="${2:?"Input parameter 'to' must be passed to 'function ${FUNCNAME[0]}()'"}"
     local OIFS=$IFS
 
-    from=${from//\/\//\/}
-    from=${from%/}
+    from="${from//\/\//\/}"
+    from="${from%/}"
     IFS=/
-    dirs=(${from#/})
+    dirs=("${from#/}")
     for to; do
-        to=${to//\/\//\/}
-        to=${to%/}
+        to="${to//\/\//\/}"
+        to="${to%/}"
         local commonPrefix=/
         for d in "${dirs[@]}"; do
             case "$to/" in "$commonPrefix$d/"*) ;;
@@ -177,27 +197,45 @@ function lib.relativize()
             commonPrefix+="$d/"
         done
         local ancestor="${from#${commonPrefix%/}}"
-        ancestor=${ancestor//[^\/]/}
-        ancestor=${ancestor//\//..\/}
+        ancestor="${ancestor//[^\/]/}"
+        ancestor="${ancestor//\//..\/}"
     done
     IFS=$OIFS
     echo -n "$ancestor${to#$commonPrefix}"
 }
+export -f lib.relativize
 
 #############################################################################
 function lib.updateConfigFile()
 {
-    local -r param="${1:?'Input parameter "param" must be defined'}"
-    local -r attr="${2:?'Input parameter "attr" must be defined'}"
-    local config_file=$3
+    local -r param="${1:?"Input parameter 'param' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r attr="${2:?"Input parameter 'attr' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r config_file="${3:?"Input parameter 'config_file' must be passed to 'function ${FUNCNAME[0]}()'"}"
 
     if [[ "$param" ]]; then
-        if grep --silent "$attr" "config_file" ; then
+        if grep -q "$attr" "config_file" ; then
             sed -i "s|^$attr=.*$|$attr=$param|" "$config_file" 
         else
             echo "$attr=$param" >> "$config_file"
         fi
     fi
 }
+export -f lib.updateConfigFile
 
 #############################################################################
+function lib.updateRuntimeEnvironment()
+{
+    local -a in_array="${1:?"Input parameter 'in_array' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r envFile="$( crf.BIN )/rt.environment"
+    local -r prefix='declare -x'
+
+    for line in ${in_array[@]} ; do
+        local var="${line%%=*}"
+        if grep -q "^${prefix} ${var}=" "$envFile" ; then
+            sed -i "s|^${prefix} ${var}=.*$|${prefix} $line|" "$envFile" 
+        else
+            echo "${prefix} $line" >> "$envFile"
+        fi
+    done
+}
+export -f lib.updateRuntimeEnvironment
