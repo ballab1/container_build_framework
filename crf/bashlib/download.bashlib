@@ -8,7 +8,7 @@
 
 function download.getFile()
 {
-    local -r file=${1:?'Input parameter "file" must be defined'}
+    local -r file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     # load download definition
     source "$file"
@@ -30,10 +30,10 @@ function download.getFile()
 
     local -i attempt
     for attempt in {0..3}; do
-        [ $attempt -eq 3 ] && exit 1
+        [ $attempt -lt 3 ] || break
         [ ! -e "${params['file']}" ] || rm "${params['file']}"
         wget -O "${params['file']}" --no-check-certificate "${params['url']}"
-        [ $? -ne 0 ] && continue
+        [ $? -eq 0 ] || continue
         local result=$(echo "${params['sha256']}  ${params['file']}" | sha256sum -cw 2>&1)
         $LOG "${result}${LF}" 'info'
         if [[ "$result" == *'FAILED'* ]]; then
@@ -45,20 +45,22 @@ function download.getFile()
             $LOG "..failed to successfully download ${params['file']}. Retrying....${LF}" 'info'
             continue
         fi
+        # successfully downloaded file :-)
         return 0
     done
-    exit 1
+    trap.die "failed to successfully download ${params['file']}."
 }
-
+export -f download.getFile
 
 #############################################################################
 function download.getPackages()
 {
-    local -a files=${1:?'Input parameter "files" must be defined'}
+    local -a files=${1:?"Input parameter 'files' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     for file in ${files} ; do
-        lib.copyFileToRuntimeEnvironment "$file"
+        crf.copyFileToRuntime 'ENV' "$file"
         cd /tmp
         eval download.getFile "$file" || $LOG ">>>>> issue while downloading $( basename "$file" ) <<<<<${LF}" 'warn'
     done
 }
+export -f download.getPackages

@@ -7,9 +7,12 @@
 ##########################################################
 
 
-declare -r dirlist='/usr/local/bin /usr/bin /sbin'
+declare -r dirlist=( /usr/local/bin
+                     /usr/local/crf/startup
+                     /usr/bin
+                     /sbin )
 
-for dir in ${dirlist}; do
+for dir in ${dirlist[@]}; do
     mkdir -p "$dir" && chmod -R 777 "$dir"
     while read -r file; do
         chmod 755 "$file"

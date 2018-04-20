@@ -1,0 +1,7 @@
+bold=21
+dim=22
+underline=24
+blink=25
+invert=27
+hidden=28
+all=0

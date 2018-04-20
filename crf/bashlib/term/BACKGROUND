@@ -1,0 +1,17 @@
+default=49
+black=40
+red=41
+green=42
+yellow=43
+blue=44
+magenta=45
+cyan=46
+lt_gray=47
+dk_gray=100
+lt_red=101
+lt_green=102
+lt_yellow=103
+lt_blue=104
+lt_magenta=105
+lt_cyan=106
+white=107

@@ -5,74 +5,194 @@
 #
 #############################################################################
 
-
-declare -A CRF
-
-function crf.__init()
-{
-    set +o nounset
-    # this function is usually called from bin/init.libraries
-    if [ "${#CRF[@]}" -eq 0 ]; then
-        CRF=()
-        CRF['base']="/usr/local/crf"
-        CRF['bin']="${CRF['base']}/bin"
-        CRF['lib']="${CRF['base']}/bashlib"
-        CRF['env']="${CRF['base']}/environment"
-        CRF['startup']="${CRF['base']}/startup"
-        CRF['debug']=${DEBUG_TRACE:-0}
-    fi
-    set -o nounset
-}
+declare -xr CRF=/usr/local/crf/CRF.properties
+declare -rx RT_ENVIRON_PREFIX='declare -x'
 
 
 #############################################################################
-function crf.makeScript()
+function crf.__init()
 {
-    local file=${1:?'Input parameter "file" must be defined'}
-    local tmpScript="/tmp/runScript.$( basename "$file" )"
-
-cat << EOF > "$tmpScript"
-#!/bin/bash
-set -o errexit
-set -o nounset
-#set -o xtrace
-#set -o verbose
-[ ! -e "/usr/local/crf/bin/init.runtime" ] || source /usr/local/crf/bin/init.runtime 
-cd /tmp
-[ "${CRF['debug']}" = "0" ] || set -o verbose  
-source "$file"
+    # this function is usually called from bin/init.libraries
+    if [ ! -e "$CRF" ]; then
+        local -r crf_base="$( dirname "$CRF" )" 
+        mkdir -p "$crf_base"
+        cat << EOF > "$CRF"
+BASE=${crf_base}
+BIN=${crf_base}/bin
+ENV=${crf_base}/environment
+LIB=${crf_base}/bashlib
+STARTUP=${crf_base}/startup
 EOF
-    chmod 755 "$tmpScript"
-    if ! eval "$tmpScript" ; then
-        $LOG ">>>>> issue while executing $( basename "$file" ) <<<<<${LF}" 'warn'
-        exit 1
+        [ "$DEBUG_TRACE" = 0 ] || cat "$CRF"
     fi
-    rm "$tmpScript"
 }
+export -f crf.__init
+
+#############################################################################
+function crf.BASE()
+{
+    lib.getProperty "^${FUNCNAME[0]##*.}=" "$CRF"
+}
+export -f crf.BASE
+
+#############################################################################
+function crf.BIN()
+{
+    lib.getProperty "^${FUNCNAME[0]##*.}=" "$CRF"
+}
+export -f crf.BIN
+
+#############################################################################
+function crf.ENV()
+{
+    lib.getProperty "^${FUNCNAME[0]##*.}=" "$CRF"
+}
+export -f crf.ENV
+
+#############################################################################
+function crf.LIB()
+{
+    lib.getProperty "^${FUNCNAME[0]##*.}=" "$CRF"
+}
+export -f crf.LIB
+
+#############################################################################
+function crf.RT_ENVIRON()
+{
+    echo "$( crf.BIN )/rt.environment"
+}
+export -f crf.RT_ENVIRON
+
+#############################################################################
+function crf.STARTUP()
+{
+    lib.getProperty "^${FUNCNAME[0]##*.}=" "$CRF"
+}
+export -f crf.STARTUP
+  
+#############################################################################
+function crf.copyFileToRuntime()
+{
+    local -r loc="${1^^:?"Input parameter 'loc' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r file="${2:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}"
+
+    case "$loc" in
+        BIN)         : ;;
+        ENV)         : ;; 
+        LIB)         : ;;
+        STARTUP)     : ;;
+        *)  trap.die "Invalid runtime location '$loc' specified";;
+    esac
+    
+    local -r rtFile="$( "crf.$loc" )/$( basename "$file" )"
+    [ ! -e "$rtFile" ] || trap.die "Attempt to overwrite file '$rtFile' will likely result in unintentend consequences"
+    
+    # use input file if it exists, otherwise determine if file exists in coresponding '/usr/local/crf' folder
+    local srcFile="$file"
+    [ -e "$srcFile" ] || srcFile="$( cbf.BASE )/usr/local/crf/$( basename "$( "crf.$loc" )" )/$( basename "$file" )"
+    if [ -e "$srcFile" ]; then
+        echo "copying $srcFile to $rtFile"
+        # copy file
+        cp "$srcFile" "$rtFile"
+    else
+        $LOG "Attempt to copy non-existent file '$srcFile' to ${rtFile}${LF}" 'warning'
+    fi
+}
+export -f crf.copyFileToRuntime
+
+#############################################################################
+function crf.fixupDirectory()
+{
+    local -r dir="${1:?'Input parameter "dir" must be defined'}"
+    local SAVED_OPTIONS=$(set +o)
+    set +o nounset
+    local -r user=${2:-$(lib.currentUser)}
+    eval "$SAVED_OPTIONS"
+    
+    $LOG "Fixing up directory: ${dir}${LF}" 'info'
+    if [ "${dir}" != '/' ]; then
+        [ -d "${dir}" ] || mkdir -p "${dir}"
+        find "$dir" -type d ! -perm 777 -exec chmod 777 '{}' \;
+        find "$dir" -type f ! -perm 666 -exec chmod 666 '{}' \;
+        # set owner to uid & login group for uid
+        if [ "$user" != root ] && [ "$user" != 0 ]; then
+            find "$dir" ! -user "$user" -exec chown "${user}:" '{}' \;
+        fi
+        true
+    else
+        $LOG "Attempt to fix up '${dir}' is not permitted.${LF}" 'warn'
+        false
+    fi
+}
+export -f crf.fixupDirectory
 
 #############################################################################
 function crf.prepareEnvironment()
 {
-    local -a files=( $( lib.getFiles "${CRF['startup']}" ) )
+    local -a files=( $( lib.getFiles "$( crf.STARTUP )" ) )
     if [ ${#files[*]} -gt 0 ]; then
 
         # execute scritps in sorted order
-        local -i todo=${#files[@]}
-        local -i isdone=0
+        local -i successfullyRan=0
         for _name in $( printf "%s\n" ${!files[@]} | sort ); do
-            local file="${files[$_name]}"
-            chmod 755 "$file"
-            $LOG "..executing ${file}${LF}" 'info'
-            ( crf.makeScript "$file" )
-            (( isdone++ )) || :
+            crf.runScript "${files[$_name]}" || (( successfullyRan++ ))
         done
-        if [ $todo -ne $isdone ]; then
-            $LOG "count before: $todo.  count after: $isdone.  files: ${files[@]}${LF}" 'info'
+        if [ $successfullyRan -ne ${#files[@]} ]; then
+            $LOG "count before: ${#files[@]}.  count after: ${successfullyRan}.  files: ${files[*]}${LF}" 'info'
 #            trap.die "failed to execute all scripts"
         else
             $LOG "Finished executing startup scripts${LF}" 'info'
         fi 
     fi
 }
+export -f crf.prepareEnvironment
 
 #############################################################################
+function crf.removeFromRuntimeEnvironment()
+{
+    local -r entry="${1:?"Input parameter 'entry' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r envFile="$( crf.RT_ENVIRON )"
+
+    if grep -q "^${RT_ENVIRON_PREFIX} ${entry}=" "$envFile" ; then
+        sed -i "s|^${RT_ENVIRON_PREFIX} ${entry}=.*$||" "$envFile" 
+    fi
+}
+export -f crf.removeFromRuntimeEnvironment
+
+#############################################################################
+function crf.runScript()
+{
+    local script=${1:?"Input parameter 'script' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    cd "$WORKDIR"
+    $LOG "..executing ${script}${LF}" 'info'
+    chmod 755 "$script"
+    
+    
+    local -i status
+    ( exec "$script" ) && status=$? || status=$? 
+    if [ $status -ne 0 ]; then
+        $LOG ">>>>> issue while executing $( basename "$script" ) <<<<<${LF}" 'warn'
+        return 1
+    fi
+    return 0
+}
+export -f crf.runScript
+
+#############################################################################
+function crf.updateRuntimeEnvironment()
+{
+    local -a in_array="${1:?"Input parameter 'in_array' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r envFile="$( crf.RT_ENVIRON )"
+
+    for line in ${in_array[@]} ; do
+        local var="${line%%=*}"
+        if grep -q "^${RT_ENVIRON_PREFIX} ${var}=" "$envFile" ; then
+            sed -i "s|^${RT_ENVIRON_PREFIX} ${var}=.*$|${RT_ENVIRON_PREFIX} $line|" "$envFile" 
+        else
+            echo "${RT_ENVIRON_PREFIX} $line" >> "$envFile"
+        fi
+    done
+}
+export -f crf.updateRuntimeEnvironment
+
