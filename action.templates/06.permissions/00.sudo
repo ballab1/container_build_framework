@@ -16,7 +16,7 @@ fi
 
 declare -r SUDOERS=/etc/sudoers.d
 if [ -d "$SUDOERS" ]; then
-    declare files=( $( lib.getFiles "$SUDOERS" ) )
+    declare -a files=( $( lib.getFiles "$SUDOERS" ) )
 
     if [ "${#files[*]}" -gt 0 ]; then
         for file in ${files[@]} ; do

@@ -8,16 +8,15 @@
 Every script defined in the action folders, is run from the '/tmp' folder as the current directory.
 The following environment variables are available:
 
-Environment Variable | contents
+CBF method | property returned
 --- | ---
- CBF['base'] | base folder. In the build container, this is '/tmp'. In the git workspace, this is the 'build' folder.
- CBF['bin'] | cbf bin folder. this contains the _setupContainerFramework_ script and test script.
- CBF['debug'] | when set to 1 (from DEBUG_TRACE build arguement) causes action scripts to be verbose.
- CBF['action'] | project actions folder. This contains the folders over which the framework iterates.
- CBF['lib'] | cbf library folder. This contains the framework bashlib scripts.
- CBF['templates'] | action template folders. This is the framework copy of the `action_folders`
+ cbf.BASE | base folder. In the build container, this is '/tmp'. In the git workspace, this is the 'build' folder.
+ cbf.BIN | cbf bin folder. this contains the _setupContainerFramework_ script and test script.
+ cbf.ACTION | project actions folder. This contains the folders over which the framework iterates.
+ cbf.LIB | cbf library folder. This contains the framework bashlib scripts.
+ cbf.TEMPLATES | action template folders. This is the framework copy of the `action_folders`
  
-These environment variables may be used to source any of the scripts in the action folders using "${CBF['action']}" or from the `action_folders` directories using "${CBF['action']}".
+These environment variables may be used to source any of the scripts in the action folders using "$( cbf.ACTION )" or from the `action_folders` directories using "$( cbf.ACTION )".
 Any script language may be used in the any of the `action_folders', other than *02.users_groups* and *03.downloads*.
 
 ### Install needed OS Support
@@ -81,7 +80,6 @@ PHPADMIN['version']=${PHPADMIN_VERSION:-4.7.4}
 PHPADMIN['file']="/tmp/phpMyAdmin-${PHPADMIN['version']}-all-languages.tar.gz"
 PHPADMIN['url']="https://files.phpmyadmin.net/phpMyAdmin/${PHPADMIN['version']}/phpMyAdmin-${PHPADMIN['version']}-all-languages.tar.gz"
 PHPADMIN['sha256']="fd1a92959553f5d87b3a2163a26b62d6314309096e1ee5e89646050457430fd2"
-export WWW=/www  
 ```
 The file gets downloaded and saved to the specified file. The sha256 is compared against that calculated from the downloaded file, and if it is the same, the download is considered successful. A max of three retries is performed. The file should be downloaded and the sha256 calculated ahead of building your container. In Linux, the `sha256sum` application can be used. These file may be 'sourced' in later scripts to access their definitions.
 

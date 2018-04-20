@@ -6,8 +6,8 @@
 #----------------------------------------------------------------------------
 
 # global exceptions
-declare -i dying=0
-declare -i pipe_error=0
+declare -ix dying=0
+declare -ix pipe_error=0
 
 #----------------------------------------------------------------------------
 # Exit on any error
@@ -17,16 +17,11 @@ function trap.catch_error()
     
     set +o verbose
     set +o xtrace
-    $LOG "Error in ${BASH_SOURCE[1]}:${BASH_LINENO[0]}. '${BASH_COMMAND}' exited with status $err${LF}" 'error'
-    # Print out the stack trace described by $function_stack  
-    if [ ${#FUNCNAME[@]} -gt 2 ]; then
-        $LOG "Stack trace:${LF}" 'error'
-        for ((i=1;i<${#FUNCNAME[@]}-1;i++)); do
-            $LOG  ">>>    $i: ${BASH_SOURCE[$i+1]}:${BASH_LINENO[$i]} ${FUNCNAME[$i]}(...)  <<<${LF}" 'error'
-        done
-    fi
+    trap.log "Error in ${BASH_SOURCE[1]}:${BASH_LINENO[0]}. '${BASH_COMMAND}' exited with status ${err}"
+    trap.stacktrace
     exit 1
 }
+export -f trap.catch_error
 
 #----------------------------------------------------------------------------
 # Detect when build is aborted
@@ -34,6 +29,7 @@ function trap.catch_int()
 {
     trap.die "${BASH_SOURCE[0]} has been aborted with SIGINT (Ctrl-C)"
 }
+export -f trap.catch_int
 
 #----------------------------------------------------------------------------
 function trap.catch_pipe()
@@ -44,6 +40,7 @@ function trap.catch_pipe()
 
     trap.die "${BASH_SOURCE[0]} has been aborted with SIGPIPE (broken pipe)"
 }
+export -f trap.catch_pipe
 
 #----------------------------------------------------------------------------
 function trap.die()
@@ -52,14 +49,34 @@ function trap.die()
     [[ $status -ne 0 ]] || status=255
     dying+=1
 
-    ( $LOG "${LF}FATAL ERROR: $*${LF}" 'error' ) >&2
-    exit $status
+    ( trap.log "${LF}FATAL ERROR: $*" ) >&2
+    [ "$DEBUG_TRACE" = "2" ] || exit $status
 }  
+export -f trap.die
 
-# trap ERR to provide an error handler whenever a command exits nonzero
-trap trap.catch_error ERR
-trap trap.catch_int INT
-trap trap.catch_pipe PIPE
+#----------------------------------------------------------------------------
+function trap.log()
+{
+    printf "%s\e[0m\n" "$1" >&2
+}
+export -f trap.log
 
-# setting errtrace allows our ERR trap handler to be propagated to functions, expansions and subshells
-set -o errtrace
+#----------------------------------------------------------------------------
+# display stacktrace
+function trap.stacktrace()
+{
+    local __trap_options=$(set +o)
+    set +o nounset
+    set +o verbose
+    set +o xtrace
+    
+    # Print out the stack trace described by $function_stack  
+    if [ ${#FUNCNAME[@]} -gt 2 ]; then
+        trap.log "Stack trace:"
+        for ((i=1;i<${#FUNCNAME[@]}-1;i++)); do
+            trap.log "$(printf ">>>    %02d: %s %s  <<<" "$i" "${BASH_SOURCE[$i+1]}:${BASH_LINENO[$i]}" "${FUNCNAME[$i]}" )"
+        done
+    fi
+    eval "$__trap_options"
+}
+export -f trap.stacktrace

@@ -7,20 +7,21 @@
 
 function uidgid.check()
 {
-    local -a files=${1:?'Input parameter "files" must be defined'}
+    local -a files=${1:?"Input parameter 'files' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     for file in ${files} ; do
-        lib.copyFileToRuntimeEnvironment "$file"
+        crf.copyFileToRuntime 'ENV' "$file"
         chmod 755 "$file"
         $LOG "..executing ${file}${LF}" 'info'
-        eval uidgid.createUserAndGroup "$file" || $LOG "..*** issue while executing $( basename "$file" ) ***${LF}" 'warn'
+        ( uidgid.runScript "$file" )
     done
 }
+export -f uidgid.check
 
 #############################################################################
 function uidgid.createUserAndGroup()
 {
-    local -r file=${1:?'Input parameter "file" must be defined'}
+    local -r file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     source "$file"
 
@@ -50,10 +51,12 @@ function uidgid.createUserAndGroup()
             local oldName=$( getent group "${gid}" | awk -F ':' '{ printf "%s",$1 }' )
             $LOG "renaming group:  ${oldName} to ${group}${LF}" 'info'
             /usr/sbin/groupmod --new-name "$group" "$oldName"
+        elif [[ "$nameMatch" ]]; then
+            local oldId=$( getent group "${group}" | awk -F ':' '{ printf "%s",$3 }' )
+            $LOG "renaming group:  ${oldId} to ${gid}${LF}" 'info'
+            /usr/sbin/groupmod --gid ${gid} "$group"
         else
             $LOG "create group:  ${group}${LF}" 'info'
-            [[ "$nameMatch"  &&  $wanted != $nameMatch ]] && groupdel "$( getent group ${group} |  cut -d: -f1 )"
-            [[ "$idMatch"    &&  $wanted != $idMatch ]]   && groupdel "$( getent group ${gid} |  cut -d: -f1 )"
             /usr/sbin/groupadd --gid "${gid}" "${group}"
         fi
     fi
@@ -85,4 +88,15 @@ function uidgid.createUserAndGroup()
             fi
         fi
     fi
-} 
+}
+export -f -f uidgid.createUserAndGroup
+
+#############################################################################
+function uidgid.runScript()
+{
+    local -a file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    source /usr/local/crf/bin/init.runtime
+    eval uidgid.createUserAndGroup "$file" || $LOG "..*** issue while executing $( basename "$file" ) ***${LF}" 'warn'
+}
+export -f uidgid.check

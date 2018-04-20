@@ -6,42 +6,46 @@
 #
 ##########################################################
 
-
 # copy runtime framework (only copy updates)
-mkdir -p "${CBF['crt_base']}"
-cd "${CBF['crf_base']}"
+mkdir -p "$( cbf.CRT_BASE )"
+cd "$( cbf.CRF_BASE )"
 
-#ensure crf directories exist
+# ensure crf directories exist
 while read -r dir; do
-    mkdir -p "${CBF['crt_base']}/$dir"
+    mkdir -p "$( cbf.CRT_BASE )/$dir"
 done < <(find . -maxdepth 1 -mindepth 1 -type d ! -name '.*')
 
-declare -i val
 
 # copy runtime framework (only copy updates)
 while read -r file ; do
-    if [ -e "${CBF['crt_base']}/$file" ]; then
-        $( ! cmp -s "$file" "${CBF['crt_base']}/$file" ) || continue
-        echo "updating ${CBF['crt_base']}/$file"
+    declare action='creating'
+    if [ -e "$( cbf.CRT_BASE )/$file" ]; then
+        [ "$( basename "$file" )" != 'rt.environment' ] || continue
+        $( ! cmp -s "$file" "$( cbf.CRT_BASE )/$file" ) || continue
+        action='updating'
     fi
-    mkdir -p "$( dirname "${CBF['crt_base']}/$file" )"
-    cp "$file" "${CBF['crt_base']}/$file"
+    echo "${action} $( cbf.CRT_BASE )/$file"
+    mkdir -p "$( dirname "$( cbf.CRT_BASE )/$file" )"
+    cp "$file" "$( cbf.CRT_BASE )/$file"
 done< <(find . -type f ! -name '.*')
+
+# update container name in runtime environment
+crf.updateRuntimeEnvironment  "CONTAINER_NAME=\"\${CONTAINER_NAME:-$CONTAINER_NAME}\""
 
 
 # create docker-entrypoint.sh from copy default entrypoint script if none exists to invoke the CRF
-if [ ! -e "${CBF['base']}/override.entrypoint" ]; then
+if [ ! -e "$( cbf.BASE )/override.entrypoint" ]; then
     # this may get refactored into processing of 'container.properties'
     if [ ! -e /usr/local/bin/docker-entrypoint.sh ]; then
         mkdir -p /usr/local/bin
         echo 'Creating docker-entrypoint.sh'
-        cp "${CBF['crf_bin']}/default.entrypoint" /usr/local/bin/docker-entrypoint.sh
+        cp "$( cbf.CRF_BIN )/default.entrypoint" /usr/local/bin/docker-entrypoint.sh
 
-    elif [ -e "${CBF['base']}/usr/local/bin/docker-entrypoint.sh" ]; then 
+    elif [ -e "$( cbf.BASE )/usr/local/bin/docker-entrypoint.sh" ]; then 
         echo 'Potential conflict detected with existing file: /usr/local/bin/docker-entrypoint.sh'
         echo 'To prevent this error, either:'
-        echo "    remove the file:       ${CBF['base']}/usr/local/bin/docker-entrypoint.sh"
-        echo "    or create an override: ${CBF['base']}/override.entrypoint"
+        echo "    remove the file:       $( cbf.BASE )/usr/local/bin/docker-entrypoint.sh"
+        echo "    or create an override: $( cbf.BASE )/override.entrypoint"
         exit 1
     fi
     sed -i "s|^declare -rx CONTAINER_NAME=.*$|declare -rx CONTAINER_NAME=${CONTAINER_NAME}|" /usr/local/bin/docker-entrypoint.sh
@@ -52,6 +56,7 @@ fi
 # setup some variables based on runtime properties in the Dockerfile 
 declare props=/tmp/container.properties
 if [ -e "$props" ]; then
+    declare -i val
     while IFS='=' read -r key value; do
         case "$key" in
             entrypoint) declare entrypoint="$val";;

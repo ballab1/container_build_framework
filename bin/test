@@ -7,13 +7,15 @@
 
 set -o errexit
 set -o nounset
+set -o pipefail
+IFS=$'\t\n'
 
 declare -A test=()
 
 #############################################################################
 function test.installBatsModules()
 {
-    local -r test_dir=${1:?"must pass parameter 'test_dir' to 'function ${FUNCNAME[0]}()'"} 
+    local -ra test_dir=${1:?"must pass parameter 'test_dir' to 'function ${FUNCNAME[0]}()'"} 
     
     if [ ${#test[*]} -eq 0 ]; then
         # configure where our test framework comes from, adn in which dir it resides
@@ -25,9 +27,15 @@ function test.installBatsModules()
         git clone --depth 1 --recurse -q "${test['BATS_MODULES_REPO']}" "${test['BATS_DIR']}" > /dev/null 2>&1
 
         # load the framework
-        local -r dirs='bats-assert bats-support bats-file'
-        for dir in $dirs ; do
-            source "${test['BATS_DIR']}/${dir}/load.bash"
+        local -ra dirs=( bats-assert bats-support bats-file )
+        for dir in ${dirs[@]} ; do
+            local batFile="${test['BATS_DIR']}/${dir}/load.bash"
+            if [ -e "$batFile" ]; then
+                echo "Loading: '${batFile}'"
+                source "$batFile"
+            else
+                echo "Unable to load: '${batFile}'. No such file"
+            fi
         done
     fi
 }

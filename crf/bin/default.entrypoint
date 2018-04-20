@@ -1,10 +1,16 @@
 #!/bin/bash
 
+# Use the Unofficial Bash Strict Mode
+set -o errexit
+set -o nounset
+set -o pipefail
+IFS=$'\n\t'
+
+source /usr/local/crf/bin/init.runtime
+
 echo "args: $*"
 
-declare -rx CONTAINER_NAME=newcontainer
 declare -r config_entry="${CONTAINER_NAME}-setup"
-source /usr/local/crf/bin/init.runtime
 
 if [[ "$1" = "${CONTAINER_NAME}" ]]; then
     # this is the primary (default) codepath invoked by the Dockerfile
@@ -15,11 +21,13 @@ if [[ "$1" = "${CONTAINER_NAME}" ]]; then
         crf.prepareEnvironment
     elif [ "$( which sudo )" ]; then
         sudo -E "$0" "$config_entry"
+    else
+        printf "\e[35m>>>>>>>> Current user 'uid:$(id -u)' does not have super powers. Unable to configure environment\e[0m\n"
     fi
 
     declare -r tools=/usr/local/bin
     [ -e "${tools}/run.sh" ] || trap.die "No ${tools}/run.sh detected"
-    cd ${WORKING_DIR}
+    cd ${WORKDIR}
     exec "${tools}/run.sh" "$@"
 
 elif [[ "$1" = "$config_entry" && "$(id -u)" -eq 0 ]]; then

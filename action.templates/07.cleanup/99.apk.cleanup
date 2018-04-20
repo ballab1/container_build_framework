@@ -7,7 +7,7 @@
 ##########################################################
 
 
-if [ "${CBF['os_id']}" = 'alpine' ]; then
+if [ "$( lib.OSid )" = 'alpine' ]; then
     ( apk info .build-deps > /dev/null 2>&1 ) && apk del .build-deps
 
     declare -r cacheDir=/var/cache/apk
