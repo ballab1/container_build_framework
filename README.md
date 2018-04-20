@@ -1,5 +1,5 @@
 # Framework for Building Containers
-## repo: container_build_framework
+## repo: container\_build\_framework
 
 A framework to simplify 'Dockerfile' and make it easier to build complex containers
 
@@ -28,10 +28,10 @@ The simplified project `Dockerfile` looks like this:
 ![project Dockerfile](./docs/Project_Dockerfile.png)
 
 Depending on the project, there may also be other `ENV`, `EXPOSE`, `ARG` or `ONBUILD` directives, and possibily a `USER` directive.
-As can be seen, all of the script code has been moved out of the `Dockerfile`, reducing the *mixed-mode* code, and resulting in simplification. 
+As can be seen, all of the script code has been moved out of the `Dockerfile`, reducing the *mixed-mode* code, and resulting in simplification.
 
 ## Need for a Framework
-The build processes of all containers is always the same. 
+The build processes of all containers is always the same.
 
 1. Install needed OS Support
 2. Verify users and groups exist

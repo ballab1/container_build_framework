@@ -1,0 +1,373 @@
+#!/bin/bash
+#############################################################################
+#
+#   cbf.bashlib: container_build_framework
+#
+#############################################################################
+
+: ${CBF_PROPERTIES_FILE:="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P )/CBF.properties" }
+export CBF_PROPERTIES_FILE
+
+function cbf.__init()
+{    
+    # this function is usually called from bin/init.libraries
+    local -r cbf_base=${1:?"Input parameter 'cbf_base' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r crf_base=${2:?"Input parameter 'crf_base' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    CBF_PROPERTIES_FILE="${cbf_base}/CBF.properties"
+    if [ ! -e "$CBF_PROPERTIES_FILE" ]; then
+        local -r _base="$( cd "$( dirname "$cbf_base" )" && pwd )"
+
+        cat << EOF > "$CBF_PROPERTIES_FILE"
+CBFBASE=$cbf_base
+BIN=${cbf_base}/cbf/bin
+LIB=${cbf_base}/cbf/bashlib
+TEMPLATES=${cbf_base}/action.templates
+BASE=$_base
+ACTION=${_base}/action_folders
+CRF_BASE=${cbf_base}/cbf
+CRF_BIN=${crf_base}/bin
+CRT_BASE=${crf_base:-/usr/local/crf}
+EOF
+       [ "$DEBUG_TRACE" == 0 ] || cat "$CBF_PROPERTIES_FILE"
+
+       #now parse some info from our Dockerfile
+       #ENTRYPOINT cmd is used
+       #Both VOLUME and USER are used
+    fi
+}
+export -f cbf.__init
+
+#############################################################################
+function cbf.CBFBASE()
+{
+    lib.getProperty "${FUNCNAME[0]##*.}" "$( cbf.propertiesFile )"
+}
+export -f cbf.CBFBASE
+
+#############################################################################
+function cbf.BIN()
+{
+    lib.getProperty "${FUNCNAME[0]##*.}" "$( cbf.propertiesFile )"
+}
+export -f cbf.BIN
+
+#############################################################################
+function cbf.LIB()
+{
+    lib.getProperty "${FUNCNAME[0]##*.}" "$( cbf.propertiesFile )"
+}
+export -f cbf.LIB
+
+#############################################################################
+function cbf.TEMPLATES()
+{
+    lib.getProperty "${FUNCNAME[0]##*.}" "$( cbf.propertiesFile )"
+}
+export -f cbf.TEMPLATES
+
+#############################################################################
+function cbf.BASE()
+{
+    lib.getProperty "${FUNCNAME[0]##*.}" "$( cbf.propertiesFile )"
+}
+export -f cbf.BASE
+
+#############################################################################
+function cbf.ACTION()
+{
+    lib.getProperty "${FUNCNAME[0]##*.}" "$( cbf.propertiesFile )"
+}
+export -f cbf.ACTION
+
+#############################################################################
+function cbf.CRF_BASE()
+{
+    lib.getProperty "${FUNCNAME[0]##*.}" "$( cbf.propertiesFile )"
+}
+export -f cbf.CRF_BASE
+
+#############################################################################
+function cbf.CRF_BIN()
+{
+    lib.getProperty "${FUNCNAME[0]##*.}" "$( cbf.propertiesFile )"
+}
+export -f cbf.CRF_BIN
+
+#############################################################################
+function cbf.CRT_BASE()
+{
+    lib.getProperty "${FUNCNAME[0]##*.}" "$( cbf.propertiesFile )"
+}
+export -f cbf.CRT_BASE
+
+#############################################################################
+function cbf.buildContainer()
+{
+    local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r debug_trace=${2:-0}
+    local -r timezone=${3:-}
+
+    # list of 'notice, directory, action' to perform
+    local -A steps=( ['00.bashlib']='cbf.initFramework'
+                     ['01.rt_environment']='cbf.runScripts'
+                     ['02.packages']='package.runScripts'
+                     ['03.users_groups']='uidgid.runScripts'
+                     ['04.downloads']='download.runScripts'
+                     ['05.applications']='cbf.runScripts'
+                     ['06.post_build_mods']='cbf.runScripts'
+                     ['07.run.startup']='cbf.runScripts'
+                     ['08.cleanup']='cbf.runScripts'
+                   )
+
+    term.header "${name^^}"
+    if [ -z "${timezone:-}" ]; then
+        [ ! -e /etc/TZ ] || export TZ="$(< /etc/TZ )"
+    else
+        export TZ="$timezone"
+        crf.updateRuntimeEnvironment 'TZ'
+        package.updateIndexes
+        package.installTimezone "$timezone"
+    fi
+
+    # iterate through list
+    for dir in $( printf "%s\n" "${!steps[@]}" | sort ); do
+        [ "$dir" != '08.cleanup' ] || [ "$DEBUG_TRACE" = 0 ] || continue
+
+        local last_notice=''
+        if [ "$dir" = '00.bashlib' ]; then
+            cbf.showActionNotice 'last_notice' "$dir"
+            cbf.initFramework
+            continue
+        fi
+
+        # get array of files in directory
+        local -a files
+        mapfile -t files < <( lib.getFiles "$( cbf.ACTION )/$dir" 'lib.isActionFile' )
+        if [ ${#files[*]} -gt 0 ] && [ "$dir" = '07.run.startup' ]; then
+            cbf.showActionNotice 'last_notice' "$dir"
+            term.log "  - copying files to $(cbf.CRT_BASE)\n" 'task'
+            for file in "${files[@]}"; do
+                crf.copyFileToRuntime 'STARTUP' "$file"
+            done
+            files=()
+        fi
+        
+        files+=( $( lib.getFiles "$( cbf.TEMPLATES )/$dir" 'lib.isActionFile') )
+        [ ${#files[*]} -gt 0 ] || continue
+        cbf.showActionNotice 'last_notice' "$dir"
+
+
+        # decode action
+        local action="${steps[$dir]}"
+
+        # perform required actions
+        if [ -z "${timezone:-}" ] && [ "$dir" = '02.packages' ]; then
+            package.updateIndexes
+        fi
+
+        # perform desired action
+        if [ "$DEBUG_TRACE" != 0 ]; then
+            echo "$action: (unsorted)"
+            printf "    %s\n" "${files[@]}"
+        fi
+
+        "$action" "${files[@]}"
+
+    done
+}
+export -f cbf.buildContainer
+
+#############################################################################
+function cbf.initFramework()
+{
+    local basis="$(unset CONTAINER_NAME; crf.runtimeProperty 'CONTAINER_NAME' || :)"
+    [ "${basis:-}" ] && (term.log '    Buidling '; term.log "$CONTAINER_NAME" 'white'; term.log ' on top of '; term.log "${basis}\n" 'white')
+
+    # ensure runtime folders exist
+    mkdir -p "$( cbf.CRT_BASE )"
+    cd "$( cbf.CRF_BASE )" || return
+
+    # check Dockerfile to determine what is needed
+    cbf.parseDockerfile
+
+    # ensure crf directories exist
+    [ -e "$( cbf.CRT_BASE )/bashlib" ] || mkdir -p "$( cbf.CRT_BASE )/bashlib"
+    [ -e "$( cbf.CRT_BASE )/bin" ] || mkdir -p "$( cbf.CRT_BASE )/bin"
+    [ -e "$( cbf.CRT_BASE )/environment" ] || mkdir -p "$( cbf.CRT_BASE )/environment"
+    [ -e "$( cbf.CRT_BASE )/environment/.info.md" ] || cp "$( cbf.BIN )/.environment.info.md" "$( cbf.CRT_BASE )/environment/"
+    [ -e "$( cbf.CRT_BASE )/startup" ] || mkdir -p "$( cbf.CRT_BASE )/startup"
+    [ -e "$( cbf.CRT_BASE )/startup/.info.md" ] || cp "$( cbf.BIN )/.startup.info.md" "$( cbf.CRT_BASE )/startup/"
+
+
+
+    # copy runtime framework (only copy updates)
+    local -a files
+    mapfile -t files < <(find . -type f ! -name '.*' | awk '{print substr($0,3)}' )    # awk strips './' from path
+    for file in "${files[@]}"; do
+        local action='creating'
+        local _name="$( basename "$file" )"
+        if [ -e "$( cbf.CRT_BASE )/$file" ]; then
+            [ "$_name" != 'rt.environment' ] || continue
+            ( ! cmp -s "$file" "$( cbf.CRT_BASE )/$file" ) || continue
+            action='updating'
+        fi
+        echo "    ${action} $( cbf.CRT_BASE )/$file"
+        mkdir -p "$( dirname "$( cbf.CRT_BASE )/$file" )"
+        cp "$file" "$( cbf.CRT_BASE )/$file"
+    done
+
+    # update container name in runtime environment
+    crf.updateRuntimeEnvironment  "CONTAINER_NAME=\"\${CONTAINER_NAME:-$CONTAINER_NAME}\""
+
+
+    # copy any custom bashlibs to crf
+    mapfile -t files < <(lib.getFiles "$(cbf.ACTION)/00.bashlib")
+    if [ ${#files[*]} -gt 0 ]; then
+        for file in "${files[@]}"; do
+            crf.copyFileToRuntime 'LIB' "$file"
+        done
+    fi
+
+
+    # create docker-entrypoint.sh from copy default entrypoint script if none exists to invoke the CRF
+    if [ ! -e "$(cbf.BASE)/override.entrypoint" ]; then
+        # this may get refactored into processing of 'container.properties'
+        if [ !	 -e /usr/local/bin/docker-entrypoint.sh ]; then
+            mkdir -p /usr/local/bin
+            echo '    creating /usr/local/bin/docker-entrypoint.sh'
+            cp "$(cbf.CRF_BIN)/default.entrypoint" /usr/local/bin/docker-entrypoint.sh
+
+        elif [ -e "$( cbf.BASE )/usr/local/bin/docker-entrypoint.sh" ]; then
+            term.log 'Potential conflict detected with existing file: /usr/local/bin/docker-entrypoint.sh' 'error'
+            term.log 'To prevent this error, either:' 'error'
+            term.log "    remove the file:       $( cbf.BASE )/usr/local/bin/docker-entrypoint.sh" 'error'
+            term.log "    or create an override: $( cbf.BASE )/override.entrypoint" 'error'
+            exit 1
+        fi
+        sed -i "s|^local -rx CONTAINER_NAME=.*$|local -rx CONTAINER_NAME=${CONTAINER_NAME}|" /usr/local/bin/docker-entrypoint.sh
+    fi
+
+
+    # create an archive of parts of CBF that exists in /tmp to permit otehr dependent containers to inherit the CBF
+    if [ -f "$( cbf.CRF_BIN )/files.txt" ]; then
+        cd "$( cbf.CBFBASE )" || return
+        tar -czf "$(cbf.CRT_BASE)/cbf.tar.gz" -T "$( cbf.CRF_BIN )/files.txt"
+    fi
+}
+export -f cbf.initFramework
+
+#############################################################################
+function cbf.makeScript()
+{
+    local file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local tmpScript="/tmp/cbfScript.$( basename "$file" )"
+
+    term.log "..executing ${file}\n" 'info'
+
+cat << EOF > "$tmpScript"
+#!/bin/bash
+# Use the Unofficial Bash Strict Mode
+set -o errexit
+set -o nounset
+set -o pipefail
+IFS=$'\n\t'
+[ ! -e "$(cbf.CRF_BASE)/bin/init.runtime" ] || source "$(cbf.CRF_BASE)/bin/init.runtime"
+if [ "$DEBUG_TRACE" != "0" ]; then
+    declare -p > "${tmpScript}.env"
+    set -o verbose
+fi
+source "$file"
+EOF
+
+    cd /tmp
+    chmod 755 "$file" "$tmpScript"
+
+    local -i status
+    ( command "$tmpScript" ) && status=$? || status=$?
+    if [ $status -ne 0 ] ; then
+        local name="$( basename "$( dirname "$file")" )/$( basename "$file" )"
+        term.log ">>>>> issue while executing ${name} <<<<<\n" 'warn'
+        trap.die "unable to execute $file"
+    fi
+    set +o xtrace
+}
+export -f cbf.makeScript
+
+#############################################################################
+function cbf.parseDockerfile()
+{
+    # setup some variables based on runtime properties in the Dockerfile
+    local props="$(cbf.BASE)/Dockerfile)"
+    if [ -e "$props" ]; then
+        local val
+        while IFS='=' read -r key val; do
+            case "$key" in
+                ENTRYPOINT) local entrypoint="$val";;
+                CMD)        local cmd="$val";;
+                VOLUMES)    local volumes="$val";;
+                USER)       local user="$val";;
+                WORKDIR)    local workdir="$val";;
+            esac
+        done < "$props"
+    fi
+}
+export -f cbf.parseDockerfile
+
+#############################################################################
+function cbf.propertiesFile()
+{
+    echo "${CBF_PROPERTIES_FILE:="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P )/CBF.properties"}"
+}
+export -f cbf.propertiesFile
+
+#############################################################################
+function cbf.runScripts()
+{
+    local -a files=( "$@" )
+    
+    # create a hash to sort the files by name & remove any templates that have been overridden
+    local -A ahash
+    for file in "${files[@]}"; do
+        local name="$( basename "$file" )"
+        local _name="${name//./_}"
+        [[ "${ahash[$_name]:-}"  &&  "${ahash[$_name]:-}" =~ */action.templates/* ]] && continue
+        ahash[$_name]="$file"
+    done
+
+    # execute scritps in sorted order
+    local -i todo="${#ahash[@]}"
+    local -i isdone=0
+    for _name in $( printf "%s\n" "${!ahash[@]}" | sort ); do
+        local file="${ahash[$_name]}"
+        cbf.makeScript "$file"
+        (( isdone++ )) || :
+    done
+    if [ $todo -ne $isdone ]; then
+        echo "count before: $todo.  count after: $isdone.  hash: ${ahash[*]}"
+        trap.die "failed to execute all scripts"
+    fi
+}
+export -f cbf.runScripts
+
+#############################################################################
+function cbf.showActionNotice()
+{
+    local -r last=${1:?"Input parameter 'last' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r dir=${2:?"Input parameter 'dir' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    [ "$dir" ] || return 0
+    [ "$dir" != "${!last}" ] || return 0
+    eval "$last"="'${dir}'"
+    
+    # get .info file, & read for 'notice'
+    local info="$( cbf.ACTION )/${dir}/.info"
+    [ -e "$info" ] || info="$( cbf.TEMPLATES )/${dir}/.info"
+
+    local notice="$(< "$info" )"
+    # show notice if there are files to process
+    [ -z "$notice" ] || term.log "${notice}\n" 'task'
+}
+export -f cbf.showActionNotice
+
+#############################################################################

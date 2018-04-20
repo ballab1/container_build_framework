@@ -1,0 +1,107 @@
+#!/bin/bash
+#############################################################################
+#
+#   package.bashlib
+#
+#############################################################################
+
+function package.checkIfInstalled()
+{
+    local -ar pkgs=( $@ )
+
+    local installed=$(lib.intersect "${pkgs[*]}" "$( package.packageList )")
+    [ -z "$installed" ] || trap.die "attempting to reinstall following packages: '$installed'"
+
+    # now verify that packages are actually valid for installation
+    local -r checker=$( package.checkPackage )
+
+    for pkg in "${pkgs[@]}"; do
+        eval $checker "${pkg%%=*}" &>/dev/null || trap.die "Package $pkg not found"
+    done
+}
+export -f package.checkIfInstalled
+
+#############################################################################
+function package.checkPackage()
+{
+    case "$( lib.OSid )" in
+        alpine)        echo 'apk info';;
+        centos)        echo 'yum info';;
+        fedora)        echo 'dnf info';;
+        ubuntu)        echo 'apt-get info';;
+    esac
+}
+export -f package.checkPackage
+
+#############################################################################
+function package.install()
+{
+    local -r defnFile=${1:?"Input parameter 'defnFile' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    term.log "Installing ${defnFile}\n" 'task'
+
+    source "$( crf.BIN )/init.runtime"
+    source "$defnFile"
+    package.checkIfInstalled "${PKGS[*]}"
+
+    : ${OPTS:=''}
+    case "$( lib.OSid )" in
+        alpine)        apk add --no-cache ${OPTS[*]} ${PKGS[*]};;
+        centos)        yum install -y RPM_EXCLUDE_VALUE ${PKGS[*]}; yum clean all;;
+        fedora)        dnf install -y ${OPTS[*]} ${PKGS[*]} && dnf clean all;;
+        ubuntu)        apt-get install -y ${OPTS[*]} ${PKGS[*]};;
+    esac
+}
+export -f package.install
+
+#############################################################################
+function package.installTimezone()
+{
+    local -r tz=${1:?"Input parameter 'tz' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    case "$( lib.OSid )" in
+        alpine)        apk add --no-cache tzdata;;
+        centos)        yum install -y tzdata; yum clean all;;
+        fedora)        dnf install -y tzdata && dnf clean all;;
+        ubuntu)        apt-get install -y tzdata;;
+    esac
+    echo "$tz" > /etc/TZ
+    cp "/usr/share/zoneinfo/$tz" /etc/timezone
+    cp "/usr/share/zoneinfo/$tz" /etc/localtime
+}
+export -f package.installTimezone
+
+#############################################################################
+function package.packageList()
+{
+    case "$( lib.OSid )" in
+        alpine)        apk info;;
+        centos)        yum list | awk '{print $1 }';;
+        fedora)        dnf --help;;
+        ubuntu)        apt-get --help;;
+    esac
+}
+export -f package.packageList
+
+#############################################################################
+function package.runScripts()
+{
+    local -a files=( "$@" )
+
+    for file in "${files[@]}"; do
+        ( package.install "$file" )
+    done
+}
+export -f package.runScripts
+
+#############################################################################
+function package.updateIndexes()
+{
+    case "$( lib.OSid )" in
+        alpine)        apk update;;
+        centos)        yum update -y;;
+        fedora)        dnf -y update && dnf clean all;;
+        ubuntu)        apt-get update -y;;
+    esac
+}
+export -f package.updateIndexes

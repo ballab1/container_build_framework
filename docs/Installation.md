@@ -2,48 +2,50 @@
 
 ## Installation
 
-The framework is installed as a submodule within the `build` folder of a GIT repo. This may be an existing repo, or a new repo. The first step is to add the scripts that drive the framework to your project as a submodule.  The submodule you are adding is the "DevEnablement/container_build_framework" repository.  The scripts in this repository properly load all the data and run all the scripts in the "build" and "build/action_folders" directories.
+The framework may be installed in one of three ways:
+1. When a copy of the https://github.com/ballab1/container_build_framework repo is placed in the build folder, it will be used in preference and is a useful way of debugging changes to the framework.
+2. Setting the environment variable CBF_VERSION to a valid branch of the https://github.com/ballab1/container_build_framework repo, or to a valid release will download and un-tar to framework to the /tmp folder of the container being built.
+3. Every container built using the framework contains a copy of the framework. This will be reused if no other version is supplied.
 
-If you are adding the framework to an existing project, in the root folder of your GIT project, type the following:
-```bash
-GIT_LFS_SKIP_SMUDGE=1 git submodule add https://github.com/ballab1/container_build_framework.git build/container_build_framework
-```
-If you are starting a new container project, create a folder with the name of the project, initialize it as a git repo, then add the container\_build\_framework subproject as detailed above. Later, when you configure the project, it will recognize and use your project's name.
+If you are starting a new container project, create a folder with the name of the project, initialize it as a git repo, then configure the projectby running the setupContainerFramework script
 ```bash
 mkdir newProject
 cd newProject
 git init
-GIT_LFS_SKIP_SMUDGE=1 git submodule add https://github.com/ballab1/container_build_framework.git build/container_build_framework
+curl -s https://raw.githubusercontent.com/ballab1/container_build_framework/master/bin/setupContainerFramework | bash
 ```
 
-Once installed in a GIT project, configure the project defaults by running 
+Once installed in a GIT project, configure the project defaults by running
 ```bash
 build/container_build_framework/bin/setupContainerFramework
 ```
 
-Configuring the framework, will setup a `action_folder` folder in the build folder. This contains subfolders for each of the action categories performed. It also sets up symlinks in the action folders to 'canned scripts' maintained in the **action.templates** folder of the container build framework. These scripts perform the most common tasks. 
+Configuring the framework will setup the `action_folder` folder in the build folder. This contains subfolders for each of the action categories performed. It also sets up the build.sh in the build folder as well as Dockerfile, docker-compose.yml and the standard git repo files: .gitignore .dockeringnore .gitattributes .lfsconfig
+
 
 The project `Dockerfile` copies the action folders and the framework folder into the container **/tmp** directory (in the build environment), along with the other scripts and customizations, when building the container. The last command in the Dockerfile deletes the contents of the **/tmp** folder. The result is that none of the framework, or any of the action folders reside in the final container.
 
-![build folder contents](./build_folder_contents.png) 
+![build folder contents](./build_folder_contents.png)
 
 
 Folder | Action
---- | --- 
-01.packages |  Install needed OS Support
-02.users_groups | Verify users and groups exist
-03.downloads | Download & verify external packages
-04.applications | Install applications
-05.customizations | Add customizations and configuration
-06.permissions | Make sure that ownership & permissions are correct
-07.cleanup | Clean up 
+--- | ---
+00.bashlib |  Install any bash libraries needed at build time or runtime
+01.rt_environment |  Add variables for runtime environment
+02.packages |  Install needed OS Support
+03.users_groups | Verify users and groups exist
+04.downloads | Download & verify external packages
+05.applications | Install applications
+06.customizations | Add customizations and configuration
+07.run.startup | scripts that will be executed at runtime (these get copied to /usr/local/crf/startup)
+08.cleanup | Clean up
 
 
-The `build` folder also contains zero or more **custom folders**. These folders are copied to the root of the of the file system of the container. 
+The `build` folder also contains zero or more **custom folders**. These folders are copied to the root of the of the file system of the container.
 This allows creation of files and subfolders which will be as-is inside your container. No errors occur when any of these folders do not exist.
 
 ### Action Folders
-The **/tmp/build.sh** script, called from the *DockerFile*, loads the framework library scripts, and then iterates in order, across the coresponding directories in the `action_folders` folder.
+The **/tmp/build.sh** script, called from the *DockerFile*, loads the framework library scripts, and then iterates in order, across the corresponding directories in the `action_folders` folder.
 
 The `action_folders` folder contains the instructions for the framework. The contents of this folder are processed in sorted order.
 If a folder contains any files, they are processed, otherwise it is skipped. Similarly, if a folder does not exist in the `action_folders' directory, it is skipped.
@@ -55,7 +57,7 @@ The framework invokes each action script in its own bash shell to prevent undesi
 
 
 ### Custom Folders
-These folders may contain any content which is copied to the coresponding folder in the root forlder of the container being built.
+These folders may contain any content which is copied to the corresponding folder in the root forlder of the container being built.
 Custom folders are not mandatory. The following custom folders are supported:
 bin etc home lib lib64 media mnt opt root sbin usr var www
 
@@ -65,4 +67,3 @@ bin etc home lib lib64 media mnt opt root sbin usr var www
 ## Introduction & Documentation
 - [Introduction](../README.md)
 - [Action Folders](./ActionFolders.md)
-

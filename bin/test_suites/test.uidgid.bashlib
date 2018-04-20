@@ -1,0 +1,287 @@
+#!/usr/bin/env bash_unit
+#-----------------------------------------------------------------------------------------
+#
+#  test suite for https://github.com/ballab1/container_build_framework.git
+#
+#  You may need to change the behavior of some commands to create conditions for your code under test
+#  to behave as expected. The *fake* function may help you to do that, see documentation.
+#
+# Organization of this test suite
+# ===============================
+# test methods
+# standard test framework routines
+# custom support provided within this suite
+#
+#
+# standard test framework routines              custom support provided within this suite
+# --------------------------------              -----------------------------------------
+# setup_suite()                                 __test_uidgid_bashlib.mktemp()
+# teardown_suite()                              __test_uidgid_bashlib.mock_logger()
+# setup()                                       export test_uidgid_bashlib_LOG_file
+# teardown()                                    export test_uidgid_bashlib_UT_TEST_DIR
+#                                               export test_uidgid_bashlib_DEBUG
+#
+#
+# bash_unit supports several shell oriented assertion functions.
+# --------------------------------------------------------------
+# fail()
+# assert()
+# assert_fail()
+# assert_status_code()
+# assert_equals()
+# assert_not_equals()
+# fake()
+#    Using stdin
+#    Using a function
+#    fake parameters
+#
+##########################################################################################
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+skip.test.uidgid.check() {
+    local expected=0
+    local actual=0
+#    assert_equals "$expected" "$actual"
+    fail 'test not implemented'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify function handles no args correctly
+test.uidgid.userAndGroupFromFile_NOARGS() {
+    assert_status_code 1 'uidgid.userAndGroupFromFile'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify function returns correctly when a bad file is given
+test.uidgid.userAndGroupFromFile_BADFILE() {
+    assert_status_code 1 'uidgid.userAndGroupFromFile "/XXX"'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify function returns correctly when an empty file is given
+test.uidgid.userAndGroupFromFile_EMPTYFILE() {
+    local fut="$test_uidgid_bashlib_UT_TEST_DIR/01.WWW"
+cat << EOF > "$fut"
+EOF
+    assert_status_code 255 'uidgid.userAndGroupFromFile "$fut"'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify function returns correctly when an empty file is given
+test.uidgid.userAndGroupFromFile_MISSINGname() {
+    local fut="$test_uidgid_bashlib_UT_TEST_DIR/01.WWW"
+cat << EOF > "$fut"
+declare -A WWW=(
+#  ['user']=www-data
+  ['uid']=82
+  ['group']=www-data
+  ['gid']=82
+)
+EOF
+    assert_status_code 255 'uidgid.userAndGroupFromFile "$fut"'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify function returns correctly when an empty file is given
+test.uidgid.userAndGroupFromFile_MISSINGuid() {
+    local fut="$test_uidgid_bashlib_UT_TEST_DIR/01.WWW"
+cat << EOF > "$fut"
+declare -A WWW=(
+  ['user']=www-data
+#  ['uid']=82
+  ['group']=www-data
+  ['gid']=82
+)
+EOF
+    assert_status_code 255 'uidgid.userAndGroupFromFile "$fut"'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify function returns correctly when an empty file is given
+test.uidgid.userAndGroupFromFile_MISSINGgroup() {
+    local fut="$test_uidgid_bashlib_UT_TEST_DIR/01.WWW"
+cat << EOF > "$fut"
+declare -A WWW=(
+  ['user']=www-data
+  ['uid']=82
+#  ['group']=www-data
+  ['gid']=82
+)
+EOF
+    assert_status_code 255 'uidgid.userAndGroupFromFile "$fut"'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify function returns correctly when an empty file is given
+test.uidgid.userAndGroupFromFile_MISSINGgid() {
+    local fut="$test_uidgid_bashlib_UT_TEST_DIR/01.WWW"
+cat << EOF > "$fut"
+declare -A WWW=(
+  ['user']=www-data
+  ['uid']=82
+  ['group']=www-data
+#  ['gid']=82
+)
+EOF
+    assert_status_code 255 'uidgid.userAndGroupFromFile "$fut"'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify function returns correctly when an empty file is given
+test.uidgid.userAndGroupFromFile_BASIC() {
+    fake 'term.log' 'echo "term.log: $1" >> "$test_uidgid_bashlib_LOG_file"'
+    fake 'groupmod' 'echo "groupmod: $1" >> "$test_uidgid_bashlib_LOG_file"'
+    fake 'groupadd' 'echo "groupaddg: $1" >> "$test_uidgid_bashlib_LOG_file"'
+    fake 'usermod' 'echo "usermod: $1" >> "$test_uidgid_bashlib_LOG_file"'
+    fake 'useradd' 'echo "useradd: $1" >> "$test_uidgid_bashlib_LOG_file"'
+    fake 'userdel' 'echo "userdel: $1" >> "$test_uidgid_bashlib_LOG_file"'
+    fake_getent() {
+        echo "getent: $*" >> "$test_uidgid_bashlib_LOG_file"
+        if [ "$1" = 'passwd' ]; then
+            echo 'bobb:x:1000:1000:Bob Ballantyne,,,:/home/bobb:/bin/bash'
+        elif [ "$1" = 'group' ]; then
+            echo 'bobb:x:1000:'
+        fi
+    }
+    fake 'getent' 'fake_getent "$@"'
+
+    local fut="$test_uidgid_bashlib_UT_TEST_DIR/01.WWW"
+cat << EOF > "$fut"
+declare -A WWW=(
+  ['user']=www-data
+  ['uid']=82
+  ['group']=www-data
+  ['gid']=82
+)
+EOF
+
+#    assert_status_code 255 'uidgid.userAndGroupFromFile "$fut"'
+    (uidgid.userAndGroupFromFile "$fut") | :
+    
+    local expected="term.log: ..executing ${test_uidgid_bashlib_UT_TEST_DIR}/01.WWW
+
+getent: group www-data
+getent: group 82
+term.log:     INFO: group/gid (www-data:82):  is currently (bobb:1000)/(bobb:1000)
+
+getent: group 82
+term.log:     renaming group:  bobb to www-data
+
+groupmod: --new-name
+getent: passwd www-data
+getent: passwd 82
+term.log:     INFO: user/uid (www-data:82):  is currently (bobb:1000)/(bobb:1000)
+
+term.log:     create user: www-data
+
+getent: passwd www-data
+userdel: bobb
+getent: passwd 82
+userdel: bobb
+useradd: --no-create-home"
+    local actual="$(< "$test_uidgid_bashlib_LOG_file" )"
+
+#cp "$test_uidgid_bashlib_LOG_file" /home/bobb/support/container_build_framework/bin/test_suites/actual.txt
+#printf "$expected" > /home/bobb/support/container_build_framework/bin/test_suites/expected.txt
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+skip.test.uidgid.verify() {
+    local expected=0
+    local actual=0
+#    assert_equals "$expected" "$actual"
+    fail 'test not implemented'
+}
+
+##########################################################################################
+#
+# standard test framework routines
+#
+##########################################################################################
+
+# load all the bash libraries, setup location for running test_suite,
+setup_suite() {
+
+    # create a temp directory for any files etc created by tests
+    local -r tmpUserDir="${TMPDIR:-/tmp}/$USER"
+    mkdir -p "$tmpUserDir"
+    local temporaryDir=$(mktemp -d --tmpdir="$tmpUserDir" --suffix=test bash_unit_XXXXXXXXXXXXXXXXXX 2>/dev/null)
+    mkdir -p "$temporaryDir"
+    test_uidgid_bashlib_UT_TEST_DIR="$temporaryDir"
+
+    # point CBF & CRF to locations in tmp workspace.  Will load libs from there
+    export CBF_LOCATION="$temporaryDir/tmp"            # set CBF_LOCATION for testing
+    mkdir -p "$CBF_LOCATION"
+    export CRF_LOCATION="$temporaryDir/usr/local/crf"  # set CRF_LOCATION for testing
+    mkdir -p "$CRF_LOCATION"
+
+    # pwd is location of test definition file.
+    local cbf_location="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )"
+
+    # copy CBF & CRF to workspace
+    for dir in 'action.templates' 'cbf' 'project.template' ; do
+        cp -r "${cbf_location}/${dir}" "$CBF_LOCATION"
+    done
+
+    # now init stuff for testing
+    source "${CBF_LOCATION}/cbf/bin/init.libraries" #> /dev/null
+}
+
+# remove anything generated by test suite
+teardown_suite() {
+
+    # ensure directory is valid
+    [ "$test_uidgid_bashlib_UT_TEST_DIR" ] || return
+    [ "$test_uidgid_bashlib_UT_TEST_DIR" != '/' ] || return
+    [ "$test_uidgid_bashlib_UT_TEST_DIR" != '~' ] || return
+    [ "$test_uidgid_bashlib_UT_TEST_DIR" != "$( cd ~ && pwd )" ] || return
+    [ "$test_uidgid_bashlib_UT_TEST_DIR" != "$TMP" ] || return
+
+    # clean up our junk
+    rm -rf "$test_uidgid_bashlib_UT_TEST_DIR"
+}
+
+# setup MOCK logger
+setup() {
+    [ "$test_uidgid_bashlib_DEBUG" = 0 ] || printf "\x1b[94m%s\x1b[0m\n\n" 'Running setup'
+    export LOG=__test_uidgid_bashlib.mock_logger
+    test_uidgid_bashlib_LOG_file=$(__test_uidgid_bashlib.mktemp)
+    fake 'term.log' '__test_uidgid_bashlib.mock_logger "$FAKE_PARAMS"'
+    touch "$test_uidgid_bashlib_LOG_file"
+}
+
+# flush the mock logger
+teardown() {
+    [ "$test_uidgid_bashlib_DEBUG" = 0 ] || printf "\x1b[94m%s\x1b[0m\n\n" 'Running teardown'
+    [ ! -e "$test_uidgid_bashlib_LOG_file" ] || rm "$test_uidgid_bashlib_LOG_file"
+
+    [ ! -e "${CBF_LOCATION}/bashlibs.loaded" ] || rm "${CBF_LOCATION}/bashlibs.loaded"
+    [ ! -e "${CBF_LOCATION}/environment.loaded " ] || rm "${CBF_LOCATION}/environment.loaded "
+}
+
+##########################################################################################
+#
+# custom support
+#
+##########################################################################################
+
+# custom mktemp to create folder withing the temp storage location for this test
+__test_uidgid_bashlib.mktemp() {
+    mktemp --tmpdir="$test_uidgid_bashlib_UT_TEST_DIR" $* 2>/dev/null
+}
+export -f __test_uidgid_bashlib.mktemp
+
+# MOCK logger implementation
+__test_uidgid_bashlib.mock_logger() {
+    printf "%s\n" "$*" >> "$test_uidgid_bashlib_LOG_file"
+}
+export -f __test_uidgid_bashlib.mock_logger
+
+export test_uidgid_bashlib_LOG_file
+export test_uidgid_bashlib_UT_TEST_DIR
+export test_uidgid_bashlib_DEBUG=0
+
+##########################################################################################

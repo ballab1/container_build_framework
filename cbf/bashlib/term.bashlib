@@ -1,0 +1,103 @@
+#!/bin/bash
+#############################################################################
+#
+#   term-codes.bashlib
+#
+#############################################################################
+
+function term.__init()
+{
+    declare -rx LOG=term.log
+    declare -rx TERM_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/properties" && pwd )"
+}
+
+#############################################################################
+function term.codes()
+{
+    local -r mode=${1:?"Input parameter 'mode' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r name=${2:?"Input parameter 'code' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    local -r code=$(lib.getProperty "$name" "$(term.propertiesDir "term_${mode^^}.properties")")
+    [ $? -ne 0 ] || [ -z "$code" ] || printf "\x1b[%dm" "$code"
+}
+export -f term.codes
+
+#############################################################################
+function term.decode()
+{
+    local -r fg=${1:?"Input parameter 'fg' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r bg=${2:-}
+
+    if [ -z "$bg" ]; then
+        case "$fg" in
+             task)     term.codes 'FOREGROUND' 'lt_cyan';;
+             info)     term.codes 'FOREGROUND' 'lt_green';;
+             warn)     term.codes 'FOREGROUND' 'lt_yellow';;
+            error)     term.codes 'FOREGROUND' 'red';;
+            reset)     term.codes 'ATTR_RESET' 'all';;
+                *)     term.codes 'FOREGROUND' ${fg};;
+        esac
+    else
+        local -r bg_code=$(lib.getProperty "$bg" "$(term.propertiesDir "term_BACKGROUND.properties")")
+        local -r fg_code=$(lib.getProperty "$fg" "$(term.propertiesDir "term_FOREGROUND.properties")")
+        [ -z "$bg_code" ] || [ -z "$fg_code" ] || printf "\x1b[%d;%dm" "$fg_code" "$bg_code"
+    fi
+}
+export -f term.decode
+
+#############################################################################
+function term.header()
+{
+    local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r bars='+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+
+    term.log "\n${bars}\n" 'blue'
+    term.log "Building Container: $( term.decode 'white' )${name}\n" 'lt_blue'
+    term.log "${bars}\n" 'blue'
+}
+export -f term.header
+
+#############################################################################
+function term.log()
+{
+    local -r msg=${1:?"Input parameter 'msg' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local msg_type=${2:-}
+
+    if [ "$msg_type" ]; then
+        msg_type="$( term.decode $msg_type )"
+        [ -z "$msg_type" ] || echo -en "$msg_type"
+    fi
+    echo -en "$msg"
+    [ -z "$msg_type" ] || echo -en $( term.decode 'reset' )
+}
+export -f term.log
+
+#############################################################################
+#
+# search everywhere we know of to find our properties file
+#
+function term.propertiesDir()
+{
+    local -r file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    for _props_dir in "${TERM_DIR:-}" "$(crf.LIB)" "$(cbf.CRF_BASE)" "$(cbf.CRT_BASE)" "/usr/local/crf" "."; do
+        [ -z "$_props_dir" ] && continue
+        
+        if [ -f "${_props_dir}/bashlib/properties/$file" ]; then
+            echo "${_props_dir}/bashlib/properties/$file"
+            return
+        fi
+        if [ -f "${_props_dir}/properties/$file" ]; then
+            echo "${_props_dir}/properties/$file"
+            return
+        fi
+        if [ -f "${_props_dir}/$file" ]; then
+            echo "${_props_dir}/$file"
+            return
+        fi
+    done
+    trap.die "unable to locate property file: $file"
+}
+export -f term.propertiesDir
+
+[[ ${LOG:-} = term.log ]] || term.__init

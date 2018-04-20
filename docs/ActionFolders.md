@@ -2,38 +2,97 @@
 
 ## Action Folders
 
-![action folders](./action_folders.png) 
+![action folders](./action_folders.png)
 
 #### Environment
 Every script defined in the action folders, is run from the '/tmp' folder as the current directory.
 The following environment variables are available:
 
-Environment Variable | contents
+CBF method | property returned
 --- | ---
- CBF['base'] | base folder. In the build container, this is '/tmp'. In the git workspace, this is the 'build' folder.
- CBF['bin'] | cbf bin folder. this contains the _setupContainerFramework_ script and test script.
- CBF['debug'] | when set to 1 (from DEBUG_TRACE build arguement) causes action scripts to be verbose.
- CBF['action'] | project actions folder. This contains the folders over which the framework iterates.
- CBF['lib'] | cbf library folder. This contains the framework bashlib scripts.
- CBF['templates'] | action template folders. This is the framework copy of the `action_folders`
- 
-These environment variables may be used to source any of the scripts in the action folders using "${CBF['action']}" or from the `action_folders` directories using "${CBF['action']}".
-Any script language may be used in the any of the `action_folders', other than *02.users_groups* and *03.downloads*.
+ cbf.BASE | base folder. In the build container, this is '/tmp'. In the git workspace, this is the 'build' folder.
+ cbf.BIN | cbf bin folder. this contains the _setupContainerFramework_ script and test script.
+ cbf.ACTION | project actions folder. This contains the folders over which the framework iterates.
+ cbf.LIB | cbf library folder. This contains the framework bashlib scripts.
+ cbf.TEMPLATE | action template folders. This is the framework copy of the `action_folders`
+
+
+All scripts used from the `action_folders' get sourced by a bash script.
+Any scripts in the action_folders directories which have a special extension { centos alpine fedora unbuntu } will only be used when the base OS of the container corresponds to the extension.
+The *03.users_groups* and *04.downloads* are special folders (see below).
+Scripts from *07.run.startup* are not executed, but copied to the /usr/local/crf/startup folder. These scripts are executed by the /usr/local/bin/docker-entrypoint.sh script during the container startup.
+
+
+### Install runtime 'bashlib' libraries
+**Folder:** _00.bashlib_
+
+This folder contains bashlib libraries for use by the framework at both buildtime and runtime. These library files should contain only bash function definitions. They should not contain any inline scripts.
+
+The following shows an example of a bashlib file which may be placed the _00.bashlib_ folder:
+```bash
+#!/bin/bash
+#############################################################################
+function www.UID()
+{
+    local -r user_name="${1:-www-data}"
+    local -r default_uid=${2:-82}
+    lib.lookupId "$user_name" 'passwd' "$default_uid"
+}
+export -f www.UID
+#############################################################################
+function www.GID()
+{
+    local -r group_name="${1:-www-data}"
+    local -r default_gid=${2:-82}
+    lib.lookupId "$group_name" 'group' "$default_gid"
+}
+export -f www.GID
+```
+
+
+### Add variables to runtime environment
+**Folder:** _01.rt\_environment_
+
+This folder contains scripts which contain commands to update the list of runtime environment variables. These files are regular scripts, however, by convention, updating the list of environment variables at this stage of the framework, also makes them available to all of the other scripts during the build. The function **crf.updateRuntimeEnvironment** updates the /usr/local/crf/bin/rt.environment file which contains the list of run time environment variables.
+
+The following shows an example of the type of file expected in the  _01.rt\_environment_ folder:
+```bash
+#!/bin/bash
+declare -ar env_php=(
+    'PHP=php7'
+    'SESSIONS_DIR="${SESSIONS_DIR:-/sessions}"'
+    'RUN_DIR="${RUN_DIR:-/run/php}"'
+)
+crf.updateRuntimeEnvironment "${env_php[@]}"
+```
+
 
 ### Install needed OS Support
-**Folder:** _01.packages_
+**Folder:** _02.packages_
 
-This folder contains scripts and/or symbolic links which contain commands to install OS functionality. On Alpine Linux, these files contain `apk add` commands. 
+This folder contains scripts which contain commands to install OS functionality. On Alpine Linux, these files contain `apk add` commands.
 
 The following shows an example of the type of file expected in the _01.packages_ folder:
 ```bash
-# core Packages
-apk add --no-cache bash-completion coreutils openssh-client shadow supervisor sudo ttf-dejavu unzip 
+# nginx build Packages
+
+declare -a OPTS=( '--virtual' '.buildDependencies' )
+declare -a PKGS=( gcc
+                  gd-dev
+                  geoip-dev
+                  gnupg
+                  libc-dev
+                  libxslt-dev
+                  linux-headers
+                  make
+                  openssl-dev
+                  pcre-dev
+                  zlib-dev )  
 ```
 
 
 ### Verify users and groups exist
-**Folder:** _02.users_groups_
+**Folder:** _03.users_groups_
 
 This folder contains scripts definitions for users and groups to configure inside the container. After stripping off any prefix digits, the name (by convention) should be the same as the associative array declared by the file. All of these array definitions should always be lowercase to prevent name conflicts with **Downloads**.
 
@@ -46,24 +105,19 @@ The `shell` and `home` are optional, while **mandatory fields** are:
 
 The *01.hubot* file, shows an example of the type of file expected in the _02.users_groups_ folder:
 ```bash
-# Hubot
-declare -A hubot=()
-declare bht_uid=${hubot_uid:-2223}
-declare bht_gid=${hubot_gid:-2223}
-hubot['user']=${HUBOT_USER:-hubot}
-hubot['uid']=${bht_uid:-$(getent passwd "${hubot['user']}" | cut -d: -f3)}
-hubot['group']=${HUBOT_GROUP:-hubot}
-hubot['gid']=${bht_gid:-$(getent group "${hubot['user']}" | cut -d: -f3)}
-hubot['shell']=/bin/bash
-hubot['home']="${HUBOT_HOME:-/usr/local/hubot}"
-# other directories
-export HUBOT_HOME="${hubot['home']}" 
+declare -A nginx=(
+    ['user']=${NGINX_USER:-nginx}
+    ['uid']=${NGINX_UID:-$(nginx.UID)}
+    ['group']=${NGINX_GROUP:-nginx}
+    ['gid']=${NGINX_GID:-$(nginx.GID)}
+    ['shell']=/bin/bash
+)
 ```
-These files may be 'sourced' in later scripts to access their definitions.
+These files are 'sourced' by the framework to permit later scripts to access their definitions.
 
 
 ### Download & verify external packages
-**Folder:** _03.downloads_
+**Folder:** _04.downloads_
 
 This folder contains scripts definitions for files which should be downloaded. After stripping off any prefix digits, the name (by convention) should be the same as the associative array declared by the file.
 The **mandatory fields** are
@@ -71,31 +125,29 @@ The **mandatory fields** are
 - url
 - sha256
 
-Every other declaration is optional. 
+Every other declaration is optional.
 
 The *01.PHPADMIN* file, shows an example of the type of file expected in the _03.downloads_ folder:
 ```bash
-# PHPADMIN
-declare -A PHPADMIN=()
-PHPADMIN['version']=${PHPADMIN_VERSION:-4.7.4}
-PHPADMIN['file']="/tmp/phpMyAdmin-${PHPADMIN['version']}-all-languages.tar.gz"
-PHPADMIN['url']="https://files.phpmyadmin.net/phpMyAdmin/${PHPADMIN['version']}/phpMyAdmin-${PHPADMIN['version']}-all-languages.tar.gz"
-PHPADMIN['sha256']="fd1a92959553f5d87b3a2163a26b62d6314309096e1ee5e89646050457430fd2"
-export WWW=/www  
+declare -A NGINX=(
+    ['version']=${NGINX_VERSION:-1.15.0}
+    ['dir']="/tmp/nginx-${NGINX['version']}"
+    ['file']="/tmp/nginx-${NGINX['version']}.tar.gz"
+    ['url']="https://nginx.org/download/nginx-${NGINX['version']}.tar.gz"
+    ['sha256']="b0b58c9a3fd73aa8b89edf5cfadc6641a352e0e6d3071db1eb3215d72b7fb516"
+)
 ```
-The file gets downloaded and saved to the specified file. The sha256 is compared against that calculated from the downloaded file, and if it is the same, the download is considered successful. A max of three retries is performed. The file should be downloaded and the sha256 calculated ahead of building your container. In Linux, the `sha256sum` application can be used. These file may be 'sourced' in later scripts to access their definitions.
+The file gets downloaded and saved to the specified file. The sha256 is compared against that calculated from the downloaded file, and if it is the same, the download is considered successful. A max of three retries is performed. The file should be downloaded and the sha256 calculated ahead of building your container. In Linux, the `sha256sum` application can be used.
 
 
 ### Install applications
-**Folder:** _04.applications_
+**Folder:** _05.applications_
 
-This folder contains scripts which should perform the installation of the major functionality. One script should be used per application installation. 
+This folder contains scripts which should perform the installation of the major functionality. One script should be used per application installation.
 
 The *02.Gradle* file, shows an example of the type of file expected in the _04.applications_ folder:
 ```bash
 #!/bin/bash
-# Gradle installation script
-source "${CBF['action']}/03.downloads/01.GRADLE" 
 
 mkdir -p /opt
 cd /opt
@@ -105,34 +157,34 @@ declare dot_gradle="${GRADLE['home']}/.gradle"
 mkdir -p "$dot_gradle"
 chown -R gradle:gradle "${GRADLE['home']}"
 ln -s "$dot_gradle" /root/.gradle
-$LOG "Testing Gradle installation${LF}" 'info'
+term.log "Testing Gradle installation${LF}" 'info'
 /usr/bin/gradle --version
 printf "%s\n" ${GRADLE[@]}
 ```
 
 ### Add customizations and configuration
-**Folder:** _05.customizations_
+**Folder:** _06.post_build_mods_
 
-This folder contains scripts  which customize what has been setup so far. A symbolic link to the the script `01.custom_folders` is located in this folder. It copies the content of the custom folders is located. I
+This folder contains scripts  which customize what has been setup so far.
 
 The *01.custom_folders* file, shows an example of the type of file expected in the _05.customizations_ folder:
 ```bash
 #!/bin/bash
 # 01.custom_folders: copy contents of custme folders from /tmp into the root of the container
-declare -r dirs='bin etc home lib lib64 media mnt opt root sbin usr var www' 
-for dir in ${dirs} ; do
-    declare custom_folder="${CBF['base']}/$dir"
+declare -ra dirs=( bin etc home lib lib64 media mnt opt root sbin usr var www )
+for dir in "${dirs[@]}" ; do
+    declare custom_folder="${cbf.BASE)/$dir"
     if [ -d "$custom_folder" ]; then
         echo "Updating ${dir} from ${custom_folder}"
         cp -r "${custom_folder}/"* "/${dir}/"
     fi
-done 
+done
 ```
-The 01.custom_folders canned script is provided with the framework, and linked into a users 'action_folders/05.customizations' folder:
+The 01.custom_folders canned script is provided with the framework.
 
 
 ### Make sure that ownership & permissions are correct
-**Folder:** _06.permissions_
+**Folder:** _07.run.startup_
 
 This folder contains scripts which setup file ownership and permissions.
 
@@ -141,10 +193,10 @@ The *01.docker-entry* file, shows an example of the type of file expected in the
 #!/bin/bash
 if [ -f /usr/local/bin/docker-entrypoint.sh ]; then
     chmod u+rwx /usr/local/bin/docker-entrypoint.sh
-    [ -h /docker-entrypoint.sh ] || ln -s /usr/local/bin/docker-entrypoint.sh /docker-entrypoint.sh 
+    [ -h /docker-entrypoint.sh ] || ln -s /usr/local/bin/docker-entrypoint.sh /docker-entrypoint.sh
 fi
 ```
-There are three canned scripts provided with the framework, and linked into a users 'action_folders/06.permissions' folder:
+There are three canned scripts provided with the framework
 
 canned script | functionality provided
 --- | ---
@@ -153,10 +205,10 @@ canned script | functionality provided
  01.sudo | checks if /usr/bin/sudo has been installed, ensures that the correct permissions are on the file, and that all files in /etc/sudoers.d  are only accessible by root
 
 
-### Clean up 
-**Folder:** _07.cleanup_
+### Clean up
+**Folder:** _08.cleanup_
 
-This folder contains scripts which cleanup content which is outside of the /tmp folder. A symbolic link to the 99.apk.cleanup script is located here.
+This folder contains scripts which cleanup content which is outside of the /tmp folder.
 
 The *99.apk.cleanup* file, shows an example of the type of file expected in the _07.cleanup_ folder:
 ```bash
@@ -170,7 +222,7 @@ if [ ${#files[@]} -gt 0 ]; then
     rm -rf "$cacheDir"/*
 fi
 ```
-The 99.apk.cleanup canned script is provided with the framework, and linked into a users 'action_folders/07.cleanup' folder:
+The 99.apk.cleanup canned script is provided with the framework.
 
 
 **************
@@ -178,4 +230,3 @@ The 99.apk.cleanup canned script is provided with the framework, and linked into
 ## Introduction & Installation
 - [Introduction](../README.md)
 - [Installation](./Installation.md)
-

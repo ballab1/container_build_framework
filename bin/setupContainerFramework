@@ -7,117 +7,127 @@ set -o errexit
 ######################################################################
 function setupCBF.createStructure()
 {
-    local actionFolders=${1:?"must pass parameter 'actionFolders' to 'function ${FUNCNAME[0]}()'"}
-    local templatesFolder=${2:?"must pass parameter 'templatesFolder' to 'function ${FUNCNAME[0]}()'"}
+    local action_folders=${1:?"must pass parameter 'action_folders' to 'function ${FUNCNAME[0]}()'"}
+    local templates_folder=${2:?"must pass parameter 'templates_folder' to 'function ${FUNCNAME[0]}()'"}
+    local isNew=${3:-}
 
-    
-    # create actions folder [ should be a sibling of 'container_build_framework' ]
-    if [ -d "$( dirname "$actionFolders")/container" ]; then
-        # migrate old framework
-        setupCBF.migrateOldFx "$actionFolders"
-    else
-        mkdir -p "${actionFolders}/01.packages"
-        mkdir -p "${actionFolders}/02.users_groups"
-        mkdir -p "${actionFolders}/03.downloads"
-        mkdir -p "${actionFolders}/04.applications"
-        mkdir -p "${actionFolders}/05.customizations"
-        mkdir -p "${actionFolders}/06.permissions"
-        mkdir -p "${actionFolders}/07.cleanup"
-        cd "$actionFolders"
+    # create actions folder [ is a sibling of 'container_build_framework' directory]
+    if [ -d "$action_folders" ]; then
+        cd "$action_folders"
+                
+        # remove any old framework directories
+        [ -d container_build_framework ] && (git rm -f container_build_framework || true)
+        for dir in $(ls -1 container_build_framework* 2>/dev/null | true); do
+            rm -rf "$dir"
+        done
+
+        # rename all folders from prior versions of CBF
+        setupCBF.renameActionFolder "00.setup" "01.rt_environment"
+        setupCBF.renameActionFolder "01.setup" "01.rt_environment"
+        setupCBF.renameActionFolder "01.packages" "02.packages"
+        setupCBF.renameActionFolder "02.users_groups" "03.users_groups"
+        setupCBF.renameActionFolder "03.downloads" "04.downloads"
+        setupCBF.renameActionFolder "04.applications" "05.applications"
+        setupCBF.renameActionFolder "05.build.customizations" "06.post_build_mods"
+        setupCBF.renameActionFolder "05.customizations" "06.post_build_mods"
+        setupCBF.renameActionFolder "06.build.customizations" "06.post_build_mods"
+        setupCBF.renameActionFolder "06.run.startup" "07.run.startup"
+        setupCBF.renameActionFolder "06.permissions" "07.run.startup"
+        setupCBF.renameActionFolder "07.cleanup" "08.cleanup"
     fi
 
-    setupCBF.removeSymlinks "$actionFolders" "$templatesFolder"
+    # ensure we have empty folders for this CBF
+    if [ "$isNew" ]; then
+        [ -d "$action_folders" ] || mkdir -p "$action_folders"
+        cd "$action_folders"
+        for dir in $(find "$templates_folder" -mindepth 1 -maxdepth 1 -type d); do
+            local subdir="$(basename "$dir")"
+            [ -d "$subdir" ] && continue
+            echo "  creating action folder:  $subdir"
+            mkdir -p "$subdir"
+        done
+    fi
 }
 
 ######################################################################
-function setupCBF.removeSymlinks()
+function setupCBF.isValidProject()
 {
-    local actionFolders=${1:?"must pass parameter 'actionFolders' to 'function ${FUNCNAME[0]}()'"}
-    local templatesFolder=${2:?"must pass parameter 'templatesFolder' to 'function ${FUNCNAME[0]}()'"}
+    # check if an existing project
+    [ -f "${project_dir}/.cbfProject" ] &&  return 0
 
-    while read -r template; do
-    
-        local actionDir="${actionFolders}/$( basename "$template" )"
-        if [ ! -d "$actionDir" ]; then
-            mkdir -p "$actionDir"
-            continue
-        fi
-        
-        cd "${actionDir}"
-        while read -r fl;do
-            local file="$( basename "$fl" )"
-            [ ! -f "$file" ] || rm "$file"
-            [ ! -h "$file" ] || rm "$file"
-        done < <(find "${template}" -maxdepth 1 -type f ! -name '.*')
-        
-    done < <( find "$templatesFolder" -maxdepth 1 -mindepth 1 -type d ! -name '.*' )
-}
+    # check if a new project
+    [ ! -d "${project_dir}/build" ] && [ ! -f '.git' ] &&  return 0
 
-######################################################################
-function setupCBF.migrateOldFx()
-{
-    local actionFolders=${1:?"must pass parameter 'actionFolders' to 'function ${FUNCNAME[0]}()'"}
+    # check if this is an old project
+    [ -f Dockerfile ] && grep -E '^ARG CONTAINER_VERSION=' 'Dockerfile' > /dev/null &&  return 0
 
-    # migrate old framework
-    [ ! -d "${CBF['base']}/container_lib" ] || rm -rf "${CBF['base']}/container_lib"
-    mv "${CBF['base']}/container" "$actionFolders"
 
-    cd "$actionFolders"
-    
-    # get rid of links and files to keep folders in GIT
-    find . -type l -delete
-    find . -name '.Do Not Delete' -delete
-    
-    # migrate the folder structure
-    setupCBF.updateFiles "02.packages" "01.packages"
-    setupCBF.updateFiles "03.users_groups" "02.users_groups"
-    setupCBF.updateFiles "04.downloads" "03.downloads"
-    setupCBF.updateFiles "05.applications" "04.applications"
-    setupCBF.updateFiles "06.customizations" "05.customizations"
-    setupCBF.updateFiles "07.permissions" "06.permissions"
-    setupCBF.updateFiles "08.cleanup" "07.cleanup"
-    
-    #remove any references to our scripts since they are no longer needed
-    for file in $(find . -type f -name '0*' -exec grep -Hc '01.bashlib' '{}' \; | grep -v ':0' | awk -F: '{ print $1 }'); do
-        awk '!/01.bashlib/' "$file" > "${file}.tmp"
-        mv "${file}.tmp" "$file"
-    done
+    echo -en "\n\e[93mProject not valid  ..skipping '${project_dir}'.\e[0m\n"
+    return 1
 }
 
 ######################################################################
 function setupCBF.main()
 {
     # load our libraries
-    source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/init.libraries"
-    source "${CBF['crf_bin']}/init.runtime"
+    local -r project_dir="$( pwd )"
+    local temporary_dir=''
 
-    # scan lib folders and create links for any files found
-    setupCBF.createStructure "${CBF['action']}" "${CBF['templates']}"
 
-    # create link for build script
-    cd "${CBF['base']}"
-    [ ! -e build.sh ] || rm build.sh
-    [ ! -h build.sh ] || rm build.sh
-    local relativePath="$( lib.relativize "${CBF['base']}" "${CBF['bin']}" )"
-    echo "Creating link to ${relativePath}/build.sh"
-    cat << "EOF" > build.sh
-#!/bin/bash
-. /tmp/container_build_frameworkd/bin/build.sh "$@"
-EOF
+    # skip unless this is a valid project
+    setupCBF.isValidProject || exit 0
+
+
+    local cbf_dir
+    [ "${BASH_SOURCE[0]:-}" ] && cbf_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+    if [ -z "${cbf_dir:-}" ] || [ ! -d "${cbf_dir}/cbf" ]; then
+        temporary_dir="$(mktemp -d)"
+        echo 'Downloading CBF from github'
+        local cbf_version="${CBF_VERSION:-dev}"
+        # since no CBF directory located, attempt to download CBF based on specified verion
+        local tar_gz="${temporary_dir}/cbf.tzr.gz"
+        local -r CBF_URL="https://github.com/ballab1/container_build_framework/archive/${cbf_version}.tar.gz"
+        wget --no-check-certificate --quiet --output-document="${tar_gz}" "$CBF_URL" || die "$(basename "$project_dir") not setup: Failed to download $CBF_URL"
+        tar -xzC "$temporary_dir" -f "${tar_gz}" || die "$(basename "$project_dir") not setup: Failed to download $CBF_URL"
+        cbf_dir="$( ls -d "${temporary_dir}/container_build_framework"* 2>/dev/null )"
+    fi
+
+    # point CBF & CRF to locations in tmp workspace.  Will load libs from there
+    export CBF_LOCATION="$( ls -d "$cbf_dir" )"      # set CBF_LOCATION for testing
+    export CRF_LOCATION="$CBF_LOCATION/cbf"          # set CRF_LOCATION for testing
+    export CONTAINER_NAME=NewContainer
+
+    # now init stuff so we can use lib functionality
+    source "${CBF_LOCATION}/cbf/bin/init.libraries"
     
-    setupCBF.setupProjectFiles "$( setupCBF.getSuperProjectDir )"
+    setupCBF.setupProjectFiles "$project_dir"
+
+    # clean up
+    [ "${libTracker:-}" ] && [ -e "$libTracker" ] && rm "$libTracker"
+    [ "${envTracker:-}" ] && [ -e "$envTracker" ] && rm "$envTracker"
+    [ "${cbfLibTracker:-}" ] && [ -e "$cbfLibTracker" ] && rm "$cbfLibTracker"
+    [ "${crfLibTracker:-}" ] && [ -e "$crfLibTracker" ] && rm "$crfLibTracker"
+    [ "${scanTracker:-}" ] && [ -e "$scanTracker" ] && rm "$scanTracker"
+
+    local propFile
+    propFile="$(cbf.propertiesFile)"
+    [ "${propFile:-}" ] && [ -e "$propFile" ] && rm "$propFile"
+    propFile="$(crf.propertiesFile)"
+    [ "${propFile:-}" ] && [ -e "$propFile" ] && rm "$propFile"
+
+    [ -z "$temporary_dir" ] || rm -rf "$temporary_dir"
 }
 
 ######################################################################
-function setupCBF.getSuperProjectDir()
-{   
-    cd "${CBF['base']}/.."
-    pwd
-#    cd "${CBF['bin']}"
-#    local top="$(git rev-parse --show-superproject-working-tree)"
-#    if [ "$top" ]; then
-#    
-#    fi
+function setupCBF.renameActionFolder()
+{
+    local org_name=${1:?"must pass parameter 'org_name' to 'function ${FUNCNAME[0]}()'"}
+    local new_name=${2:?"must pass parameter 'new_name' to 'function ${FUNCNAME[0]}()'"}
+
+    if [ -d "$org_name" ]; then
+        echo "  renaming action folder:  '$(basename "$org_name")' to '$(basename "$new_name")'"
+        mv "$org_name" "$new_name"
+    fi
 }
 
 ######################################################################
@@ -127,45 +137,73 @@ function setupCBF.setupProjectFiles()
 
     cd "$top"
     local projectName="$( basename "$top" )"
-    echo "setting files for superProject: $projectName"
+    echo "setting files for project: $projectName"
     projectName=${projectName,,}
+    
+    local -r templates_folder="$( cbf.CBFBASE )/project.template"
+    local isNew
+    [ -e "${top}/.cbfProject" ] || isNew='true'
 
-    [ -e Dockerfile ] || setupCBF.verifyDependentContainerExists
+    if [ -e Dockerfile ] && grep -E '^COPY build /tmp/$' Dockerfile > /dev/null ; then
+        echo "  updating 'Dockerfile'"
+        sed -Ei -e 's|^COPY build /tmp/$|COPY build Dockerfile /tmp/|' Dockerfile
+    fi
 
     # ensure our folder structure exists
-    while read -r abs_dir; do
-        local dir="$( lib.relativize "${CBF['cbfbase']}/project.templates" "$abs_dir" )"
-        mkdir -p "${top}/$dir"  
-    done< <(find "${CBF['cbfbase']}/project.templates" -mindepth 1 -type d)
+    for abs_dir in $(find "$templates_folder" -mindepth 1 -type d); do
+        local dir="$( lib.relativize "$abs_dir" "$templates_folder" )"
+        mkdir -p "${top}/$dir"
+    done
 
-    # copy any missing files from project templates
-    while read -r abs_file; do
-        local file="$( lib.relativize "${CBF['cbfbase']}/project.templates" "$abs_file" )"
+    # copy any missing files from project template
+    local updatableFiles="build/build.sh
+                          .gitignore
+                          .dockerignore
+                          .gitattributes"
+    for abs_file in $(find "$templates_folder" -type f); do
+        local file="$( lib.relativize "$abs_file" "$templates_folder" )"
         if [ ! -e "$file" ]; then
             sed "s|newcontainer|${projectName}|gi" "$abs_file" > "$file"
             echo "  created: ${file}"
-        fi
-    done< <(find "${CBF['cbfbase']}/project.templates" -type f)
-}
+        elif [ "$(grep -c "$file" <<< "$updatableFiles" 2>/dev/null)" -gt 0 ]; then
+            # check if contents of files are the same
+            (printf "%s %s\n" "$(sha256sum "$file" | awk '{print $1}')" "$abs_file" | sha256sum -c --status) && continue
+#            [ "$file" -nt "$abs_file" ] && continue
 
-######################################################################
-function setupCBF.updateFiles()
-{
-    local old=${1:?"must pass parameter 'old' to 'function ${FUNCNAME[0]}()'"}
-    local new=${2:?"must pass parameter 'new' to 'function ${FUNCNAME[0]}()'"}
+            echo "  updating: ${file}   previous file renamed to ${file}.bak"
+            [ -f "$file" ] && mv "$file" "${file}.bak"
+            cp "$abs_file" "$file"
+        fi
+    done
     
-    [ ! -d "$old" ] || mv "$old" "$new"
-#    for file in $(find . -type f -name '0*'); do
-#        sed -i "s|\${TOOLS}/${old}|\\$\\{CBF['action']\\}/${new}|g" "$file"
-#    done
+    # make sure '.cbfProject' exists
+    if  [ ! -e "${top}/.cbfProject" ]; then
+        echo '[project]' > "${top}/.cbfProject"
+        echo "container_name=$projectName" >> "${top}/.cbfProject"
+    fi
+
+    # remove symlinks
+    find "$top" -mindepth 2 -type l -delete
+    
+
+    # remove any old CBF folders that exist (for testing or old CBF)
+    for dir in $(find "${top}/build" -type d -name 'container_build_framework*');  do
+        echo "  removing $dir" 
+        rm -rf "$dir"
+    done
+
+
+    # setup our structure
+    local -r action_folders="${top}/build/action_folders"
+    setupCBF.createStructure "$action_folders" "$( cbf.CBFBASE )/action.templates" "${isNew:-}"
 }
 
 ######################################################################
 function setupCBF.verifyDependentContainerExists()
 {
     if [ -z "$(  docker images --filter 'reference=base_container:*' -q --format '{{.Repository}}:{{.Tag}}' )" ];then
-        $LOG "The Docker image on which this project depends does not exist${LF}" 'error'
-        $LOG "Either modify this project's dependencies, or build the docker image: 'base_container:20180217'${LF}" 'warn'
+        term.log "The Docker image on which this project depends does not exist\n" 'error'
+        term.log "Either modify this project's dependencies, or build the docker image: 'base_container:20180217'\n" 'warn'
     fi
 }
 
