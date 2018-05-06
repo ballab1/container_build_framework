@@ -1,0 +1,433 @@
+#!/usr/bin/env bash_unit
+#-----------------------------------------------------------------------------------------
+#
+#  test suite for https://github.com/ballab1/container_build_framework.git
+#
+#  You may need to change the behavior of some commands to create conditions for your code under test
+#  to behave as expected. The *fake* function may help you to do that, see documentation.
+#
+# Organization of this test suite
+# ===============================
+# test methods
+# standard test framework routines
+# custom support provided within this suite
+# 
+#
+# standard test framework routines              custom support provided within this suite
+# --------------------------------              -----------------------------------------
+# setup_suite()                                 __test_lib_bashlib.mktemp()
+# teardown_suite()                              __test_lib_bashlib.mock_logger()
+# setup()                                       export test_lib_bashlib_LOG_file 
+# teardown()                                    export test_lib_bashlib_UT_TEST_DIR
+#                                               export test_lib_bashlib_DEBUG
+#                                              
+#
+# bash_unit supports several shell oriented assertion functions.
+# --------------------------------------------------------------
+# fail()
+# assert()
+# assert_fail()
+# assert_status_code()
+# assert_equals()
+# assert_not_equals()
+# fake()
+#    Using stdin
+#    Using a function
+#    fake parameters
+#
+##########################################################################################
+
+#-----------------------------------------------------------------------------------------
+# verify failure with invalid args
+test.lib.file_env_INVALIDARGS() {
+    export -f lib.file_env
+    assert_status_code 1 'lib.file_env' 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify basic assignment
+test.lib.file_env_BASIC() {
+    lib.file_env 't1' 'expected'
+    assert_equals "expected" "$t1"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify basic assignment to a var
+test.lib.file_env_INDIRECT() {
+    local t2='expected'
+    lib.file_env 't2'
+    assert_equals "expected" "$t2"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify alternate assignment to a var
+test.lib.file_env_INDIRECT2() {
+    local t2='xxx'
+    lib.file_env 't2' 'expected'
+    assert_equals 'xxx' "$t2"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify assignment from value specified in a file (aka: lib.getProperty)
+test.lib.file_env_FILE() {
+    local t3_FILE=$(__test_lib_bashlib.mktemp)
+    local expected='this is a test'
+    echo "$expected" > "$t3_FILE"
+    lib.file_env 't3'
+    assert_equals "$expected" "$t3" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify failure when there are both exported VAR and a file which can be referenced
+test.lib.file_env_CONFLICT() {
+    local t4='1'
+    local t4_FILE='2'
+    export -f lib.file_env
+    assert_status_code 1 'lib.file_env'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify array of full pathname visible files is returned
+test.lib.getFiles() {
+    local -r tmp=$(__test_lib_bashlib.mktemp -d)
+    mkdir -p "${tmp}"
+    local -a names=( a b c d )
+    local -a expected=()
+    for file in ${expected[@]}; do
+        touch "${tmp}/$file"
+        expected+=("${tmp}/$file")
+    done
+    touch "${tmp}/.hidden"
+    local -a actual=( $( lib.getFiles "$tmp" ) )
+    assert_equals "${expected[*]}" "${actual[*]}" 
+}
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+test.lib.getFiles_INVALID() {
+    local -r tmp=$(__test_lib_bashlib.mktemp -d)
+    mkdir -p "${tmp}"
+    local -a expected=( a b c d )
+    for file in ${expected[@]}; do
+        touch "${tmp}/$file"
+    done
+set -o xtrace
+    mv "${tmp}/a" "${tmp}/.hidden"
+    local -a actual=( $( lib.getFiles "$tmp" ) )
+set +o xtrace
+    assert_equals "${expected[*]}" "${actual[*]}" 
+}
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+test.lib.getProperty_USER() {
+    local expected='root'
+    local propFile="$( crf.RT_ENVIRON )"
+    local key='export USER'
+    local actual="$(lib.getProperty "$key" "$propFile" )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify we can get a value from a property file
+test.lib.getProperty_SIMPLE() {
+    local propFile="$(__test_lib_sh.mktemp)"
+cat << EOF > "$propFile"
+# property file
+sc=this is a property
+EOF
+    local expected='this is a property'
+    local actual="$( lib.getProperty 'sc' "$propFile" )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify we can get an indirect value from a property file
+test.lib.getProperty_EVAL() {
+    local propFile="$(__test_lib_sh.mktemp)"
+    export SC='this is a property'
+cat << EOF > "$propFile"
+# property file
+eval=${SC}
+EOF
+    local expected='this is a property'
+    local actual="$( lib.getProperty 'eval' "$propFile" )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+test.lib.getProperty_WORKDIR() {
+    local expected='/'
+    local propFile="$( crf.RT_ENVIRON )"
+    local key='export WORKDIR'
+    local actual="$(lib.getProperty "$key" "$propFile" )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify we can get the value in an associative array using an inderect reference
+test.lib.indirectReference() {
+    local sc="$(__test_lib_sh.mktemp)"
+cat << EOF > "$sc"
+#!/bin/bash
+declare -A sc=(
+    ['a']=1
+    ['b']=2
+)
+EOF
+    source "$sc"
+    local expected='1:2:100'
+    local actual="$( lib.indirectReference 'sc' 'a' ):$( lib.indirectReference 'sc' 'b' ):$( lib.indirectReference 'sc' 'c' '100' )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify comparison of array with itself returns itself
+test.lib.intersect_ALL() {
+    local -a AR=( 1 2 3 )
+    local -a expected=( 1 2 3 )
+    local -a actual=( $( lib.intersect "${AR[*]}" "${AR[*]}" ) )
+    assert_equals "${expected[*]}" "${actual[*]}" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify comparison of 2 arrays returns correct intersection
+test.lib.intersect_SOME() {
+    local -a AR=( 1 2 3 4 5 6 )
+    local -a BR=( 1 2 3 7 8 9 )
+    local -a expected=( 1 2 3 )
+    local -a actual=( $( lib.intersect "${AR[*]}" "${BR[*]}" ) )
+    assert_equals "${expected[*]}" "${actual[*]}" 
+} 
+
+#-----------------------------------------------------------------------------------------
+# verify comparison of array with no common elements returns nothing
+test.lib.intersect_NONE() {
+    local -a AR=( 4 5 6 )
+    local -a BR=( 7 8 9 )
+    local -a expected=()
+    local -a actual=( $( lib.intersect "${AR[*]}" "${BR[*]}" ) )
+    assert_equals "${expected[*]}" "${actual[*]}" 
+} 
+
+#-----------------------------------------------------------------------------------------
+# verify /etc/passwd lookup of uid:0 is 0
+test.lib.lookupId_UID_0() {
+    local expected=0
+    local actual="$(lib.lookupId 'passwd' 0)" 
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify /etc/group lookup of gid:0 is 0
+test.lib.lookupId_GID_0() {
+    local expected=0
+    local actual="$(lib.lookupId 'group' 0)" 
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify /etc/passwd lookup of root is 0
+test.lib.lookupId_USER_ROOT() {
+    local expected=0
+    local actual="$(lib.lookupId 'passwd' 'root')" 
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify /etc/group lookup of root is 0
+test.lib.lookupId_GROUP_ROOT() {
+    local expected=0
+    local actual="$(lib.lookupId 'group' 'root')" 
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify default value returned when no entry found
+test.lib.lookupId_DEFAULT() {
+    local expected='default'
+    local actual="$(lib.lookupId 'passwd' '9999999999' "$expected")" 
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify nothing returned when invalid DB specified
+test.lib.lookupId_INVALID() {
+    local expected=''
+    local actual="$(lib.lookupId 'invalid' '0')" 
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error returned when no args provided
+test.lib.lookupId_BAD_ARGS() {
+    export -f lib.lookupId
+    assert_status_code 1 'lib.lookupId' 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify correct OS id is returned
+test.lib.OSid() {
+    local expected='centos'
+    local actual="$( lib.OSid )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error returned when no args provided
+test.lib.relativize_BADARGS() {
+    export -f lib.relativize
+    assert_status_code 1 'lib.relativize' 
+    assert_status_code 1 'lib.relativize "..."' 
+}
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+xtest.lib.relativize_SAME() {
+    local expected='.'
+    local actual="$( lib.relativize '/tmp/a/b' '/tmp/a/b' )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+test.lib.relativize_FWD() {
+    local expected='../../../../../tmp/a'
+    local actual="$( lib.relativize '/tmp/a/b/c/d' '/tmp/a' )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+test.lib.relativize_BKWD() {
+    local expected='b/c/d'
+    local actual="$( lib.relativize '/tmp/a' '/tmp/a/b/c/d' )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+test.lib.relativize_WDBL_QUOTES() {
+    local expected='c/d'
+    local actual="$( lib.relativize '/tmp/a' '/tmp/a/b/../c/d' )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+test.lib.removeProperty() {
+    local expected=0
+    local actual=0
+#    assert_equals "$expected" "$actual" 
+    fail 'test not implemented'
+}
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+test.lib.updateProperties() {
+    local expected=0
+    local actual=0
+#    assert_equals "$expected" "$actual" 
+    fail 'test not implemented'
+}
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+test.lib.updatePropertyFile() {
+    local expected=0
+    local actual=0
+#    assert_equals "$expected" "$actual" 
+    fail 'test not implemented'
+}
+
+##########################################################################################
+#
+# standard test framework routines
+#
+##########################################################################################
+
+# load all the bash libraries, setup location for running test_suite, 
+setup_suite() {
+
+    # create a temp directory for any files etc created by tests
+    local -r tmpUserDir="${TMPDIR:-/tmp}/$USER"
+    mkdir -p "$tmpUserDir"
+    local temporaryDir=$(mktemp -d --tmpdir="$tmpUserDir" --suffix=test bash_unit_XXXXXXXXXXXXXXXXXX 2>/dev/null)
+    mkdir -p "$temporaryDir"
+    test_lib_bashlib_UT_TEST_DIR="$temporaryDir" 
+
+    # point CBF & CRF to locations in tmp workspace.  Will load libs from there
+    export CBF_LOCATION="$temporaryDir/tmp"            # set CBF_LOCATION for testing
+    mkdir -p "$CBF_LOCATION"
+    export CRF_LOCATION="$temporaryDir/usr/local/crf"  # set CRF_LOCATION for testing
+    mkdir -p "$CRF_LOCATION"
+
+    # pwd is location of test definition file.
+    local cbf_location="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )"
+
+    # copy CBF & CRF to workspace
+    for dir in 'action.templates' 'bin' 'cbf' 'crf' 'project.templates' ; do
+        cp -r "${cbf_location}/${dir}" "$CBF_LOCATION"
+    done
+    cp -r "${cbf_location}/crf"/* "$CRF_LOCATION"
+    
+    # now init stuff for testing
+    source "${CBF_LOCATION}/bin/init.libraries" #> /dev/null
+} 
+
+# remove anything generated by test suite
+teardown_suite() {
+
+    # ensure directory is valid
+    [ "$test_lib_bashlib_UT_TEST_DIR" ] || return
+    [ "$test_lib_bashlib_UT_TEST_DIR" != '/' ] || return
+    [ "$test_lib_bashlib_UT_TEST_DIR" != '~' ] || return
+    [ "$test_lib_bashlib_UT_TEST_DIR" != "$( cd ~ && pwd )" ] || return
+    [ "$test_lib_bashlib_UT_TEST_DIR" != "$TMP" ] || return
+
+    # clean up our junk
+    rm -rf "$test_lib_bashlib_UT_TEST_DIR"
+}
+
+# setup MOCK logger
+setup() {
+    [ "$test_lib_bashlib_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running setup'
+    export LOG=__test_lib_bashlib.mock_logger
+    test_lib_bashlib_LOG_file=$(__test_lib_bashlib.mktemp)
+    fake 'term.log' '__test_lib_bashlib.mock_logger $*'
+    touch "$test_lib_bashlib_LOG_file" 
+}
+
+# flush the mock logger
+teardown() {
+    [ "$test_lib_bashlib_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running teardown'
+    [ ! -e "$test_lib_bashlib_LOG_file" ] || rm "$test_lib_bashlib_LOG_file"
+
+    [ ! -e "${CBF_LOCATION}/bashlibs.loaded" ] || rm "${CBF_LOCATION}/bashlibs.loaded"
+    [ ! -e "${CBF_LOCATION}/environment.loaded " ] || rm "${CBF_LOCATION}/environment.loaded "
+}
+
+##########################################################################################
+#
+# custom support
+#
+##########################################################################################
+
+# custom mktemp to create folder withing the temp storage location for this test
+__test_lib_bashlib.mktemp() {
+    mktemp --tmpdir="$test_lib_bashlib_UT_TEST_DIR" $* 2>/dev/null
+}
+export -f __test_lib_bashlib.mktemp
+
+# MOCK logger implementation
+__test_lib_bashlib.mock_logger() {
+    printf "%s\n" "$FAKE_PARAMS" >> "${test_lib_bashlib_LOG_file}"
+}
+export -f __test_lib_bashlib.mock_logger
+
+export test_lib_bashlib_LOG_file 
+export test_lib_bashlib_UT_TEST_DIR
+export test_lib_bashlib_DEBUG=0
+
+##########################################################################################

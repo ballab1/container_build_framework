@@ -49,7 +49,7 @@ function trap.die()
     [[ $status -ne 0 ]] || status=255
     dying+=1
 
-    ( trap.log "${LF}FATAL ERROR: $*" ) >&2
+    ( trap.log "\nFATAL ERROR: $*" ) >&2
     [ "$DEBUG_TRACE" = "2" ] || exit $status
 }  
 export -f trap.die

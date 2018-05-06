@@ -164,8 +164,8 @@ function setupCBF.updateFiles()
 function setupCBF.verifyDependentContainerExists()
 {
     if [ -z "$(  docker images --filter 'reference=base_container:*' -q --format '{{.Repository}}:{{.Tag}}' )" ];then
-        $LOG "The Docker image on which this project depends does not exist${LF}" 'error'
-        $LOG "Either modify this project's dependencies, or build the docker image: 'base_container:20180217'${LF}" 'warn'
+        term.log "The Docker image on which this project depends does not exist\n" 'error'
+        term.log "Either modify this project's dependencies, or build the docker image: 'base_container:20180217'\n" 'warn'
     fi
 }
 

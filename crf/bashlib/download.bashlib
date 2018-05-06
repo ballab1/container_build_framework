@@ -13,7 +13,7 @@ function download.getFile()
     # load download definition
     source "$file"
     local name="$( basename "$file" )"
-    $LOG "Downloading from definition:  ${name}${LF}" 'task'
+    term.log "Downloading from definition:  ${name}\n" 'task'
 
     # strip path & prefix from file to get name
     name="${name//[0-9]/}"
@@ -24,9 +24,9 @@ function download.getFile()
                       ['url']="$( lib.indirectReference "$name" 'url' )" \
                       ['sha256']="$( lib.indirectReference "$name" 'sha256' )" \
                     )
-    $LOG "....file:  ${params['file']}${LF}" 'info'
-    $LOG ".....url:  ${params['url']}${LF}" 'info'
-    $LOG "..sha256:  ${params['sha256']}${LF}" 'info'
+    term.log "....file:  ${params['file']}\n" 'info'
+    term.log ".....url:  ${params['url']}\n" 'info'
+    term.log "..sha256:  ${params['sha256']}\n" 'info'
 
     local -i attempt
     for attempt in {0..3}; do
@@ -35,14 +35,14 @@ function download.getFile()
         wget -O "${params['file']}" --no-check-certificate "${params['url']}"
         [ $? -eq 0 ] || continue
         local result=$(echo "${params['sha256']}  ${params['file']}" | sha256sum -cw 2>&1)
-        $LOG "${result}${LF}" 'info'
+        term.log "${result}\n" 'info'
         if [[ "$result" == *'FAILED'* ]]; then
-            $LOG "..Incorrect checksum for ${params['file']}${LF}" 'warn'
-            $LOG "    actual:   $( sha256sum "${params['file']}" | awk '{ print $1 }')${LF}" 'warn'
+            term.log "..Incorrect checksum for ${params['file']}\n" 'warn'
+            term.log "    actual:   $( sha256sum "${params['file']}" | awk '{ print $1 }')\n" 'warn'
             continue
         fi
         if [[ "$result" == *' WARNING: '* ]]; then
-            $LOG "..failed to successfully download ${params['file']}. Retrying....${LF}" 'info'
+            term.log "..failed to successfully download ${params['file']}. Retrying....\n" 'info'
             continue
         fi
         # successfully downloaded file :-)
@@ -60,7 +60,7 @@ function download.getPackages()
     for file in ${files} ; do
         crf.copyFileToRuntime 'ENV' "$file"
         cd /tmp
-        eval download.getFile "$file" || $LOG ">>>>> issue while downloading $( basename "$file" ) <<<<<${LF}" 'warn'
+        eval download.getFile "$file" || term.log ">>>>> issue while downloading $( basename "$file" ) <<<<<\n" 'warn'
     done
 }
 export -f download.getPackages

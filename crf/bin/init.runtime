@@ -3,14 +3,17 @@
 declare __CRF_OPTIONS=$(set +o)
 set +o nounset
 
+: ${CBF_LOCATION:=/tmp} 
+: ${CRF_LOCATION:=/usr/local/crf}
+
 declare _crfTracker
 declare _filename
 declare -a _files=()
 
 # when nothing exists in 'BASHLIBS' populate it with names of _files 'source'd from crf folder
 declare -a _libbase=( "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
-                       /tmp/usr/local/crf 
-                       /usr/local/crf
+                       "${CRF_LOCATION}"
+                       "${CBF_LOCATION}${CRF_LOCATION}"
                      )
 # make sure _libbase is unique
 _libbase=( $( printf "%s\n" ${_libbase[@]} | sort -u ) )
@@ -20,12 +23,12 @@ for dir in ${_libbase[@]}; do
     [ ! -d "${dir}/bashlib" ] || _files+=( $(find "${dir}/bashlib" -maxdepth 1 -mindepth 1 -type f ! -name '.*'  -print) )
 done
 if [ "${#_files[@]}" -gt 0 ]; then
-    _crfTracker=/tmp/bashlibs.loaded
+    _crfTracker=${CBF_LOCATION}/bashlibs.loaded
     for src in ${_files[@]} ; do
         _filename="$( basename "$src" )"
         [ -e "$_crfTracker" ] || touch "$_crfTracker"
         if ! grep -sq "$_filename" "$_crfTracker" ; then
-            [ $( dirname "$src" ) = '/usr/local/crf/bashlib' ] || echo "$_filename" >> "$_crfTracker"
+            [ $( dirname "$src" ) = "${CRF_LOCATION}/bashlib" ] || echo "$_filename" >> "$_crfTracker"
             echo "    loading library: ${src}"
             source "$src"
         fi
@@ -38,7 +41,7 @@ for dir in ${_libbase[@]}; do
     [ ! -d "${dir}/environment" ] || _files+=( $(find "${dir}/environment" -maxdepth 1 -mindepth 1 -type f ! -name '.*'  -print) )
 done
 if [ "${#_files[@]}" -gt 0 ]; then
-    _crfTracker=/tmp/environment.loaded
+    _crfTracker=${CBF_LOCATION}/environment.loaded
     # shrink _crfTracker
     :>  "$_crfTracker"
     for src in ${_files[@]} ; do
@@ -50,9 +53,9 @@ if [ "${#_files[@]}" -gt 0 ]; then
         fi
     done
 fi
-if [ -e /usr/local/crf/bin/rt.environment ]; then
-    echo "    loading: /usr/local/crf/bin/rt.environment"
-    source /usr/local/crf/bin/rt.environment 
+if [ -e "${CRF_LOCATION}/bin/rt.environment" ]; then
+    echo "    loading: ${CRF_LOCATION}/bin/rt.environment"
+    source "${CRF_LOCATION}/bin/rt.environment"
 fi
 
 eval "$__CRF_OPTIONS"
@@ -63,4 +66,4 @@ unset _filename
 unset _files
 unset _libbase
 
-crf.__init
+crf.__init "$CRF_LOCATION"

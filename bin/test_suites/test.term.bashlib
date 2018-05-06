@@ -1,0 +1,304 @@
+#!/usr/bin/env bash_unit
+#-----------------------------------------------------------------------------------------
+#
+#  test suite for https://github.com/ballab1/container_build_framework.git
+#
+#  You may need to change the behavior of some commands to create conditions for your code under test
+#  to behave as expected. The *fake* function may help you to do that, see documentation.
+#
+# Organization of this test suite
+# ===============================
+# test methods
+# standard test framework routines
+# custom support provided within this suite
+# 
+#
+# standard test framework routines              custom support provided within this suite
+# --------------------------------              -----------------------------------------
+# setup_suite()                                 __test_term_bashlib.mktemp()
+# teardown_suite()                              __test_term_bashlib.mock_logger()
+# setup()                                       export test_term_bashlib_LOG_file 
+# teardown()                                    export test_term_bashlib_UT_TEST_DIR
+#                                               export test_term_bashlib_DEBUG
+#                                              
+#
+# bash_unit supports several shell oriented assertion functions.
+# --------------------------------------------------------------
+# fail()
+# assert()
+# assert_fail()
+# assert_status_code()
+# assert_equals()
+# assert_not_equals()
+# fake()
+#    Using stdin
+#    Using a function
+#    fake parameters
+#
+##########################################################################################
+
+IFS=$'\t\n'
+
+#-----------------------------------------------------------------------------------------
+# verify different color strings are converted to correct values
+test.term.codes() {
+    IFS=' ' local -A attr_reset=( [bold]=21 [dim]=22 [underline]=24 [blink]=25 [invert]=27 [hidden]=28 [all]=0 )
+    IFS=' ' local -A attr_setters=( [bold]=1 [dim]=2 [underline]=4 [blink]=5 [invert]=7 [hidden]=8 )
+    IFS=' ' local -A background=( [default]=49  [black]=40  [red]=41  [green]=42  [yellow]=43  [blue]=44  [magenta]=45  [cyan]=46  [lt_gray]=47  [dk_gray]=100  [lt_red]=101  [lt_green]=102  [lt_yellow]=103  [lt_blue]=104  [lt_magenta]=105  [lt_cyan]=106  [white]=107  )
+    IFS=' ' local -A foreground=( [black]=30  [blue]=34  [cyan]=36  [default]=39  [dk_gray]=90  [green]=32  [lt_blue]=94  [lt_cyan]=96  [lt_gray]=37  [lt_green]=92  [lt_magenta]=95  [lt_red]=91  [lt_yellow]=93  [magenta]=35  [red]=31  [white]=97  [yellow]=33  )
+    IFS=' ' local -a attrs=( attr_reset attr_setters background foreground )
+    local -a results=()
+
+    for attr in "${attrs[@]}"; do
+        for key in $(eval "echo \${!${attr}[@]}"); do
+            local expected="\e[$(eval "echo \${${attr}[$key]}")m"
+            local actual="$(term.codes "${attr^^}" "$key")"
+            [ "$expected" = "$actual" ] || results+=( $(printf "attr: %s, key: %s, val: %s" "$attr" "$key" "$expected") )
+        done
+    done
+    [ ${#results[*]} -ne 0 ] || fail "$(echo 'bad results for the following:' ; printf "    %s\n" "${results[@]}")"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify correct return when an invalid key passed to ATTR_RESET
+test.term.codes_INVALID_RESET_CODE() {
+    local expected=''
+    local actual="$(term.codes 'ATTR_RESET' 'invalid')"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify correct return when an invalid key passed to ATTR_SETTERS
+test.term.codes_INVALID_SETTERS_CODE() {
+    local expected=''
+    local actual="$(term.codes 'ATTR_SETTERS' 'invalid')"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify correct return when an invalid key passed to FOREGROUND
+test.term.codes_INVALID_FOREGROUND_CODE() {
+    local expected=''
+    local actual="$(term.codes 'FOREGROUND' 'invalid')"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify correct return when an invalid key passed to BACKGROUND
+test.term.codes_INVALID_BACKGROUND_CODE() {
+    local expected=''
+    local actual="$(term.codes 'BACKGROUND' 'invalid')"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify term.code returns bad status code when no args supplied
+test.term.codes_NOARGS() {
+    export -f term.codes
+    assert_status_code 1 'term.codes'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify term.decode returns correct code for 'task'
+test.term.decode_TASK() {
+    local expected=$( printf "\e[96m" )
+    local actual="$(term.decode 'task')"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify term.decode returns correct code for 'info'
+test.term.decode_INFO() {
+    local expected=$( printf "\e[92m" )
+    local actual="$(term.decode 'info')"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify term.decode returns correct code for 'error'
+test.term.decode_ERROR() {
+    local expected=$( printf "\e[31m" )
+    local actual="$(term.decode 'error')"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify term.decode returns correct code for 'reset'
+test.term.decode_WARN() {
+    local expected=$( printf "\e[93m" )
+    local actual="$(term.decode 'warn')"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify term.decode returns correct code for 'warn'
+test.term.decode_RESET() {
+    local expected=$( printf "\e[0m" )
+    local actual="$(term.decode 'reset')"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify term.decode returns correct code for some color
+test.term.decode_SOMECOLOR() {
+    local expected=$( printf "\e[90m" )
+    local actual="$(term.decode 'dk_gray')"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify term.decode returns correct code for invalid color
+test.term.decode_INVALIDCFGOLOR() {
+    local expected=''
+    local actual="$(term.decode 'invalid')"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify term.decode returns correct code for invalid color
+test.term.decode_FG_BGCOLOR() {
+    local expected=$( printf "\e[97;100m" )
+    local actual="$(term.decode 'white' 'dk_gray')"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify term.decode returns correct code for invalid color
+test.term.decode_INVALIDBGCOLOR() {
+    local expected=''
+    local actual="$(term.decode 'dk_gray' 'invalid')"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify term.decode returns bad status code when no args supplied
+test.term.decode_NOARGS() {
+    export -f term.decode
+    assert_status_code 1 'term.decode'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify LOG works with correctly formatted banners
+test.term.header() {
+    local expected="|blue|\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n||lt_blue|Build step: whiteStarting CONTAINER BUILD\n||blue|+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n|"
+    fake 'term.decode' 'echo $1'
+    local test_LOG=$( __test_term_bashlib.mktemp ) 
+    fake 'term.log' 'printf "|%s|%s|" $2 $1 >> "$test_LOG"'
+    term.header 'Starting CONTAINER BUILD' 'info'
+    local actual="$(< "${test_LOG}" )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify term.header returns bad status code when no args supplied
+test.term.header_NOARGS() {
+    export -f term.header
+    assert_status_code 1 'term.header'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify logger puts components parts together correctly
+test.term.log() {
+    fake 'term.decode' 'echo $1'
+    local expected='bareset'
+    local actual="$(term.log 'a' 'b')"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify term.log returns bad status code when no args supplied
+test.term.log_NOARGS() {
+    export -f term.log
+    assert_status_code 1 'term.log'
+}
+
+##########################################################################################
+#
+# standard test framework routines
+#
+##########################################################################################
+
+# load all the bash libraries, setup location for running test_suite, 
+setup_suite() {
+
+    # create a temp directory for any files etc created by tests
+    local -r tmpUserDir="${TMPDIR:-/tmp}/$USER"
+    mkdir -p "$tmpUserDir"
+    local temporaryDir=$(mktemp -d --tmpdir="$tmpUserDir" --suffix=test bash_unit_XXXXXXXXXXXXXXXXXX 2>/dev/null)
+    mkdir -p "$temporaryDir"
+    test_term_bashlib_UT_TEST_DIR="$temporaryDir" 
+
+    # point CBF & CRF to locations in tmp workspace.  Will load libs from there
+    export CBF_LOCATION="$temporaryDir/tmp"            # set CBF_LOCATION for testing
+    mkdir -p "$CBF_LOCATION"
+    export CRF_LOCATION="$temporaryDir/usr/local/crf"  # set CRF_LOCATION for testing
+    mkdir -p "$CRF_LOCATION"
+
+    # pwd is location of test definition file.
+    local cbf_location="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )"
+
+    # copy CBF & CRF to workspace
+    for dir in 'action.templates' 'bin' 'cbf' 'crf' 'project.templates' ; do
+        cp -r "${cbf_location}/${dir}" "$CBF_LOCATION"
+    done
+    cp -r "${cbf_location}/crf"/* "$CRF_LOCATION"
+    
+    # now init stuff for testing
+    source "${CBF_LOCATION}/bin/init.libraries" #> /dev/null
+} 
+
+# remove anything generated by test suite
+teardown_suite() {
+
+    # ensure directory is valid
+    [ "$test_term_bashlib_UT_TEST_DIR" ] || return
+    [ "$test_term_bashlib_UT_TEST_DIR" != '/' ] || return
+    [ "$test_term_bashlib_UT_TEST_DIR" != '~' ] || return
+    [ "$test_term_bashlib_UT_TEST_DIR" != "$( cd ~ && pwd )" ] || return
+    [ "$test_term_bashlib_UT_TEST_DIR" != "$TMP" ] || return
+
+    # clean up our junk
+    rm -rf "$test_term_bashlib_UT_TEST_DIR"
+}
+
+# setup MOCK logger
+setup() {
+    [ "$test_term_bashlib_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running setup'
+    export LOG=__test_term_bashlib.mock_logger
+    test_term_bashlib_LOG_file=$(__test_term_bashlib.mktemp) 
+#    fake 'term.log' '__test_term_bashlib.mock_logger $*'
+    touch "$test_term_bashlib_LOG_file"
+}
+
+# flush the mock logger
+teardown() {
+    [ "$test_term_bashlib_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running teardown'
+    [ ! -e "$test_term_bashlib_LOG_file" ] || rm "$test_term_bashlib_LOG_file"
+
+    [ ! -e "${CBF_LOCATION}/bashlibs.loaded" ] || rm "${CBF_LOCATION}/bashlibs.loaded"
+    [ ! -e "${CBF_LOCATION}/environment.loaded " ] || rm "${CBF_LOCATION}/environment.loaded "
+}
+
+##########################################################################################
+#
+# custom support
+#
+##########################################################################################
+
+# custom mktemp to create folder withing the temp storage location for this test
+__test_term_bashlib.mktemp() {
+    mktemp --tmpdir="$test_term_bashlib_UT_TEST_DIR" $* 2>/dev/null
+}
+export -f __test_term_bashlib.mktemp
+
+# MOCK logger implementation
+__test_term_bashlib.mock_logger() {
+    printf "%s\n" "$FAKE_PARAMS" >> "${test_term_bashlib_LOG_file}"
+}
+export -f __test_term_bashlib.mock_logger
+
+export test_term_bashlib_LOG_file 
+export test_term_bashlib_UT_TEST_DIR
+export test_term_bashlib_DEBUG=0
+
+##########################################################################################

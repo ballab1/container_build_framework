@@ -12,7 +12,7 @@ function uidgid.check()
     for file in ${files} ; do
         crf.copyFileToRuntime 'ENV' "$file"
         chmod 755 "$file"
-        $LOG "..executing ${file}${LF}" 'info'
+        term.log "..executing ${file}\n" 'info'
         ( uidgid.runScript "$file" )
     done
 }
@@ -44,19 +44,19 @@ function uidgid.createUserAndGroup()
     local wanted=$( printf '%s:%s' $group $gid )
     local nameMatch=$( getent group "${group}" | awk -F ':' '{ printf "%s:%s",$1,$3 }' )
     local idMatch=$( getent group "${gid}" | awk -F ':' '{ printf "%s:%s",$1,$3 }' )
-    $LOG "INFO: group/gid (${wanted}):  is currently (${nameMatch})/(${idMatch})${LF}" 'info'
+    term.log "INFO: group/gid (${wanted}):  is currently (${nameMatch})/(${idMatch})\n" 'info'
 
     if [[ $wanted != $nameMatch  ||  $wanted != $idMatch ]]; then
         if [[ "$idMatch" ]]; then
             local oldName=$( getent group "${gid}" | awk -F ':' '{ printf "%s",$1 }' )
-            $LOG "renaming group:  ${oldName} to ${group}${LF}" 'info'
+            term.log "renaming group:  ${oldName} to ${group}\n" 'info'
             /usr/sbin/groupmod --new-name "$group" "$oldName"
         elif [[ "$nameMatch" ]]; then
             local oldId=$( getent group "${group}" | awk -F ':' '{ printf "%s",$3 }' )
-            $LOG "renaming group:  ${oldId} to ${gid}${LF}" 'info'
+            term.log "renaming group:  ${oldId} to ${gid}\n" 'info'
             /usr/sbin/groupmod --gid ${gid} "$group"
         else
-            $LOG "create group:  ${group}${LF}" 'info'
+            term.log "create group:  ${group}\n" 'info'
             /usr/sbin/groupadd --gid "${gid}" "${group}"
         fi
     fi
@@ -65,11 +65,11 @@ function uidgid.createUserAndGroup()
     wanted=$( printf '%s:%s' $user $uid )
     nameMatch=$( getent passwd "${user}" | awk -F ':' '{ printf "%s:%s",$1,$3 }' )
     idMatch=$( getent passwd "${uid}" | awk -F ':' '{ printf "%s:%s",$1,$3 }' )
-    $LOG "INFO: user/uid (${wanted}):  is currently (${nameMatch})/(${idMatch})${LF}" 'info'
+    term.log "INFO: user/uid (${wanted}):  is currently (${nameMatch})/(${idMatch})\n" 'info'
     
     if [[ $wanted != $nameMatch  ||  $wanted != $idMatch ]]; then
         if [[ -z "$idMatch"  &&  -n "$nameMatch" ]]; then
-            $LOG "update user:  ${user}${LF}" 'info'
+            term.log "update user:  ${user}\n" 'info'
             if [ "$homedir" ]; then
                 [ -d "$homedir" ] || mkdir -p "$homedir"
                 /usr/sbin/usermod --home "$homedir" --uid "${uid}" --gid "${gid}" --shell "${shell}" "${user}"
@@ -77,7 +77,7 @@ function uidgid.createUserAndGroup()
                 /usr/sbin/usermod --uid "${uid}" --gid "${gid}" --shell "${shell}" "${user}"
             fi
         else
-            $LOG "create user: ${user}${LF}" 'info'
+            term.log "create user: ${user}\n" 'info'
             [[ "$nameMatch"  &&  $wanted != $nameMatch ]] && userdel "$( getent passwd ${user} |  cut -d: -f1 )"
             [[ "$idMatch"    &&  $wanted != $idMatch ]]   && userdel "$( getent passwd ${uid} |  cut -d: -f1 )"
             if [ "$homedir" ]; then
@@ -97,6 +97,6 @@ function uidgid.runScript()
     local -a file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     source /usr/local/crf/bin/init.runtime
-    eval uidgid.createUserAndGroup "$file" || $LOG "..*** issue while executing $( basename "$file" ) ***${LF}" 'warn'
+    eval uidgid.createUserAndGroup "$file" || term.log "..*** issue while executing $( basename "$file" ) ***\n" 'warn'
 }
 export -f uidgid.check

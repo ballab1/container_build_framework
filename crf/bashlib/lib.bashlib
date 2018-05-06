@@ -101,14 +101,11 @@ function lib.lookupId()
 {
     local -r database=${1:?"Input parameter 'database' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r entry=${2:?"Input parameter 'entry' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local -r default=${3:?"Input parameter 'default' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r default=${3:-}
 
-    local __lib_savedOptions=$(set +o)
-    set +o pipefail
     local id=$(getent "$database" "$entry" | cut -d: -f3)
-    [ "$id" ] || id=$default
+    [ "$id" ] || id="$default"
     echo "$id"
-    eval "$__lib_savedOptions"
 }
 export -f lib.lookupId
 

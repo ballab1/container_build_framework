@@ -5,14 +5,11 @@
 #
 ############################################################################# 
 
-: ${LOG:=''}
-if [[ "$LOG" != term.log ]]; then
-  declare -x LOG=term.log
-  declare -rx LF=$'\n'
-  declare -rx BLANK=''
-  declare -rx RESET=0 
-  declare -rx TERM_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/properties" && pwd )"
-fi
+function term.__init()
+{
+    declare -rx LOG=term.log
+    declare -rx TERM_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/properties" && pwd )"
+}
 
 ############################################################################# 
 function term.codes()
@@ -20,8 +17,10 @@ function term.codes()
     local -r mode=${1:?"Input parameter 'mode' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r name=${2:?"Input parameter 'code' must be passed to 'function ${FUNCNAME[0]}()'"}
 
+    local fmt=''
     local -r code=$(lib.getProperty "$name" "$(term.propertiesDir)/term_${mode^^}.properties")
-    [ $? -ne 0 ] || [ -z "$code" ] || printf "\e[%dm" "$code"
+    [ $? -ne 0 ] || [ -z "$code" ] || fmt="\e[%dm"
+    printf "$fmt" "$code"
 }
 export -f term.codes
 
@@ -41,7 +40,11 @@ function term.decode()
                 *)     term.codes 'FOREGROUND' ${fg};;
         esac
     else
-        printf "\e[%d;%dm" $(term.codes 'FOREGROUND' $fg) $(term.codes 'BACKGROUND' $bg)
+        local fmt=''
+        local -r bg_code=$(lib.getProperty "$bg" "$(term.propertiesDir)/term_BACKGROUND.properties")
+        local -r fg_code=$(lib.getProperty "$fg" "$(term.propertiesDir)/term_FOREGROUND.properties")
+        [ -z "$bg_code" ] || [ -z "$fg_code" ] || fmt="\e[%d;%dm"
+        printf "$fmt" "$fg_code" "$bg_code"
     fi
 }
 export -f term.decode
@@ -52,9 +55,9 @@ function term.header()
     local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r bars='+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
 
-    $LOG "${LF}${bars}${LF}" 'blue'
-    $LOG "Build step: $( term.decode 'white' )${name}${LF}" 'lt_blue'
-    $LOG "${bars}${LF}" 'blue'
+    term.log "\n${bars}\n" 'blue'
+    term.log "Build step: $( term.decode 'white' )${name}\n" 'lt_blue'
+    term.log "${bars}\n" 'blue'
 }
 export -f term.header
 
@@ -74,3 +77,5 @@ function term.propertiesDir()
     echo "${TERM_DIR:=$( cd "$( dirname "${BASH_SOURCE[0]}" )/properties" && pwd )}"
 }
 export -f term.propertiesDir
+
+[[ ${LOG:-} = term.log ]] || term.__init 

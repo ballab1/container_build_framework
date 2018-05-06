@@ -39,7 +39,7 @@ function package.install()
     local -r defnFile=${1:?"Input parameter 'defnFile' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -ra empty=()
     
-    $LOG "Installing ${defnFile}${LF}" 'task'
+    term.log "Installing ${defnFile}\n" 'task'
 
     source "$( crf.BIN )/init.runtime"
     source "$defnFile"

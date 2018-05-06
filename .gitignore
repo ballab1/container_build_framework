@@ -1,4 +1,8 @@
 vols-rw/*
+bashlibs.loaded
+ENVIRONMENT.loaded
+CBF.properties
+crf/CRF.properties
 *.log
 *.tgz
 *.zip

@@ -1,0 +1,307 @@
+#!/usr/bin/env bash_unit
+#-----------------------------------------------------------------------------------------
+#
+#  test suite for https://github.com/ballab1/container_build_framework.git
+#
+#  You may need to change the behavior of some commands to create conditions for your code under test
+#  to behave as expected. The *fake* function may help you to do that, see documentation.
+#
+# Organization of this test suite
+# ===============================
+# test methods
+# standard test framework routines
+# custom support provided within this suite
+# 
+#
+# standard test framework routines              custom support provided within this suite
+# --------------------------------              -----------------------------------------
+# setup_suite()                                 __test_crf_bashlib.mktemp()
+# teardown_suite()                              __test_crf_bashlib.mock_logger()
+# setup()                                       export test_crf_bashlib_LOG_file 
+# teardown()                                    export test_crf_bashlib_UT_TEST_DIR
+#                                               export test_crf_bashlib_DEBUG
+#                                              
+#
+# bash_unit supports several shell oriented assertion functions.
+# --------------------------------------------------------------
+# fail()
+# assert()
+# assert_fail()
+# assert_status_code()
+# assert_equals()
+# assert_not_equals()
+# fake()
+#    Using stdin
+#    Using a function
+#    fake parameters
+#
+##########################################################################################
+
+#-----------------------------------------------------------------------------------------
+# verify correct location of crf.BASE
+test.crf.BASE() {
+    local expected="${CRF_LOCATION}"
+    local actual="$( crf.BASE )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify correct location of crf.BIN
+test.crf.BIN() {
+    local expected="${CRF_LOCATION}/bin"
+    local actual="$( crf.BIN )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error status returned when invalild args provided
+test.crf.copyFileToRuntime_BADARGS() {
+    export -f crf.copyFileToRuntime
+    assert_status_code 1 'crf.copyFileToRuntime'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify correct user
+test.crf.currentUser() {
+    local expected='0'
+    local actual="$( crf.currentUser )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify correct location of crf.ENV
+test.crf.ENV() {
+    local expected="${CRF_LOCATION}/environment"
+    local actual="$( crf.ENV )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error status returned when invalild args provided
+test.crf.fixupDirectory_BADARGS() {
+    export -f crf.fixupDirectory
+    assert_status_code 1 'crf.fixupDirectory'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify correct location of crf.BIN
+test.crf.LIB() {
+    local expected="${CRF_LOCATION}/bashlib"
+    local actual="$( crf.LIB )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# run files in the 'startup' folder
+test.crf.prepareEnvironment_NOFILES() {
+    crf.prepareEnvironment
+    assert_equals '' "$(< "$test_crf_bashlib_LOG_file" )"
+    rm "${CRF_LOCATION}/startup/file"*
+}
+
+#-----------------------------------------------------------------------------------------
+# run files in the 'startup' folder
+test.crf.prepareEnvironment_1FILE() {
+    export -f crf.prepareEnvironment
+    mkdir -p "${CRF_LOCATION}/startup"
+    local script="${CRF_LOCATION}/startup/file1"
+cat << EOF > "$script"
+#!/bin/bash
+true
+EOF
+    crf.prepareEnvironment
+    local -r expected="..executing ${CRF_LOCATION}/startup/file1\n info\nFinished executing startup scripts\n info"
+    assert_equals "$expected" "$(< "$test_crf_bashlib_LOG_file" )"
+    rm "${CRF_LOCATION}/startup/file"*
+}
+
+#-----------------------------------------------------------------------------------------
+# run files in the 'startup' folder
+test.crf.prepareEnvironment_2FILES() {
+    export -f crf.prepareEnvironment
+    mkdir -p "${CRF_LOCATION}/startup"
+    local -a scripts=( 'file1' 'file2' )
+    for script in ${scripts[@]}; do
+cat << EOF > "${CRF_LOCATION}/startup/${script}"
+#!/bin/bash
+:
+EOF
+    done
+    crf.prepareEnvironment
+    local -r expected="..executing ${CRF_LOCATION}/startup/file1\n info\n..executing ${CRF_LOCATION}/startup/file2\n info\nFinished executing startup scripts\n info"
+    assert_equals "$expected" "$(< "$test_crf_bashlib_LOG_file" )"
+    rm "${CRF_LOCATION}/startup/file"*
+}
+
+#-----------------------------------------------------------------------------------------
+# run files in the 'startup' folder
+test.crf.prepareEnvironment_BADFILES() {
+    export -f crf.prepareEnvironment
+    mkdir -p "${CRF_LOCATION}/startup"
+    fake 'crf.runScript' '(chmod 755 $1; exit 1)'
+    local -a scripts=( 'file1' 'file2' )
+    for script in ${scripts[@]}; do
+cat << EOF > "${CRF_LOCATION}/startup/${script}"
+#!/bin/bash
+:
+EOF
+    done
+    crf.prepareEnvironment
+    local -r expected="..executing ${CRF_LOCATION}/startup/file1\n info\n..executing ${CRF_LOCATION}/startup/file2\n info\nFinished executing startup scripts\n info"
+    assert_equals "$expected" "$(< "$test_crf_bashlib_LOG_file" )"
+    rm "${CRF_LOCATION}/startup/file"*
+}
+
+#-----------------------------------------------------------------------------------------
+# verify correct location of properties file
+test.crf.propertiesFile() {
+    local expected="${CRF_LOCATION}/CRF.properties"
+    local actual="$( crf.propertiesFile )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+test.crf.removeFromRuntimeEnvironment() {
+    local expected=0
+    local actual=0
+#    assert_equals "$expected" "$actual" 
+    fail 'test not implemented'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify correct location of rt.environment file
+test.crf.RT_ENVIRON() {
+    local expected="${CRF_LOCATION}/bin/rt.environment"
+    local actual="$( crf.RT_ENVIRON )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error status returned when invalild args provided
+test.crf.runScript_BADARGS() {
+    export -f crf.runScript
+    assert_status_code 1 'crf.runScript'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify correct USER property returned
+test.crf.runtimeProperty_USER() {
+    local expected='root'
+    local actual="$( crf.runtimeProperty 'USER' )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify correct WORKDIR property returned
+test.crf.runtimeProperty_WORKDIR() {
+    local expected='/'
+    local actual="$( crf.runtimeProperty 'WORKDIR' )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify correct location of crf.STARTUP
+test.crf.STARTUP() {
+    local expected="${CRF_LOCATION}/startup"
+    local actual="$( crf.STARTUP )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error status returned when invalild args provided
+test.crf.updateRuntimeEnvironment_BADARGS() {
+    export -f crf.updateRuntimeEnvironment
+    assert_status_code 1 'crf.updateRuntimeEnvironment'
+}
+
+##########################################################################################
+#
+# standard test framework routines
+#
+##########################################################################################
+
+# load all the bash libraries, setup location for running test_suite, 
+setup_suite() {
+
+    # create a temp directory for any files etc created by tests
+    local -r tmpUserDir="${TMPDIR:-/tmp}/$USER"
+    mkdir -p "$tmpUserDir"
+    local temporaryDir=$(mktemp -d --tmpdir="$tmpUserDir" --suffix=test bash_unit_XXXXXXXXXXXXXXXXXX 2>/dev/null)
+    mkdir -p "$temporaryDir"
+    test_crf_bashlib_UT_TEST_DIR="$temporaryDir" 
+
+    # point CBF & CRF to locations in tmp workspace.  Will load libs from there
+    export CBF_LOCATION="$temporaryDir/tmp"            # set CBF_LOCATION for testing
+    mkdir -p "$CBF_LOCATION"
+    export CRF_LOCATION="$temporaryDir/usr/local/crf"  # set CRF_LOCATION for testing
+    mkdir -p "$CRF_LOCATION"
+
+    # pwd is location of test definition file.
+    local cbf_location="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )"
+
+    # copy CBF & CRF to workspace
+    for dir in 'action.templates' 'bin' 'cbf' 'crf' 'project.templates' ; do
+        cp -r "${cbf_location}/${dir}" "$CBF_LOCATION"
+    done
+    cp -r "${cbf_location}/crf"/* "$CRF_LOCATION"
+    
+    # now init stuff for testing
+    source "${CBF_LOCATION}/bin/init.libraries" #> /dev/null
+} 
+
+# remove anything generated by test suite
+teardown_suite() {
+
+    # ensure directory is valid
+    [ "$test_crf_bashlib_UT_TEST_DIR" ] || return
+    [ "$test_crf_bashlib_UT_TEST_DIR" != '/' ] || return
+    [ "$test_crf_bashlib_UT_TEST_DIR" != '~' ] || return
+    [ "$test_crf_bashlib_UT_TEST_DIR" != "$( cd ~ && pwd )" ] || return
+    [ "$test_crf_bashlib_UT_TEST_DIR" != "$TMP" ] || return
+
+    # clean up our junk
+    rm -rf "$test_crf_bashlib_UT_TEST_DIR"
+}
+
+# setup MOCK logger
+setup() {
+    [ "$test_crf_bashlib_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running setup'
+    export LOG=__test_crf_bashlib.mock_logger
+    test_crf_bashlib_LOG_file=$(__test_crf_bashlib.mktemp) 
+    fake 'term.log' '__test_crf_bashlib.mock_logger $*'
+    touch "$test_crf_bashlib_LOG_file" 
+}
+
+# flush the mock logger
+teardown() {
+    [ "$test_crf_bashlib_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running teardown'
+    [ ! -e "$test_crf_bashlib_LOG_file" ] || rm "$test_crf_bashlib_LOG_file"
+
+    [ ! -e "${CBF_LOCATION}/bashlibs.loaded" ] || rm "${CBF_LOCATION}/bashlibs.loaded"
+    [ ! -e "${CBF_LOCATION}/environment.loaded " ] || rm "${CBF_LOCATION}/environment.loaded "
+}
+
+##########################################################################################
+#
+# custom support
+#
+##########################################################################################
+
+# custom mktemp to create folder withing the temp storage location for this test
+__test_crf_bashlib.mktemp() {
+    mktemp --tmpdir="$test_crf_bashlib_UT_TEST_DIR" $* 2>/dev/null
+}
+export -f __test_crf_bashlib.mktemp
+
+# MOCK logger implementation
+__test_crf_bashlib.mock_logger() {
+    printf "%s\n" "$FAKE_PARAMS" >> "${test_crf_bashlib_LOG_file}"
+}
+export -f __test_crf_bashlib.mock_logger
+
+export test_crf_bashlib_LOG_file 
+export test_crf_bashlib_UT_TEST_DIR
+export test_crf_bashlib_DEBUG=0
+
+##########################################################################################

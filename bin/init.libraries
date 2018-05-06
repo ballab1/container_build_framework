@@ -3,17 +3,18 @@
 declare __CBF_OPTIONS=$(set +o)
 set +o nounset
 
+: ${CBF_LOCATION:=/tmp} 
+: ${CRF_LOCATION:=/usr/local/crf}
 : ${DEBUG_TRACE:=0}
-
 
 # when nothing exists in 'BASHLIBS' populate it with names of _files 'source'd from crf folder
 declare -a _files=() 
-declare __base="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
-[ ! -d "${__base}/cbf" ] || _files+=( $(find "${__base}/cbf" -maxdepth 1 -mindepth 1 -name '*.bashlib') )
-[ ! -d /tmp/usr/local/crf/bashlib ] || _files+=( $(find "/tmp/usr/local/crf/bashlib" -maxdepth 1 -mindepth 1 -name '*.bashlib') ) 
+[ ! -d "${CBF_LOCATION}/cbf" ] || _files+=( $(find "${CBF_LOCATION}/cbf" -maxdepth 1 -mindepth 1 -name '*.bashlib') )
+[ ! -d "${CRF_LOCATION}/bashlib" ] || _files+=( $(find "${CRF_LOCATION}/bashlib" -maxdepth 1 -mindepth 1 -name '*.bashlib') ) 
+[ ! -d "${CBF_LOCATION}${CRF_LOCATION}/bashlib" ] || _files+=( $(find "${CBF_LOCATION}${CRF_LOCATION}/bashlib" -maxdepth 1 -mindepth 1 -name '*.bashlib') ) 
 
 if [ "${#_files[@]}" -gt 0 ]; then
-    declare _cbfTracker=/tmp/bashlibs.loaded
+    declare _cbfTracker=${CBF_LOCATION}/bashlibs.loaded
     for src in ${_files[@]} ; do 
         declare _filename="$( basename "$src" )"
         [ -e "$_cbfTracker" ] || touch "$_cbfTracker"
@@ -27,15 +28,14 @@ fi
 
 eval "$__CBF_OPTIONS"
 
-[ ! -e "${__base}/crf/bin/init.runtime" ] || source "${__base}/crf/bin/init.runtime"
+[ ! -e "${CBF_LOCATION}/crf/bin/init.runtime" ] || source "${CBF_LOCATION}/crf/bin/init.runtime"
 
 unset __CBF_OPTIONS
 unset _cbfTracker
 unset _filename
 unset _files
 
-cbf.__init "${__base}/cbf"
+cbf.__init "${CBF_LOCATION}" "${CRF_LOCATION}"
 [ "$( cbf.CBFBASE )" ] || trap.die 'error when setting up container build framework'
 [ "$( cbf.CRT_BASE )" ] || trap.die 'error when setting up container build framework'
 
-unset __base
