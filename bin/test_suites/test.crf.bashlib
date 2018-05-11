@@ -84,6 +84,35 @@ test.crf.fixupDirectory_BADARGS() {
 }
 
 #-----------------------------------------------------------------------------------------
+# verify error msg returned when invalild dir provided
+test.crf.fixupDirectory_INVALIDDIR() {
+    export -f crf.fixupDirectory
+    assert_status_code 1 "crf.fixupDirectory '/' 'me'"
+
+    local -r expected="Attempt to fix up '/' is not permitted.\n warn"
+    local -r actual="$(< "$test_crf_bashlib_LOG_file" )"
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error msg returned when invalild dir provided
+test.crf.fixupDirectory_VerifyNullUser() {
+    fake 'crf.currentUser' 'echo "FAKE_USER"'
+    fake 'find' '__test_crf_bashlib.mock_logger "find $FAKE_PARAMS"'
+
+    local -r dir="$(__test_crf_bashlib.mktemp -d)"
+    crf.fixupDirectory "$dir"
+
+    local -r expected="Fixing up directory: ${dir}\\n info
+find ${dir} -type d ! -perm 777 -exec chmod 777 {} ;
+find ${dir} -type f ! -perm 666 -exec chmod 666 {} ;
+find ${dir} ! -user FAKE_USER -exec chown FAKE_USER: {} ;"    
+
+    local -r actual="$(< "$test_crf_bashlib_LOG_file" )"
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
 # verify correct location of crf.BIN
 test.crf.LIB() {
     local expected="${CRF_LOCATION}/bashlib"
@@ -269,7 +298,7 @@ setup() {
     [ "$test_crf_bashlib_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running setup'
     export LOG=__test_crf_bashlib.mock_logger
     test_crf_bashlib_LOG_file=$(__test_crf_bashlib.mktemp) 
-    fake 'term.log' '__test_crf_bashlib.mock_logger $*'
+    fake 'term.log' '__test_crf_bashlib.mock_logger "$FAKE_PARAMS"'
     touch "$test_crf_bashlib_LOG_file" 
 }
 
@@ -296,7 +325,7 @@ export -f __test_crf_bashlib.mktemp
 
 # MOCK logger implementation
 __test_crf_bashlib.mock_logger() {
-    printf "%s\n" "$FAKE_PARAMS" >> "${test_crf_bashlib_LOG_file}"
+    printf "%s\n" "$*" >> "${test_crf_bashlib_LOG_file}"
 }
 export -f __test_crf_bashlib.mock_logger
 

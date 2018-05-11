@@ -212,6 +212,14 @@ test.term.log_NOARGS() {
     assert_status_code 1 'term.log'
 }
 
+#-----------------------------------------------------------------------------------------
+# verify term.log returns bad status code when no args supplied
+test.term.log_INVALID_COLOR() {
+    local expected='a message'
+    local actual="$(term.log "$expected" 'invalid')"
+    assert_equals "$expected" "$actual" 
+}
+
 ##########################################################################################
 #
 # standard test framework routines
@@ -266,7 +274,7 @@ setup() {
     [ "$test_term_bashlib_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running setup'
     export LOG=__test_term_bashlib.mock_logger
     test_term_bashlib_LOG_file=$(__test_term_bashlib.mktemp) 
-#    fake 'term.log' '__test_term_bashlib.mock_logger $*'
+    fake 'term.log' '__test_term_bashlib.mock_logger "$FAKE_PARAMS"'
     touch "$test_term_bashlib_LOG_file"
 }
 
@@ -293,7 +301,7 @@ export -f __test_term_bashlib.mktemp
 
 # MOCK logger implementation
 __test_term_bashlib.mock_logger() {
-    printf "%s\n" "$FAKE_PARAMS" >> "${test_term_bashlib_LOG_file}"
+    printf "%s\n" "$*" >> "${test_term_bashlib_LOG_file}"
 }
 export -f __test_term_bashlib.mock_logger
 

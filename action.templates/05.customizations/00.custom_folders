@@ -22,7 +22,7 @@ declare -ra dirs=( bin
                    var
                    www )
 
-for dir in ${dirs[@]} ; do
+for dir in "${dirs[@]}" ; do
     declare custom_folder="$( cbf.BASE )/$dir"
     if [ -d "$custom_folder" ]; then
         echo "Updating ${dir} from ${custom_folder}"

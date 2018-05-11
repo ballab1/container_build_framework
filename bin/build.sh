@@ -1,19 +1,10 @@
 #!/bin/bash
 
-# setting errtrace allows our ERR trap handler to be propagated to functions, expansions and subshells
-set -o errtrace
-
-# trap ERR to provide an error handler whenever a command exits nonzero
-trap trap.catch_error ERR
-trap trap.catch_int INT
-trap trap.catch_pipe PIPE
-
 # Use the Unofficial Bash Strict Mode
 set -o errexit
 set -o nounset
 set -o pipefail
 IFS=$'\n\t'
-
 
 declare NAME=${1:?'Input parameter "NAME" must be defined'} 
 declare TZ="${2:-null}"

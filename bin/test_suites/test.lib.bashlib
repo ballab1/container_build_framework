@@ -93,7 +93,7 @@ test.lib.getFiles() {
     mkdir -p "${tmp}"
     local -a names=( a b c d )
     local -a expected=()
-    for file in ${expected[@]}; do
+    for file in "${expected[@]}"; do
         touch "${tmp}/$file"
         expected+=("${tmp}/$file")
     done
@@ -104,17 +104,17 @@ test.lib.getFiles() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-test.lib.getFiles_INVALID() {
+skip_test.lib.getFiles_INVALID() {
     local -r tmp=$(__test_lib_bashlib.mktemp -d)
     mkdir -p "${tmp}"
-    local -a expected=( a b c d )
-    for file in ${expected[@]}; do
+    local -a names=( a b c d )
+    local -a expected=()
+    for file in "${expected[@]}"; do
         touch "${tmp}/$file"
+        expected+=("${tmp}/$file")
     done
-set -o xtrace
-    mv "${tmp}/a" "${tmp}/.hidden"
+    touch "${tmp}/e"
     local -a actual=( $( lib.getFiles "$tmp" ) )
-set +o xtrace
     assert_equals "${expected[*]}" "${actual[*]}" 
 }
 
@@ -131,7 +131,7 @@ test.lib.getProperty_USER() {
 #-----------------------------------------------------------------------------------------
 # verify we can get a value from a property file
 test.lib.getProperty_SIMPLE() {
-    local propFile="$(__test_lib_sh.mktemp)"
+    local propFile="$(__test_lib_bashlib.mktemp)"
 cat << EOF > "$propFile"
 # property file
 sc=this is a property
@@ -144,13 +144,13 @@ EOF
 #-----------------------------------------------------------------------------------------
 # verify we can get an indirect value from a property file
 test.lib.getProperty_EVAL() {
-    local propFile="$(__test_lib_sh.mktemp)"
+    local propFile="$(__test_lib_bashlib.mktemp)"
     export SC='this is a property'
 cat << EOF > "$propFile"
 # property file
 eval=${SC}
 EOF
-    local expected='this is a property'
+    local expected="$SC"
     local actual="$( lib.getProperty 'eval' "$propFile" )"
     assert_equals "$expected" "$actual" 
 }
@@ -166,9 +166,9 @@ test.lib.getProperty_WORKDIR() {
 }
 
 #-----------------------------------------------------------------------------------------
-# verify we can get the value in an associative array using an inderect reference
+# verify we can get the value in an associative array using an indirect reference
 test.lib.indirectReference() {
-    local sc="$(__test_lib_sh.mktemp)"
+    local sc="$(__test_lib_bashlib.mktemp)"
 cat << EOF > "$sc"
 #!/bin/bash
 declare -A sc=(
@@ -178,7 +178,7 @@ declare -A sc=(
 EOF
     source "$sc"
     local expected='1:2:100'
-    local actual="$( lib.indirectReference 'sc' 'a' ):$( lib.indirectReference 'sc' 'b' ):$( lib.indirectReference 'sc' 'c' '100' )"
+    local actual="$( lib.indirectReference 'a' 'sc' ):$( lib.indirectReference 'b' 'sc' ):$( lib.indirectReference 'c' 'sc' '100' )"
     assert_equals "$expected" "$actual" 
 }
 
@@ -215,7 +215,7 @@ test.lib.intersect_NONE() {
 # verify /etc/passwd lookup of uid:0 is 0
 test.lib.lookupId_UID_0() {
     local expected=0
-    local actual="$(lib.lookupId 'passwd' 0)" 
+    local actual="$(lib.lookupId 0 'passwd')" 
     assert_equals "$expected" "$actual"
 }
 
@@ -223,7 +223,7 @@ test.lib.lookupId_UID_0() {
 # verify /etc/group lookup of gid:0 is 0
 test.lib.lookupId_GID_0() {
     local expected=0
-    local actual="$(lib.lookupId 'group' 0)" 
+    local actual="$(lib.lookupId 0 'group')" 
     assert_equals "$expected" "$actual"
 }
 
@@ -231,7 +231,7 @@ test.lib.lookupId_GID_0() {
 # verify /etc/passwd lookup of root is 0
 test.lib.lookupId_USER_ROOT() {
     local expected=0
-    local actual="$(lib.lookupId 'passwd' 'root')" 
+    local actual="$(lib.lookupId 'root' 'passwd')" 
     assert_equals "$expected" "$actual"
 }
 
@@ -239,7 +239,7 @@ test.lib.lookupId_USER_ROOT() {
 # verify /etc/group lookup of root is 0
 test.lib.lookupId_GROUP_ROOT() {
     local expected=0
-    local actual="$(lib.lookupId 'group' 'root')" 
+    local actual="$(lib.lookupId 'root' 'group')" 
     assert_equals "$expected" "$actual"
 }
 
@@ -247,7 +247,7 @@ test.lib.lookupId_GROUP_ROOT() {
 # verify default value returned when no entry found
 test.lib.lookupId_DEFAULT() {
     local expected='default'
-    local actual="$(lib.lookupId 'passwd' '9999999999' "$expected")" 
+    local actual="$(lib.lookupId '9999999999' 'passwd' "$expected")" 
     assert_equals "$expected" "$actual"
 }
 
@@ -255,7 +255,7 @@ test.lib.lookupId_DEFAULT() {
 # verify nothing returned when invalid DB specified
 test.lib.lookupId_INVALID() {
     local expected=''
-    local actual="$(lib.lookupId 'invalid' '0')" 
+    local actual="$(lib.lookupId '0' 'invalid')" 
     assert_equals "$expected" "$actual"
 }
 
@@ -267,9 +267,112 @@ test.lib.lookupId_BAD_ARGS() {
 }
 
 #-----------------------------------------------------------------------------------------
+# verify error returned when no args provided
+test.lib.normalizePath_BAD_ARGS() {
+    export -f lib.normalizePath
+    assert_status_code 1 'lib.normalizePath' 
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error returned when no args provided
+test.lib.normalizePath_base() {
+    local expected='base'
+    local actual="$(lib.normalizePath "$expected")" 
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error returned when no args provided
+test.lib.normalizePath_root() {
+    local expected='/'
+    local actual="$(lib.normalizePath "$expected")" 
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error returned when no args provided
+test.lib.normalizePath_rootbase() {
+    local expected='/base'
+    local actual="$(lib.normalizePath "$expected")" 
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error returned when no args provided
+test.lib.normalizePath_normal() {
+    local expected='base/x/y/t'
+    local actual="$(lib.normalizePath "${expected}")" 
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error returned when no args provided
+test.lib.normalizePath_normalbase() {
+    local expected='/base/x/y/t'
+    local actual="$(lib.normalizePath "${expected}")" 
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error returned when no args provided
+test.lib.normalizePath_1REL() {
+    local expected='/base/x/y/t'
+    local actual="$(lib.normalizePath '/base/x/./y/t')" 
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error returned when no args provided
+test.lib.normalizePath_base1REL() {
+    local expected='base/x/y/t'
+    local actual="$(lib.normalizePath 'base/x/./y/t')" 
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error returned when no args provided
+test.lib.normalizePath_base1REL1() {
+    local expected='x/y/t'
+    local actual="$(lib.normalizePath './x/./y/t')" 
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error returned when no args provided
+test.lib.normalizePath_base1REL1() {
+    local expected='x/y/t'
+    local actual="$(lib.normalizePath './x/./y/t/.')" 
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error returned when no args provided
+skip_test.lib.normalizePath_parent() {
+    local expected='.'
+    local actual="$(lib.normalizePath 'base/..')" 
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error returned when no args provided
+test.lib.normalizePath_basePARENT() {
+    local expected='abc'
+    local actual="$(lib.normalizePath 'base/../abc')" 
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error returned when no args provided
+test.lib.normalizePath_baseCOMPOUND() {
+    local expected='abc/x'
+    local actual="$(lib.normalizePath 'base/../abc/./x')" 
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
 # verify correct OS id is returned
 test.lib.OSid() {
-    local expected='centos'
+    local expected='ubuntu'
     local actual="$( lib.OSid )"
     assert_equals "$expected" "$actual" 
 }
@@ -283,40 +386,48 @@ test.lib.relativize_BADARGS() {
 }
 
 #-----------------------------------------------------------------------------------------
-# provide brief explanation of what test does
-xtest.lib.relativize_SAME() {
-    local expected='.'
+# verify that '.' is returned when both paths are the same
+test.lib.relativize_SAME() {
+    local expected='../b'
     local actual="$( lib.relativize '/tmp/a/b' '/tmp/a/b' )"
     assert_equals "$expected" "$actual" 
 }
 
 #-----------------------------------------------------------------------------------------
-# provide brief explanation of what test does
+# verify correct relative path is returned when 'from' contains 'to' 
 test.lib.relativize_FWD() {
-    local expected='../../../../../tmp/a'
+    local expected='b/c/d'
     local actual="$( lib.relativize '/tmp/a/b/c/d' '/tmp/a' )"
     assert_equals "$expected" "$actual" 
 }
 
 #-----------------------------------------------------------------------------------------
-# provide brief explanation of what test does
+# verify correct relative path is returned when 'to' contains 'from' 
 test.lib.relativize_BKWD() {
-    local expected='b/c/d'
+    local expected='../../../../a'
     local actual="$( lib.relativize '/tmp/a' '/tmp/a/b/c/d' )"
     assert_equals "$expected" "$actual" 
 }
-
+ 
 #-----------------------------------------------------------------------------------------
-# provide brief explanation of what test does
-test.lib.relativize_WDBL_QUOTES() {
-    local expected='c/d'
+# verify correct relative path is returned when 'from' contains '..'
+test.lib.relativize_WPARENT() {
+    local expected='../../../a'
     local actual="$( lib.relativize '/tmp/a' '/tmp/a/b/../c/d' )"
     assert_equals "$expected" "$actual" 
 }
 
 #-----------------------------------------------------------------------------------------
+# verify correct relative path is returned when 'from' contains '..'
+test.lib.relativize_test() {
+    local expected='out/logs/01.cyc-core.out'
+    local actual="$( lib.relativize '/tmp/cyc/bash_unit_j4Z4lxPzHcKg1VY80Atest/out/logs/01.cyc-core.out' '/tmp/cyc/bash_unit_j4Z4lxPzHcKg1VY80Atest/' )"
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-test.lib.removeProperty() {
+skip_test.lib.removeProperty() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual" 
@@ -325,7 +436,7 @@ test.lib.removeProperty() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-test.lib.updateProperties() {
+skip_test.lib.updateProperties() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual" 
@@ -334,11 +445,27 @@ test.lib.updateProperties() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-test.lib.updatePropertyFile() {
+skip_test.lib.updatePropertyFile() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual" 
     fail 'test not implemented'
+}
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+test.lib.pidAncestors_0() {
+    local expected=0
+    local actual=$( lib.pidAncestors 0 )
+    assert_equals "$expected" "$actual" 
+}
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+test.lib.pidAncestors_2() {
+    local expected='0,2'
+    local actual=$( lib.pidAncestors 2 )
+    assert_equals "$expected" "$actual" 
 }
 
 ##########################################################################################
@@ -395,7 +522,7 @@ setup() {
     [ "$test_lib_bashlib_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running setup'
     export LOG=__test_lib_bashlib.mock_logger
     test_lib_bashlib_LOG_file=$(__test_lib_bashlib.mktemp)
-    fake 'term.log' '__test_lib_bashlib.mock_logger $*'
+    fake 'term.log' '__test_lib_bashlib.mock_logger "$FAKE_PARAMS"'
     touch "$test_lib_bashlib_LOG_file" 
 }
 
@@ -422,7 +549,7 @@ export -f __test_lib_bashlib.mktemp
 
 # MOCK logger implementation
 __test_lib_bashlib.mock_logger() {
-    printf "%s\n" "$FAKE_PARAMS" >> "${test_lib_bashlib_LOG_file}"
+    printf "%s\n" "$*" >> "${test_lib_bashlib_LOG_file}"
 }
 export -f __test_lib_bashlib.mock_logger
 

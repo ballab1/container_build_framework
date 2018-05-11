@@ -91,7 +91,7 @@ setup() {
     [ "$test_rt_environment_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running setup'
     export LOG=__test_rt_environment.mock_logger
     test_rt_environment_LOG_file=$(__test_rt_environment.mktemp)
-    fake 'term.log' '__test_rt_environment.mock_logger $*'
+    fake 'term.log' '__test_rt_environment.mock_logger "$FAKE_PARAMS"'
     touch "$test_rt_environment_LOG_file" 
 }
 
@@ -118,7 +118,7 @@ export -f __test_rt_environment.mktemp
 
 # MOCK logger implementation
 __test_rt_environment.mock_logger() {
-    printf "%s\n" "$FAKE_PARAMS" >> "${test_rt_environment_LOG_file}"
+    printf "%s\n" "$*" >> "${test_rt_environment_LOG_file}"
 }
 export -f __test_rt_environment.mock_logger
 

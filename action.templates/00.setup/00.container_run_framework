@@ -17,17 +17,19 @@ done < <(find . -maxdepth 1 -mindepth 1 -type d ! -name '.*')
 
 
 # copy runtime framework (only copy updates)
-while read -r file ; do
+declare -a files=( $(find . -type f ! -name '.*' | awk '{print substr($0,3)}' ) )
+for file in "${files[@]}"; do
     declare action='creating'
+    declare _name="$( basename "$file" )"
     if [ -e "$( cbf.CRT_BASE )/$file" ]; then
-        [ "$( basename "$file" )" != 'rt.environment' ] || continue
+        [ "$_name" != 'rt.environment' ] || continue
         $( ! cmp -s "$file" "$( cbf.CRT_BASE )/$file" ) || continue
         action='updating'
     fi
-    echo "${action} $( cbf.CRT_BASE )/$file"
+    echo "    ${action} $( cbf.CRT_BASE )/$file"
     mkdir -p "$( dirname "$( cbf.CRT_BASE )/$file" )"
     cp "$file" "$( cbf.CRT_BASE )/$file"
-done< <(find . -type f ! -name '.*')
+done
 
 # update container name in runtime environment
 crf.updateRuntimeEnvironment  "CONTAINER_NAME=\"\${CONTAINER_NAME:-$CONTAINER_NAME}\""

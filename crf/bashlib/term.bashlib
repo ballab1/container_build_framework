@@ -28,9 +28,9 @@ export -f term.codes
 function term.decode()
 {
     local -r fg=${1:?"Input parameter 'fg' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local -r bg=${2:-null}
+    local -r bg=${2:-}
 
-    if [ "$bg" = null ]; then
+    if [ -z "$bg" ]; then
         case "$fg" in
              task)     term.codes 'FOREGROUND' 'lt_cyan';;
              info)     term.codes 'FOREGROUND' 'lt_green';;
@@ -56,7 +56,7 @@ function term.header()
     local -r bars='+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
 
     term.log "\n${bars}\n" 'blue'
-    term.log "Build step: $( term.decode 'white' )${name}\n" 'lt_blue'
+    term.log "Building Container: $( term.decode 'white' )${name}\n" 'lt_blue'
     term.log "${bars}\n" 'blue'
 }
 export -f term.header
@@ -65,16 +65,27 @@ export -f term.header
 function term.log()
 {
     local -r msg=${1:?"Input parameter 'msg' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local -r msg_type=${2:?"Input parameter 'msg_type' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local msg_type=${2:-}
 
-    printf "%s%s%s" $( term.decode $msg_type ) "$msg" $( term.decode 'reset' )
+    if [ "$msg_type" ]; then
+        msg_type="$( term.decode $msg_type )"
+        [ -z "$msg_type" ] || printf "$msg_type"
+    fi
+    printf "$msg"
+    [ -z "$msg_type" ] || printf $( term.decode 'reset' )
 }
 export -f term.log
 
 #############################################################################
 function term.propertiesDir()
 {
-    echo "${TERM_DIR:=$( cd "$( dirname "${BASH_SOURCE[0]}" )/properties" && pwd )}"
+    if [ -z "${TERM_DIR:-}" ]; then
+        TERM_DIR="$(crf.LIB)/properties"
+        [ -e "$TERM_DIR" ] || TERM_DIR="$(cbf.CRF_BASE)/bashlib/properties"
+        [ -e "$TERM_DIR" ] || TERM_DIR="$(cbf.CRT_BASE)/bashlib/properties"
+        [ -e "$TERM_DIR" ] || TERM_DIR="/usr/local/crf/bashlib/properties"
+    fi
+    echo "${TERM_DIR}"
 }
 export -f term.propertiesDir
 

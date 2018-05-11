@@ -14,6 +14,9 @@ declare -rA BASH_UNIT=(
 
 declare -A test=()
 
+# tests are maintained in the 'test_suites' folder in directory this script is in
+declare -r DIR_OF_TESTS_TO_RUN="$( cd "$( dirname "${BASH_SOURCE[0]}" )/test_suites" && pwd )"
+
 
 #############################################################################
 function test.downloadFramework()
@@ -46,7 +49,8 @@ function test.downloadFramework()
                 continue
             fi
 
-            tar -xvf "${BASH_UNIT['file']}" > /dev/null 2>&1
+            # unpack the unit test framework in our tmp folder, and use to run tests
+            tar -xvf "${BASH_UNIT['file']}" #> /dev/null 2>&1
             local framework="${download_dir}/bash_unit-${BASH_UNIT['version']#v}/bash_unit"
             echo "framework:  $framework"
             [ -e "$framework" ] || break
@@ -64,10 +68,62 @@ function test.downloadFramework()
 } 
 
 #############################################################################
+function test.processArgs()
+{
+    local -a args=( $@ )
+
+    if [ ${#args[*]} -eq 0 ]; then
+        args=( test* )
+    
+    else
+        for (( i=0; i<${#args[@]}; i++ )); do
+            local f="${args[i]}"
+
+            # skip if nothing to do
+            [ -e "$f" ] && continue
+         
+            # move pattern definitions to beginning of args
+            if [ "$f" = '-p' ]; then
+                (( i++ ))
+                local pattern="${args[i]}"
+                for (( j=i; j>1; j-- )); do
+                    let k=( j - 2 )
+                    args[j]="${args[k]}"
+                done
+                args[0]='-p'
+                args[1]="${pattern}"
+                continue
+            fi
+
+            # add prefix if ommitted
+            if [ -e "test.$f" ]; then
+                args[i]="test.${args[i]}"
+                continue
+            fi
+
+            # add suffix if ommitted
+            if [ -e "${f}.bashlib" ]; then
+                args[i]="${args[i]}.bashlib"
+                continue
+            fi
+
+            # add prefix & suffix if ommitted
+            if [ -e "test.${f}.bashlib" ]; then
+                args[i]="test.${args[i]}.bashlib"
+                continue
+            fi
+        done
+    fi
+    printf "%s\n" "${args[@]}"
+} 
+
+#############################################################################
 function test.main()
 {
-    local -r dir_of_tests_to_run=${1:?"must pass parameter 'dir_of_tests_to_run' to 'function ${FUNCNAME[0]}()'"} 
-    shift
+    cd "$DIR_OF_TESTS_TO_RUN"
+
+    local -a args=( $(test.processArgs "$@") )
+printf "%s\n" "${args[@]}"
 
     # configure where our test framework comes from, and in which dir it resides
     if [ ${#test[*]} -eq 0 ]; then
@@ -75,15 +131,14 @@ function test.main()
         test['BASH_UNIT_DIR']="$( cd "$test_dir" && pwd )"
     
         # run tests
-        cd "$dir_of_tests_to_run"
         if [ "$BASH_UNIT_ROOT" = "${test['BASH_UNIT_DIR']}" ]; then
             test['BASH_UNIT']="${test['BASH_UNIT_DIR']}/bash_unit"
-            "${test['BASH_UNIT']}" -f tap $@
+            "${test['BASH_UNIT']}" -f tap "${args[@]}"
 
         # download the test framework if needed
         elif test.downloadFramework "${test['BASH_UNIT_DIR']}" ; then
 
-            "${test['BASH_UNIT']}" -f tap $@
+            "${test['BASH_UNIT']}" -f tap "${args[@]}"
             # remove framework that was downloaded
             rm -rf "${test['BASH_UNIT_DIR']}"
         fi
@@ -124,7 +179,4 @@ function test.tmpDir()
 #
 #############################################################################
 
-declare -r testdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/test_suites" && pwd )"
-
-[ $# -eq 0 ] || test.main "$testdir" "$*"
-[ $# -ne 0 ] || test.main "$testdir" "test*"
+test.main "$@"

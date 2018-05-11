@@ -5,16 +5,16 @@
 #
 #############################################################################
 
-declare -x CBF_PROPERTIES_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P )/CBF.properties" 
-declare -x CBF=/tmp/CBF.properties
+: ${CBF_PROPERTIES_FILE:="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P )/CBF.properties" }
+export CBF_PROPERTIES_FILE
 
 function cbf.__init()
 {
     # this function is usually called from bin/init.libraries
     local -r cbf_base=${1:?"Input parameter 'lib_base' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local -r crf_base=${1:?"Input parameter 'crf_base' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r crf_base=${2:?"Input parameter 'crf_base' must be passed to 'function ${FUNCNAME[0]}()'"}
     
-    CRF_PROPERTIES_FILE="${cbf_base}/CBF.properties"
+    CBF_PROPERTIES_FILE="${cbf_base}/CBF.properties"
     if [ ! -e "$CBF_PROPERTIES_FILE" ]; then
         local -r _base="$( cd "$( dirname "$cbf_base" )" && pwd )"
 
@@ -25,7 +25,7 @@ LIB=${cbf_base}/crf
 TEMPLATES=${cbf_base}/action.templates
 BASE=$_base
 ACTION=${_base}/action_folders
-CRF_BASE=$crf_base
+CRF_BASE=${cbf_base}/crf
 CRF_BIN=${crf_base}/bin
 CRT_BASE=${crf_base:-/usr/local/crf}
 EOF
@@ -170,20 +170,23 @@ function cbf.makeScript()
     local file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
     local tmpScript="/tmp/cbfScript.$( basename "$file" )"
 
+    term.log "..executing ${file}\n" 'info'
+
 cat << EOF > "$tmpScript"
 #!/bin/bash
 # Use the Unofficial Bash Strict Mode
 set -o errexit
 set -o nounset
 set -o pipefail
-IFS=$'\n\t' 
-[ ! -e "/usr/local/crf/bin/init.runtime" ] || source /usr/local/crf/bin/init.runtime
+IFS=$'\n\t'
+[ ! -e "$(cbf.CRF_BASE)/bin/init.runtime" ] || source "$(cbf.CRF_BASE)/bin/init.runtime"
 if [ "$DEBUG_TRACE" != "0" ]; then
     declare -p > "$tmpScript".env
     set -o verbose
 fi
 source "$file"
 EOF
+
     cd /tmp
     chmod 755 "$file" "$tmpScript"
     
@@ -208,26 +211,21 @@ export -f cbf.propertiesFile
 function cbf.runScripts()
 {
     local -a files=${1:?"Input parameter 'files' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local __cbf_savedOptions=$(set +o)
 
     # create a hash to sort the files by name & remove any templates that have been overridden
     local -A ahash
-    set +o nounset
     for file in ${files[@]}; do
         local name="$( basename "$file" )"
         local _name="${name//./_}"
-        [[ -n "${ahash[$_name]}"  &&  "${ahash[$_name]}" =~ */action.templates/* ]] && continue
+        [[ "${ahash[$_name]:-}"  &&  "${ahash[$_name]:-}" =~ */action.templates/* ]] && continue
         ahash[$_name]="$file"
     done
-    eval "$__cbf_savedOptions"
 
     # execute scritps in sorted order
-    local -i todo=${#ahash[@]}
+    local -i todo="${#ahash[@]}"
     local -i isdone=0
-    for _name in $( printf "%s\n" ${!ahash[@]} | sort ); do
+    for _name in $( printf "%s\n" "${!ahash[@]}" | sort ); do
         local file="${ahash[$_name]}"
-        chmod 755 "$file"
-        term.log "..executing ${file}\n" 'info'
         ( cbf.makeScript "$file" )
         (( isdone++ )) || :
     done

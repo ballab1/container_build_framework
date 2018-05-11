@@ -28,6 +28,7 @@ if [[ "$1" = "${CONTAINER_NAME}" ]]; then
     declare -r tools=/usr/local/bin
     [ -e "${tools}/run.sh" ] || trap.die "No ${tools}/run.sh detected"
     cd ${WORKDIR}
+    chmod +x "${tools}/run.sh"
     exec "${tools}/run.sh" "$@"
 
 elif [[ "$1" = "$config_entry" && "$(id -u)" -eq 0 ]]; then

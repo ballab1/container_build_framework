@@ -118,7 +118,7 @@ setup() {
     [ "$test_run_unit_tests_sh_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running setup'
     export LOG=__test_run_unit_tests_sh.mock_logger
     test_run_unit_tests_sh_LOG_file=$(__test_run_unit_tests_sh.mktemp)
-    fake 'term.log' '__test_run_unit_tests_sh.mock_logger $*'
+    fake 'term.log' '__test_run_unit_tests_sh.mock_logger "$FAKE_PARAMS"'
     touch "$test_run_unit_tests_sh_LOG_file" 
 }
 
@@ -145,7 +145,7 @@ export -f __test_run_unit_tests_sh.mktemp
 
 # MOCK logger implementation
 __test_run_unit_tests_sh.mock_logger() {
-    printf "%s\n" "$FAKE_PARAMS" >> "${test_run_unit_tests_sh_LOG_file}"
+    printf "%s\n" "$*" >> "${test_run_unit_tests_sh_LOG_file}"
 }
 export -f __test_run_unit_tests_sh.mock_logger
 

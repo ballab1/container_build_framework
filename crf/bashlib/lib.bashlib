@@ -52,29 +52,31 @@ function lib.getProperty()
 {
     local -r prop=${1:?"Input parameter 'prop' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r file=${2:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r default_val=${3:-}
 
     # get definition from property file
     local -r val="$( grep -e "^${prop}\s*=" "$file" )"
+
     # only report eval'd string (after removing 'prop=' prefix) if something was found
-    [ $? -ne 0 ] || [ -z "$val" ] || eval 'echo' "${val#*=}"
+    if [ $? -eq 0 ] && [ "$val" ]; then
+        eval 'echo' "${val#*=}"
+    elif [ "$default_val" ]; then
+        echo "$default_val"
+    fi
 }
 export -f lib.getProperty
 
 #############################################################################
 function lib.indirectReference()
 {
-    local -r ahash=${1:?"Input parameter 'ahash' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local -r key=${2:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local __lib_savedOptions=$(set +o)
-    set +o nounset
-    local -r default="$3"
+    local -r key=${1:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r ahash=${2:?"Input parameter 'ahash' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r default="${3:-}"
 
-    local val=$( eval "echo \${$ahash[$key]}" )
-    [ -n "$val" ] || val="$default"
+    local val=$( eval "echo \${$ahash[$key]:-}" )
+    [ "$val" ] || [ -z "$default" ] || val="$default"
     echo "$val"
-    eval "$__lib_savedOptions"
 }
-export -f lib.indirectReference
 
 #############################################################################
 function lib.intersect()
@@ -99,21 +101,52 @@ export -f lib.intersect
 #############################################################################
 function lib.lookupId()
 {
-    local -r database=${1:?"Input parameter 'database' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local -r entry=${2:?"Input parameter 'entry' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r entry=${1:?"Input parameter 'entry' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r database=${2:?"Input parameter 'database' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r default=${3:-}
 
-    local id=$(getent "$database" "$entry" | cut -d: -f3)
-    [ "$id" ] || id="$default"
+    local id=$(getent "$database" "$entry" 2>/dev/null)
+    [ $? -eq 0 ] || id=''
+    [[ "$id" =~ 'Try '* ]] && id=''
+    [ -z "$id" ] || id=$(echo "$id" | cut -d: -f3)
+    
+    if [ -z "$id" ] && [ -n "$default" ]; then
+        id=$default
+    fi
     echo "$id"
 }
 export -f lib.lookupId
 
 #############################################################################
+function lib.normalizePath()
+{
+    local path="${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}"
+
+    # Remove all /./ sequences.
+    path="${path//\/.\//\/}"
+    if [ ${#path} -gt 2 ]; then
+        [ "${path:${#path}-2:2}" = '/.' ] && path="${path::-2}"
+        [ "${path::2}" = './' ] && path="${path:2}"
+    fi
+
+    # Remove dir/.. sequences.
+    while [[ "$path" =~ ([^/][^/]*/\.\./) ]]; do
+        path="${path/${BASH_REMATCH[0]}/}"
+    done
+
+    if [ "$path" = '/' ]; then
+        echo "$path"
+    else
+        echo "${path%/}"
+    fi
+}
+export -f lib.normalizePath
+
+#############################################################################
 function lib.OSid()
 {
     if [ -e /etc/os-release ]; then
-        grep -e '^ID=' /etc/os-release | awk -F'=' '{ print $2 }'
+        grep -e '^ID=' /etc/os-release | awk -F'=' '{ print $2 }' | sed 's|"||g'
     else
         echo 'windows'
     fi
@@ -132,40 +165,49 @@ function lib.primaryPid
 }
 export -f lib.primaryPid
 
+#############################################################################
+function lib.pidAncestors
+{
+    local -ri pid=${1:-$$}
+    local -r pidList="${2:-$(ps -eao pid,ppid | awk '{ if (NR > 1) { print "[" $1 "]=" $2 } }')}"
+
+    if [ "$pid" -ne 0 ]; then
+        eval "local -rA pids=($pidList)"
+        printf "%s,%d" $(lib.pidAncestors "${pids[$pid]}" "$pidList") "$pid"
+    else
+        printf "%d" "$pid"
+    fi
+}
+export -f lib.pidAncestors
+
 ######################################################################
 function lib.relativize()
 {
-    local from="${1:?"Input parameter 'from' must be passed to 'function ${FUNCNAME[0]}()'"}"
-    local to="${2:?"Input parameter 'to' must be passed to 'function ${FUNCNAME[0]}()'"}"
-    local OIFS=$IFS
+    local pos="${1:?"Input parameter 'pos' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local ref="${2:?"Input parameter 'ref' must be passed to 'function ${FUNCNAME[0]}()'"}"
 
-    from="${from//\/\//\/}"
-    from="${from%/}"
-    IFS=/
-    dirs=("${from#/}")
-    for to; do
-        to="${to//\/\//\/}"
-        to="${to%/}"
-        local commonPrefix=/
-        for d in "${dirs[@]}"; do
-            case "$to/" in "$commonPrefix$d/"*) ;;
-                *) break;;
-            esac
-            commonPrefix+="$d/"
-        done
-        local ancestor="${from#${commonPrefix%/}}"
-        ancestor="${ancestor//[^\/]/}"
-        ancestor="${ancestor//\//..\/}"
+    local down=''
+
+    pos="$(lib.normalizePath "$pos")"
+    ref="$(lib.normalizePath "$ref")" 
+
+    while :; do
+        [ "$ref" = '/' ] && break
+        case "$pos" in
+            $ref/*) break;;
+        esac
+        down="../$down"
+        ref=${ref%/*}
     done
-    IFS=$OIFS
-    echo -n "$ancestor${to#$commonPrefix}"
+
+    echo "$down${pos##$ref/}"
 }
 export -f lib.relativize
 
 #############################################################################
 function lib.removeProperty()
 {
-    local -r key="${1:?"Input parameter 'entry' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r key="${1:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}"
     local -r config_file="${2:?"Input parameter 'config_file' must be passed to 'function ${FUNCNAME[0]}()'"}"
 
     if grep -qE "^\s+${key}\s+=" "config_file" ; then
@@ -177,8 +219,8 @@ export -f lib.removeProperty
 #############################################################################
 function lib.updatePropertyFile()
 {
-    local -r key="${2:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}"
-    local -r val="${1:?"Input parameter 'val' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r key="${1:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r val="${2:?"Input parameter 'val' must be passed to 'function ${FUNCNAME[0]}()'"}"
     local -r config_file="${3:?"Input parameter 'config_file' must be passed to 'function ${FUNCNAME[0]}()'"}"
 
     if [[ "$val" ]]; then

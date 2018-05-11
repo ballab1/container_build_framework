@@ -103,7 +103,7 @@ declare dot_gradle="${GRADLE['home']}/.gradle"
 mkdir -p "$dot_gradle"
 chown -R gradle:gradle "${GRADLE['home']}"
 ln -s "$dot_gradle" /root/.gradle
-$LOG "Testing Gradle installation${LF}" 'info'
+term.log "Testing Gradle installation${LF}" 'info'
 /usr/bin/gradle --version
 printf "%s\n" ${GRADLE[@]}
 ```

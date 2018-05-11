@@ -163,7 +163,7 @@ setup() {
     [ "$test_setupContainerFramework_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running setup'
     export LOG=__test_setupContainerFramework.mock_logger
     test_setupContainerFramework_LOG_file=$(__test_setupContainerFramework.mktemp)
-    fake 'term.log' '__test_setupContainerFramework.mock_logger $*'
+    fake 'term.log' '__test_setupContainerFramework.mock_logger "$FAKE_PARAMS"'
     touch "$test_setupContainerFramework_LOG_file" 
 }
 
@@ -190,7 +190,7 @@ export -f __test_setupContainerFramework.mktemp
 
 # MOCK logger implementation
 __test_setupContainerFramework.mock_logger() {
-    printf "%s\n" "$FAKE_PARAMS" >> "${test_setupContainerFramework_LOG_file}"
+    printf "%s\n" "$*" >> "${test_setupContainerFramework_LOG_file}"
 }
 export -f __test_setupContainerFramework.mock_logger
 

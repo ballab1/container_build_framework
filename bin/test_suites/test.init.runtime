@@ -37,6 +37,51 @@
 #
 ##########################################################################################
 
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+test.envNotLoaded() {
+    local expected=0
+    local actual=0
+#    assert_equals "$expected" "$actual" 
+    fail 'test not implemented'
+}
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+test.libNotLoaded() {
+    local expected=0
+    local actual=0
+#    assert_equals "$expected" "$actual" 
+    fail 'test not implemented'
+}
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+test.loadEnvars() {
+    local expected=0
+    local actual=0
+#    assert_equals "$expected" "$actual" 
+    fail 'test not implemented'
+}
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+test.loadLibs() {
+    local expected=0
+    local actual=0
+#    assert_equals "$expected" "$actual" 
+    fail 'test not implemented'
+}
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+test.pathNotScanned() {
+    local expected=0
+    local actual=0
+#    assert_equals "$expected" "$actual" 
+    fail 'test not implemented'
+}
+
 ##########################################################################################
 #
 # standard test framework routines
@@ -91,7 +136,7 @@ setup() {
     [ "$test_init_runtime_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running setup'
     export LOG=__test_init_runtime.mock_logger
     test_init_runtime_LOG_file=$(__test_init_runtime.mktemp)
-    fake 'term.log' '__test_init_runtime.mock_logger $*'
+    fake 'term.log' '__test_init_runtime.mock_logger "$FAKE_PARAMS"'
     touch "$test_init_runtime_LOG_file" 
 }
 
@@ -118,7 +163,7 @@ export -f __test_init_runtime.mktemp
 
 # MOCK logger implementation
 __test_init_runtime.mock_logger() {
-    printf "%s\n" "$FAKE_PARAMS" >> "${test_init_runtime_LOG_file}"
+    printf "%s\n" "$*" >> "${test_init_runtime_LOG_file}"
 }
 export -f __test_init_runtime.mock_logger
 

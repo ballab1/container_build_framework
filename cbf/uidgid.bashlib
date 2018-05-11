@@ -30,15 +30,15 @@ function uidgid.createUserAndGroup()
     name="${name//[0-9]/}"
     name="${name#.}"
 
-    local user="$( lib.indirectReference $name 'user' )"
-    local uid="$( lib.indirectReference $name 'uid' )"
-    local group="$( lib.indirectReference $name 'group' )"
-    local gid="$( lib.indirectReference $name 'gid' )"
-    local homedir="$( lib.indirectReference $name 'home' )"
-    local shell="$( lib.indirectReference $name 'shell' )"
+    local user="$( lib.indirectReference 'user' "$name" )"
+    local uid="$( lib.indirectReference 'uid' "$name" )"
+    local group="$( lib.indirectReference 'group' "$name" )"
+    local gid="$( lib.indirectReference 'gid' "$name" )"
+    local homedir="$( lib.indirectReference 'home' "$name" )"
+    local shell="$( lib.indirectReference 'shell' "$name" )"
 
     if [ -z "$user" ] || [ -z "$uid" ] || [ -z "$group" ] || [ -z "$gid" ]; then
-        trap.die "Invalid user/group specified in '${file}'; user: '${user}', uid: '${uid}', group: '$group', gid: '${gid}'"
+        trap.die "Invalid user/group specified in '${file}'; user:[${user}], uid:[${uid}], group:[$group], gid:[${gid}]"
     fi
    
     local wanted=$( printf '%s:%s' $group $gid )
@@ -95,8 +95,8 @@ export -f -f uidgid.createUserAndGroup
 function uidgid.runScript()
 {
     local -a file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
-
     source /usr/local/crf/bin/init.runtime
+
     eval uidgid.createUserAndGroup "$file" || term.log "..*** issue while executing $( basename "$file" ) ***\n" 'warn'
 }
 export -f uidgid.check

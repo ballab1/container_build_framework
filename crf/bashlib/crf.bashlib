@@ -5,7 +5,8 @@
 #
 #############################################################################
 
-declare -x CRF_PROPERTIES_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P )/CRF.properties"
+: ${CRF_PROPERTIES_FILE:="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P )/CRF.properties"}
+export CRF_PROPERTIES_FILE
 
 #############################################################################
 function crf.__init()
@@ -25,7 +26,10 @@ ROOT="${CRF_LOCATION:-${crf}}"
 STARTUP="${crf_base}/startup"
 EOF
         [ "$DEBUG_TRACE" = 0 ] || cat "$CRF_PROPERTIES_FILE"
+        [ -e "$(cbf.propertiesFile)" ] || term.log "runtime initialized\n"
     fi
+#    term.__init
+#    trap.__init
 }
 export -f crf.__init
 
@@ -114,12 +118,10 @@ function crf.currentUser()
     local user=''
 
     local __lib_savedOptions=$(set +o)
-    set +o nounset
-    [ "$user" ] || user=$(lib.lookupId 'passwd' "$(crf.runtimeProperty 'USER')")
-    [ "$user" ] || [ -z "$USER" ] || user=$(lib.lookupId 'passwd' "$USER")
-    [ "$user" ] || [ -z "$UID" ] || user=$(lib.lookupId 'passwd' "$UID")
-    [ "$user" ] || user=0
-    eval "$__lib_savedOptions"
+    [ "${user:-}" ] || user=$(lib.lookupId 'passwd' "$(crf.runtimeProperty 'USER')")
+    [ "${user:-}" ] || [ -z "${USER:-}" ] || user=$(lib.lookupId 'passwd' "$USER")
+    [ "${user:-}" ] || [ -z "${UID:-}" ] || user=$(lib.lookupId 'passwd' "$UID")
+    [ "${user:-}" ] || user=0
 
     echo "$user"
 }
@@ -129,25 +131,22 @@ export -f crf.currentUser
 function crf.fixupDirectory()
 {
     local -r dir="${1:?'Input parameter "dir" must be defined'}"
-    local __crf_savedOptions=$(set +o)
-    set +o nounset
     local -r user=${2:-$(crf.currentUser)}
-    eval "$__crf_savedOptions"
     
-    term.log "Fixing up directory: ${dir}\n" 'info'
     if [ "${dir}" != '/' ]; then
+        term.log "Fixing up directory: ${dir}\n" 'info'
         [ -d "${dir}" ] || mkdir -p "${dir}"
-        find "$dir" -type d ! -perm 777 -exec chmod 777 '{}' \;
-        find "$dir" -type f ! -perm 666 -exec chmod 666 '{}' \;
+        find "$dir" -type d ! -perm 777 -exec chmod 777 '{}' \; | :
+        find "$dir" -type f ! -perm 666 -exec chmod a+rw '{}' \; | :
         # set owner to uid & login group for uid
         if [ "$user" != root ] && [ "$user" != 0 ]; then
-            find "$dir" ! -user "$user" -exec chown "${user}:" '{}' \;
+            find "$dir" ! -user "$user" -exec chown "${user}:" '{}' \; | :
         fi
-        true
-    else
-        term.log "Attempt to fix up '${dir}' is not permitted.\n" 'warn'
-        false
+        return 0
     fi
+
+    term.log "Attempt to fix up '${dir}' is not permitted.\n" 'warn'
+    return 1
 }
 export -f crf.fixupDirectory
 
@@ -160,7 +159,7 @@ function crf.prepareEnvironment()
         # execute scritps in sorted order
         local -a failedToRun=()
         for _name in $( printf "%s\n" ${!files[@]} | sort ); do
-            crf.runScript "${files[$_name]}" || failedToRun+=( "$script" )
+            crf.runScript "${files[$_name]}" || failedToRun+=( "${files[$_name]}" )
         done
         if [ ${#failedToRun[*]} -gt 0 ]; then
             term.log "Failed to run: ${#failedToRun[*]} out of ${#files[*]} startup scripts..\n" 'lt_gray'
@@ -195,18 +194,35 @@ export -f crf.removeFromRuntimeEnvironment
 #############################################################################
 function crf.runScript()
 {
-    local script=${1:?"Input parameter 'script' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local tmpScript="/tmp/crfScript.$( basename "$file" )"
 
-    cd "$WORKDIR"
-    term.log "..executing ${script}\n" 'info'
-    chmod 755 "$script"
-    
-    
+    term.log "..executing ${file}\n" 'info'
+
+cat << EOF > "$tmpScript"
+#!/bin/bash
+
+# Use the Unofficial Bash Strict Mode
+set -o errexit
+set -o nounset
+set -o pipefail
+IFS=$'\n\t'
+
+# init the framework
+declare -r __init="\$(crf.BIN)/init.runtime"
+[ ! -e "\$__init" ] || source "\$__init"
+
+cd "$WORKDIR"
+source "$file"
+EOF
+
+    chmod 755 "$tmpScript"    
     local -i status
-    ( exec "$script" ) && status=$? || status=$? 
+    ( command "$tmpScript" ) && status=$? || status=$?
+    rm  "$tmpScript"
     if [ $status -ne 0 ]; then
-        cat "$script"
-        term.log ">>>>> issue while executing $( basename "$script" ) <<<<<\n" 'warn'
+        cat "$file"
+        term.log ">>>>> issue while executing $( basename "$file" ) <<<<<\n" 'warn'
     fi
     return $status
 }
@@ -215,7 +231,8 @@ export -f crf.runScript
 #############################################################################
 function crf.runtimeProperty()
 {
-    local key=${1:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local key="${1:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}"
+
     lib.getProperty "$(crf.RT_ENVIRON_PREFIX)${key}" "$(crf.RT_ENVIRON)"
 }
 export -f crf.runtimeProperty

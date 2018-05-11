@@ -12,9 +12,9 @@ declare -r dirlist=( /usr/local/bin
                      /usr/bin
                      /sbin )
 
-for dir in ${dirlist[@]}; do
+for dir in "${dirlist[@]}"; do
     mkdir -p "$dir" && chmod -R 777 "$dir"
-    while read -r file; do
+    for file in $(find "$dir" -maxdepth 1 -mindepth 1 -type f ! -name '.*'); do
         chmod 755 "$file"
-    done < <(find "$dir" -maxdepth 1 -mindepth 1 -type f ! -name '.*')
+    done
 done

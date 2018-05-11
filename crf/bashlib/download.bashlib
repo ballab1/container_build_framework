@@ -20,9 +20,9 @@ function download.getFile()
     name="${name#.}"
 
     # derefernce our params
-    local -A params=( ['file']="$( lib.indirectReference "$name" 'file' )" \
-                      ['url']="$( lib.indirectReference "$name" 'url' )" \
-                      ['sha256']="$( lib.indirectReference "$name" 'sha256' )" \
+    local -A params=( ['file']="$( lib.indirectReference 'file' "$name" )" \
+                      ['url']="$( lib.indirectReference 'url' "$name" )" \
+                      ['sha256']="$( lib.indirectReference 'sha256' "$name" )" \
                     )
     term.log "....file:  ${params['file']}\n" 'info'
     term.log ".....url:  ${params['url']}\n" 'info'

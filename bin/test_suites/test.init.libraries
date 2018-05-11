@@ -37,6 +37,24 @@
 #
 ##########################################################################################
 
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+test.libNotLoaded() {
+    local expected=0
+    local actual=0
+#    assert_equals "$expected" "$actual" 
+    fail 'test not implemented'
+}
+
+#-----------------------------------------------------------------------------------------
+# provide brief explanation of what test does
+test.loadLibs() {
+    local expected=0
+    local actual=0
+#    assert_equals "$expected" "$actual" 
+    fail 'test not implemented'
+}
+
 ##########################################################################################
 #
 # standard test framework routines
@@ -91,7 +109,7 @@ setup() {
     [ "$test_init_libraries_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running setup'
     export LOG=__test_init_libraries.mock_logger
     test_init_libraries_LOG_file=$(__test_init_libraries.mktemp)
-    fake 'term.log' '__test_init_libraries.mock_logger $*'
+    fake 'term.log' '__test_init_libraries.mock_logger "$FAKE_PARAMS"'
     touch "$test_init_libraries_LOG_file" 
 }
 
@@ -118,7 +136,7 @@ export -f __test_init_libraries.mktemp
 
 # MOCK logger implementation
 __test_init_libraries.mock_logger() {
-    printf "%s\n" "$FAKE_PARAMS" >> "${test_init_libraries_LOG_file}"
+    printf "%s\n" "$*" >> "${test_init_libraries_LOG_file}"
 }
 export -f __test_init_libraries.mock_logger
 

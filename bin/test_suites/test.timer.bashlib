@@ -136,7 +136,7 @@ setup() {
     [ "$test_timer_bashlib_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running setup'
     export LOG=__test_timer_bashlib.mock_logger
     test_timer_bashlib_LOG_file=$(__test_timer_bashlib.mktemp)
-    fake 'term.log' '__test_timer_bashlib.mock_logger $*'
+    fake 'term.log' '__test_timer_bashlib.mock_logger "$FAKE_PARAMS"'
     touch "$test_timer_bashlib_LOG_file" 
 }
 
@@ -163,7 +163,7 @@ export -f __test_timer_bashlib.mktemp
 
 # MOCK logger implementation
 __test_timer_bashlib.mock_logger() {
-    printf "%s\n" "$FAKE_PARAMS" >> "${test_timer_bashlib_LOG_file}"
+    printf "%s\n" "$*" >> "${test_timer_bashlib_LOG_file}"
 }
 export -f __test_timer_bashlib.mock_logger
 

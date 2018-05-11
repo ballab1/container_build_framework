@@ -1,69 +1,119 @@
 #!/bin/bash
 
-declare __CRF_OPTIONS=$(set +o)
-set +o nounset
+############################################################################# 
+function pathNotScanned()
+{
+    local -r path=${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}
 
-: ${CBF_LOCATION:=/tmp} 
-: ${CRF_LOCATION:=/usr/local/crf}
+    local -i status
+    (grep -sq "$path" "$scanTracker" > /dev/null 2>&1 ) && status=$? || status=$?
+    [ "$status" -ne 0 ] || return 1
+    echo "$path" >> "$scanTracker"
+    return 0
+}
 
-declare _crfTracker
-declare _filename
-declare -a _files=()
+############################################################################# 
+function libNotLoaded()
+{
+    local -r filename=${1:?"Input parameter 'filename' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r libname="$( basename "$filename" )"
 
-# when nothing exists in 'BASHLIBS' populate it with names of _files 'source'd from crf folder
-declare -a _libbase=( "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
-                       "${CRF_LOCATION}"
-                       "${CBF_LOCATION}${CRF_LOCATION}"
-                     )
-# make sure _libbase is unique
-_libbase=( $( printf "%s\n" ${_libbase[@]} | sort -u ) )
+    local -i status
+    (grep -sq "$libname" "$crfLibTracker" > /dev/null 2>&1 ) && status=$? || status=$?
+    [ "$status" -ne 0 ] || return 1
+    echo "$libname" >> "$crfLibTracker"
+    return 0
+}
 
-# find all the libraries
-for dir in ${_libbase[@]}; do
-    [ ! -d "${dir}/bashlib" ] || _files+=( $(find "${dir}/bashlib" -maxdepth 1 -mindepth 1 -type f ! -name '.*'  -print) )
-done
-if [ "${#_files[@]}" -gt 0 ]; then
-    _crfTracker=${CBF_LOCATION}/bashlibs.loaded
-    for src in ${_files[@]} ; do
-        _filename="$( basename "$src" )"
-        [ -e "$_crfTracker" ] || touch "$_crfTracker"
-        if ! grep -sq "$_filename" "$_crfTracker" ; then
-            [ $( dirname "$src" ) = "${CRF_LOCATION}/bashlib" ] || echo "$_filename" >> "$_crfTracker"
+############################################################################# 
+function envNotLoaded()
+{
+    local -r filename=${1:?"Input parameter 'filename' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r envname="$( basename "$filename" )"
+
+    local -i status
+    (grep -sq "$envname" "$envTracker" > /dev/null 2>&1 ) && status=$? || status=$?
+    [ "$status" -ne 0 ] || return 1
+    echo "$envname" >> "$envTracker"
+    return 0
+}
+
+############################################################################# 
+function loadLibs()
+{
+    local -a path=${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    [ "$path" ] || return 0
+    pathNotScanned "$path" || return 0
+    [ -d "${path}/bashlib" ] || return 0
+    local -ar files=( $(find "${path}/bashlib" -maxdepth 1 -mindepth 1 -type f ! -name '.*'  -print) )
+    [ ${#files[@]} -gt 0 ] || return 0
+
+    local src
+    for src in "${files[@]}" ; do
+        if  libNotLoaded "$src" ; then
             echo "    loading library: ${src}"
             source "$src"
         fi
     done
+}
+
+############################################################################# 
+function loadEnvars()
+{
+    local -a path=${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -a files=()
+
+    if [ "${path}" ] && [  -d "${path}/environment" ]; then
+        files=( $(find "${path}/environment" -maxdepth 1 -mindepth 1 -type f ! -name '.*'  -print) )
+    fi
+    [ "${#files[@]}" -eq 0 ] || printf "%s\n" "${files[@]}"
+}
+
+############################################################################# 
+
+: ${CBF_LOCATION:=/tmp} 
+: ${CRF_LOCATION:=/usr/local/crf}
+
+# init our cache files
+[ "${envTracker:-}" ] || declare -rx envTracker="${CBF_LOCATION}/environment.loaded"
+[ "${cbfLibTracker:-}" ] || declare -rx cbfLibTracker="${CBF_LOCATION}/bashlibs.loaded"
+[ "${crfLibTracker:-}" ] || declare -rx crfLibTracker="${CBF_LOCATION}/crf.bashlibs.loaded"
+[ "${scanTracker:-}" ] || declare -rx scanTracker="${CBF_LOCATION}/scanned.paths"
+if [ -e "$cbfLibTracker" ]; then
+    cp "$cbfLibTracker" "$crfLibTracker"
+else
+    :>  "$crfLibTracker"
 fi
+:>  "$envTracker"
+:>  "$scanTracker"
+
+
+# load our bashlibs
+loadLibs "${CRF_LOCATION}"
+loadLibs "${CBF_LOCATION}${CRF_LOCATION}"
+loadLibs "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
 
 # load our environment
-_files=()
-for dir in ${_libbase[@]}; do
-    [ ! -d "${dir}/environment" ] || _files+=( $(find "${dir}/environment" -maxdepth 1 -mindepth 1 -type f ! -name '.*'  -print) )
-done
-if [ "${#_files[@]}" -gt 0 ]; then
-    _crfTracker=${CBF_LOCATION}/environment.loaded
-    # shrink _crfTracker
-    :>  "$_crfTracker"
-    for src in ${_files[@]} ; do
-        _filename="$( basename "$src" )"
-        if ! grep -sq "$_filename" "$_crfTracker" ; then
-            echo "$_filename" >> "$_crfTracker"
-            echo "    loading: ${src}"
-            source "$src"
-        fi
-    done
-fi
 if [ -e "${CRF_LOCATION}/bin/rt.environment" ]; then
     echo "    loading: ${CRF_LOCATION}/bin/rt.environment"
     source "${CRF_LOCATION}/bin/rt.environment"
 fi
 
-eval "$__CRF_OPTIONS"
+# load our definitions (associative arrays)
+declare -a _files=( $(loadEnvars "${CRF_LOCATION}") )
+_files+=( $(loadEnvars "${CBF_LOCATION}${CRF_LOCATION}") )
+_files+=( $(loadEnvars "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )") )
+if [ "${#_files[@]}" -gt 0 ]; then
+    for _src in "${_files[@]}" ; do
+        if envNotLoaded "$_src" ; then
+            echo "    loading: ${_src}"
+            source "$_src"
+        fi
+    done
+fi
 
-unset __CRF_OPTIONS
-unset _crfTracker
-unset _filename
-unset _files
-unset _libbase
+[ ! -e /tmp/dump_env ] || declare -p
 
+# init the framework
 crf.__init "$CRF_LOCATION"
