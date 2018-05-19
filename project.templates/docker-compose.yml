@@ -27,4 +27,4 @@ services:
 # only use when building a 'service container'
 #        restart: unless-stopped
         volumes:
-            - ./vols/log:/var/log 
+            - ./vols/log:/var/log

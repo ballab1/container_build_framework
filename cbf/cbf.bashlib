@@ -13,7 +13,7 @@ function cbf.__init()
     # this function is usually called from bin/init.libraries
     local -r cbf_base=${1:?"Input parameter 'lib_base' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r crf_base=${2:?"Input parameter 'crf_base' must be passed to 'function ${FUNCNAME[0]}()'"}
-    
+
     CBF_PROPERTIES_FILE="${cbf_base}/CBF.properties"
     if [ ! -e "$CBF_PROPERTIES_FILE" ]; then
         local -r _base="$( cd "$( dirname "$cbf_base" )" && pwd )"
@@ -30,7 +30,7 @@ CRF_BIN=${crf_base}/bin
 CRT_BASE=${crf_base:-/usr/local/crf}
 EOF
        [ "$DEBUG_TRACE" == 0 ] || cat "$CBF_PROPERTIES_FILE"
-    
+
        #now parse some info from our Dockerfile
        #ENTRYPOINT cmd is used
        #Both VOLUME and USER are used
@@ -107,7 +107,7 @@ function cbf.buildContainer()
     local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r debug_trace=${2:-0}
     local -r timezone=${3:-null}
-    
+
     # list of 'notice, directory, action' to perform
     local -A steps=( ['00.setup']='cbf.runScripts'
                      ['01.packages']='package.runScripts'
@@ -118,7 +118,7 @@ function cbf.buildContainer()
                      ['06.permissions']='cbf.runScripts'
                      ['07.cleanup']='cbf.runScripts'
                    )
-    
+
     term.header "${name^^}"
     if [ "$timezone" = null ]; then
         [ ! -e /etc/TZ ] || export TZ="$( cat /etc/TZ )"
@@ -153,7 +153,7 @@ function cbf.buildContainer()
         if [[ "$timezone" = null && "$dir" = '01.packages' ]]; then
             package.updateIndexes
         fi
-        
+
         # perform desired action
         if [ "$DEBUG_TRACE" != 0 ]; then
             echo "$action: (unsorted)"
@@ -189,7 +189,7 @@ EOF
 
     cd /tmp
     chmod 755 "$file" "$tmpScript"
-    
+
     local -i status
     ( command "$tmpScript" ) && status=$? || status=$?
     if [ $status -ne 0 ] ; then
@@ -204,7 +204,7 @@ export -f cbf.makeScript
 function cbf.propertiesFile()
 {
     echo "${CBF_PROPERTIES_FILE:="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P )/CBF.properties"}"
-} 
+}
 export -f cbf.propertiesFile
 
 #############################################################################

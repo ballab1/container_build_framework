@@ -1,6 +1,6 @@
 #!/bin/bash
 
-############################################################################# 
+#############################################################################
 function pathNotScanned()
 {
     local -r path=${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -12,7 +12,7 @@ function pathNotScanned()
     return 0
 }
 
-############################################################################# 
+#############################################################################
 function libNotLoaded()
 {
     local -r filename=${1:?"Input parameter 'filename' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -25,7 +25,7 @@ function libNotLoaded()
     return 0
 }
 
-############################################################################# 
+#############################################################################
 function envNotLoaded()
 {
     local -r filename=${1:?"Input parameter 'filename' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -38,7 +38,7 @@ function envNotLoaded()
     return 0
 }
 
-############################################################################# 
+#############################################################################
 function loadLibs()
 {
     local -a path=${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -58,7 +58,7 @@ function loadLibs()
     done
 }
 
-############################################################################# 
+#############################################################################
 function loadEnvars()
 {
     local -a path=${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -70,9 +70,9 @@ function loadEnvars()
     [ "${#files[@]}" -eq 0 ] || printf "%s\n" "${files[@]}"
 }
 
-############################################################################# 
+#############################################################################
 
-: ${CBF_LOCATION:=/tmp} 
+: ${CBF_LOCATION:=/tmp}
 : ${CRF_LOCATION:=/usr/local/crf}
 
 # init our cache files
@@ -92,7 +92,7 @@ fi
 # load our bashlibs
 loadLibs "${CRF_LOCATION}"
 loadLibs "${CBF_LOCATION}${CRF_LOCATION}"
-loadLibs "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"  
+loadLibs "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 # load our environment
 if [ -e "${CRF_LOCATION}/bin/rt.environment" ]; then

@@ -6,7 +6,7 @@ set -o nounset
 set -o pipefail
 IFS=$'\n\t'
 
-declare NAME=${1:?'Input parameter "NAME" must be defined'} 
+declare NAME=${1:?'Input parameter "NAME" must be defined'}
 declare TZ="${2:-null}"
 : ${DEBUG_TRACE:=0}
 

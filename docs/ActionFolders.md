@@ -2,7 +2,7 @@
 
 ## Action Folders
 
-![action folders](./action_folders.png) 
+![action folders](./action_folders.png)
 
 #### Environment
 Every script defined in the action folders, is run from the '/tmp' folder as the current directory.
@@ -15,19 +15,19 @@ CBF method | property returned
  cbf.ACTION | project actions folder. This contains the folders over which the framework iterates.
  cbf.LIB | cbf library folder. This contains the framework bashlib scripts.
  cbf.TEMPLATES | action template folders. This is the framework copy of the `action_folders`
- 
+
 These environment variables may be used to source any of the scripts in the action folders using "$( cbf.ACTION )" or from the `action_folders` directories using "$( cbf.ACTION )".
 Any script language may be used in the any of the `action_folders', other than *02.users_groups* and *03.downloads*.
 
 ### Install needed OS Support
 **Folder:** _01.packages_
 
-This folder contains scripts and/or symbolic links which contain commands to install OS functionality. On Alpine Linux, these files contain `apk add` commands. 
+This folder contains scripts and/or symbolic links which contain commands to install OS functionality. On Alpine Linux, these files contain `apk add` commands.
 
 The following shows an example of the type of file expected in the _01.packages_ folder:
 ```bash
 # core Packages
-apk add --no-cache bash-completion coreutils openssh-client shadow supervisor sudo ttf-dejavu unzip 
+apk add --no-cache bash-completion coreutils openssh-client shadow supervisor sudo ttf-dejavu unzip
 ```
 
 
@@ -56,7 +56,7 @@ hubot['gid']=${bht_gid:-$(getent group "${hubot['user']}" | cut -d: -f3)}
 hubot['shell']=/bin/bash
 hubot['home']="${HUBOT_HOME:-/usr/local/hubot}"
 # other directories
-export HUBOT_HOME="${hubot['home']}" 
+export HUBOT_HOME="${hubot['home']}"
 ```
 These files may be 'sourced' in later scripts to access their definitions.
 
@@ -70,7 +70,7 @@ The **mandatory fields** are
 - url
 - sha256
 
-Every other declaration is optional. 
+Every other declaration is optional.
 
 The *01.PHPADMIN* file, shows an example of the type of file expected in the _03.downloads_ folder:
 ```bash
@@ -87,13 +87,13 @@ The file gets downloaded and saved to the specified file. The sha256 is compared
 ### Install applications
 **Folder:** _04.applications_
 
-This folder contains scripts which should perform the installation of the major functionality. One script should be used per application installation. 
+This folder contains scripts which should perform the installation of the major functionality. One script should be used per application installation.
 
 The *02.Gradle* file, shows an example of the type of file expected in the _04.applications_ folder:
 ```bash
 #!/bin/bash
 # Gradle installation script
-source "${CBF['action']}/03.downloads/01.GRADLE" 
+source "${CBF['action']}/03.downloads/01.GRADLE"
 
 mkdir -p /opt
 cd /opt
@@ -117,14 +117,14 @@ The *01.custom_folders* file, shows an example of the type of file expected in t
 ```bash
 #!/bin/bash
 # 01.custom_folders: copy contents of custme folders from /tmp into the root of the container
-declare -r dirs='bin etc home lib lib64 media mnt opt root sbin usr var www' 
+declare -r dirs='bin etc home lib lib64 media mnt opt root sbin usr var www'
 for dir in ${dirs} ; do
     declare custom_folder="${CBF['base']}/$dir"
     if [ -d "$custom_folder" ]; then
         echo "Updating ${dir} from ${custom_folder}"
         cp -r "${custom_folder}/"* "/${dir}/"
     fi
-done 
+done
 ```
 The 01.custom_folders canned script is provided with the framework, and linked into a users 'action_folders/05.customizations' folder:
 
@@ -139,7 +139,7 @@ The *01.docker-entry* file, shows an example of the type of file expected in the
 #!/bin/bash
 if [ -f /usr/local/bin/docker-entrypoint.sh ]; then
     chmod u+rwx /usr/local/bin/docker-entrypoint.sh
-    [ -h /docker-entrypoint.sh ] || ln -s /usr/local/bin/docker-entrypoint.sh /docker-entrypoint.sh 
+    [ -h /docker-entrypoint.sh ] || ln -s /usr/local/bin/docker-entrypoint.sh /docker-entrypoint.sh
 fi
 ```
 There are three canned scripts provided with the framework, and linked into a users 'action_folders/06.permissions' folder:
@@ -151,7 +151,7 @@ canned script | functionality provided
  01.sudo | checks if /usr/bin/sudo has been installed, ensures that the correct permissions are on the file, and that all files in /etc/sudoers.d  are only accessible by root
 
 
-### Clean up 
+### Clean up
 **Folder:** _07.cleanup_
 
 This folder contains scripts which cleanup content which is outside of the /tmp folder. A symbolic link to the 99.apk.cleanup script is located here.

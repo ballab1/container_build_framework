@@ -3,7 +3,7 @@
 #
 #   term-codes.bashlib
 #
-############################################################################# 
+#############################################################################
 
 function term.__init()
 {
@@ -11,7 +11,7 @@ function term.__init()
     declare -rx TERM_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/properties" && pwd )"
 }
 
-############################################################################# 
+#############################################################################
 function term.codes()
 {
     local -r mode=${1:?"Input parameter 'mode' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -24,7 +24,7 @@ function term.codes()
 }
 export -f term.codes
 
-############################################################################# 
+#############################################################################
 function term.decode()
 {
     local -r fg=${1:?"Input parameter 'fg' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -89,4 +89,4 @@ function term.propertiesDir()
 }
 export -f term.propertiesDir
 
-[[ ${LOG:-} = term.log ]] || term.__init 
+[[ ${LOG:-} = term.log ]] || term.__init

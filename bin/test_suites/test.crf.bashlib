@@ -11,16 +11,16 @@
 # test methods
 # standard test framework routines
 # custom support provided within this suite
-# 
+#
 #
 # standard test framework routines              custom support provided within this suite
 # --------------------------------              -----------------------------------------
 # setup_suite()                                 __test_crf_bashlib.mktemp()
 # teardown_suite()                              __test_crf_bashlib.mock_logger()
-# setup()                                       export test_crf_bashlib_LOG_file 
+# setup()                                       export test_crf_bashlib_LOG_file
 # teardown()                                    export test_crf_bashlib_UT_TEST_DIR
 #                                               export test_crf_bashlib_DEBUG
-#                                              
+#
 #
 # bash_unit supports several shell oriented assertion functions.
 # --------------------------------------------------------------
@@ -42,7 +42,7 @@
 test.crf.BASE() {
     local expected="${CRF_LOCATION}"
     local actual="$( crf.BASE )"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -50,7 +50,7 @@ test.crf.BASE() {
 test.crf.BIN() {
     local expected="${CRF_LOCATION}/bin"
     local actual="$( crf.BIN )"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -65,7 +65,7 @@ test.crf.copyFileToRuntime_BADARGS() {
 test.crf.currentUser() {
     local expected='0'
     local actual="$( crf.currentUser )"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -73,7 +73,7 @@ test.crf.currentUser() {
 test.crf.ENV() {
     local expected="${CRF_LOCATION}/environment"
     local actual="$( crf.ENV )"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -106,7 +106,7 @@ test.crf.fixupDirectory_VerifyNullUser() {
     local -r expected="Fixing up directory: ${dir}\\n info
 find ${dir} -type d ! -perm 777 -exec chmod 777 {} ;
 find ${dir} -type f ! -perm 666 -exec chmod 666 {} ;
-find ${dir} ! -user FAKE_USER -exec chown FAKE_USER: {} ;"    
+find ${dir} ! -user FAKE_USER -exec chown FAKE_USER: {} ;"
 
     local -r actual="$(< "$test_crf_bashlib_LOG_file" )"
     assert_equals "$expected" "$actual"
@@ -117,7 +117,7 @@ find ${dir} ! -user FAKE_USER -exec chown FAKE_USER: {} ;"
 test.crf.LIB() {
     local expected="${CRF_LOCATION}/bashlib"
     local actual="$( crf.LIB )"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -186,7 +186,7 @@ EOF
 test.crf.propertiesFile() {
     local expected="${CRF_LOCATION}/CRF.properties"
     local actual="$( crf.propertiesFile )"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -194,7 +194,7 @@ test.crf.propertiesFile() {
 test.crf.removeFromRuntimeEnvironment() {
     local expected=0
     local actual=0
-#    assert_equals "$expected" "$actual" 
+#    assert_equals "$expected" "$actual"
     fail 'test not implemented'
 }
 
@@ -203,7 +203,7 @@ test.crf.removeFromRuntimeEnvironment() {
 test.crf.RT_ENVIRON() {
     local expected="${CRF_LOCATION}/bin/rt.environment"
     local actual="$( crf.RT_ENVIRON )"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -218,7 +218,7 @@ test.crf.runScript_BADARGS() {
 test.crf.runtimeProperty_USER() {
     local expected='root'
     local actual="$( crf.runtimeProperty 'USER' )"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -226,7 +226,7 @@ test.crf.runtimeProperty_USER() {
 test.crf.runtimeProperty_WORKDIR() {
     local expected='/'
     local actual="$( crf.runtimeProperty 'WORKDIR' )"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -234,7 +234,7 @@ test.crf.runtimeProperty_WORKDIR() {
 test.crf.STARTUP() {
     local expected="${CRF_LOCATION}/startup"
     local actual="$( crf.STARTUP )"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -250,7 +250,7 @@ test.crf.updateRuntimeEnvironment_BADARGS() {
 #
 ##########################################################################################
 
-# load all the bash libraries, setup location for running test_suite, 
+# load all the bash libraries, setup location for running test_suite,
 setup_suite() {
 
     # create a temp directory for any files etc created by tests
@@ -258,7 +258,7 @@ setup_suite() {
     mkdir -p "$tmpUserDir"
     local temporaryDir=$(mktemp -d --tmpdir="$tmpUserDir" --suffix=test bash_unit_XXXXXXXXXXXXXXXXXX 2>/dev/null)
     mkdir -p "$temporaryDir"
-    test_crf_bashlib_UT_TEST_DIR="$temporaryDir" 
+    test_crf_bashlib_UT_TEST_DIR="$temporaryDir"
 
     # point CBF & CRF to locations in tmp workspace.  Will load libs from there
     export CBF_LOCATION="$temporaryDir/tmp"            # set CBF_LOCATION for testing
@@ -274,10 +274,10 @@ setup_suite() {
         cp -r "${cbf_location}/${dir}" "$CBF_LOCATION"
     done
     cp -r "${cbf_location}/crf"/* "$CRF_LOCATION"
-    
+
     # now init stuff for testing
     source "${CBF_LOCATION}/bin/init.libraries" #> /dev/null
-} 
+}
 
 # remove anything generated by test suite
 teardown_suite() {
@@ -297,9 +297,9 @@ teardown_suite() {
 setup() {
     [ "$test_crf_bashlib_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running setup'
     export LOG=__test_crf_bashlib.mock_logger
-    test_crf_bashlib_LOG_file=$(__test_crf_bashlib.mktemp) 
+    test_crf_bashlib_LOG_file=$(__test_crf_bashlib.mktemp)
     fake 'term.log' '__test_crf_bashlib.mock_logger "$FAKE_PARAMS"'
-    touch "$test_crf_bashlib_LOG_file" 
+    touch "$test_crf_bashlib_LOG_file"
 }
 
 # flush the mock logger
@@ -329,7 +329,7 @@ __test_crf_bashlib.mock_logger() {
 }
 export -f __test_crf_bashlib.mock_logger
 
-export test_crf_bashlib_LOG_file 
+export test_crf_bashlib_LOG_file
 export test_crf_bashlib_UT_TEST_DIR
 export test_crf_bashlib_DEBUG=0
 

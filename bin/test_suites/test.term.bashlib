@@ -11,16 +11,16 @@
 # test methods
 # standard test framework routines
 # custom support provided within this suite
-# 
+#
 #
 # standard test framework routines              custom support provided within this suite
 # --------------------------------              -----------------------------------------
 # setup_suite()                                 __test_term_bashlib.mktemp()
 # teardown_suite()                              __test_term_bashlib.mock_logger()
-# setup()                                       export test_term_bashlib_LOG_file 
+# setup()                                       export test_term_bashlib_LOG_file
 # teardown()                                    export test_term_bashlib_UT_TEST_DIR
 #                                               export test_term_bashlib_DEBUG
-#                                              
+#
 #
 # bash_unit supports several shell oriented assertion functions.
 # --------------------------------------------------------------
@@ -64,7 +64,7 @@ test.term.codes() {
 test.term.codes_INVALID_RESET_CODE() {
     local expected=''
     local actual="$(term.codes 'ATTR_RESET' 'invalid')"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -72,7 +72,7 @@ test.term.codes_INVALID_RESET_CODE() {
 test.term.codes_INVALID_SETTERS_CODE() {
     local expected=''
     local actual="$(term.codes 'ATTR_SETTERS' 'invalid')"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -80,7 +80,7 @@ test.term.codes_INVALID_SETTERS_CODE() {
 test.term.codes_INVALID_FOREGROUND_CODE() {
     local expected=''
     local actual="$(term.codes 'FOREGROUND' 'invalid')"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -88,7 +88,7 @@ test.term.codes_INVALID_FOREGROUND_CODE() {
 test.term.codes_INVALID_BACKGROUND_CODE() {
     local expected=''
     local actual="$(term.codes 'BACKGROUND' 'invalid')"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -103,7 +103,7 @@ test.term.codes_NOARGS() {
 test.term.decode_TASK() {
     local expected=$( printf "\e[96m" )
     local actual="$(term.decode 'task')"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -111,7 +111,7 @@ test.term.decode_TASK() {
 test.term.decode_INFO() {
     local expected=$( printf "\e[92m" )
     local actual="$(term.decode 'info')"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -119,7 +119,7 @@ test.term.decode_INFO() {
 test.term.decode_ERROR() {
     local expected=$( printf "\e[31m" )
     local actual="$(term.decode 'error')"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -127,7 +127,7 @@ test.term.decode_ERROR() {
 test.term.decode_WARN() {
     local expected=$( printf "\e[93m" )
     local actual="$(term.decode 'warn')"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -135,7 +135,7 @@ test.term.decode_WARN() {
 test.term.decode_RESET() {
     local expected=$( printf "\e[0m" )
     local actual="$(term.decode 'reset')"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -143,7 +143,7 @@ test.term.decode_RESET() {
 test.term.decode_SOMECOLOR() {
     local expected=$( printf "\e[90m" )
     local actual="$(term.decode 'dk_gray')"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -151,7 +151,7 @@ test.term.decode_SOMECOLOR() {
 test.term.decode_INVALIDCFGOLOR() {
     local expected=''
     local actual="$(term.decode 'invalid')"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -159,7 +159,7 @@ test.term.decode_INVALIDCFGOLOR() {
 test.term.decode_FG_BGCOLOR() {
     local expected=$( printf "\e[97;100m" )
     local actual="$(term.decode 'white' 'dk_gray')"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -167,7 +167,7 @@ test.term.decode_FG_BGCOLOR() {
 test.term.decode_INVALIDBGCOLOR() {
     local expected=''
     local actual="$(term.decode 'dk_gray' 'invalid')"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -182,11 +182,11 @@ test.term.decode_NOARGS() {
 test.term.header() {
     local expected="|blue|\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n||lt_blue|Build step: whiteStarting CONTAINER BUILD\n||blue|+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n|"
     fake 'term.decode' 'echo $1'
-    local test_LOG=$( __test_term_bashlib.mktemp ) 
+    local test_LOG=$( __test_term_bashlib.mktemp )
     fake 'term.log' 'printf "|%s|%s|" $2 $1 >> "$test_LOG"'
     term.header 'Starting CONTAINER BUILD' 'info'
     local actual="$(< "${test_LOG}" )"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -202,7 +202,7 @@ test.term.log() {
     fake 'term.decode' 'echo $1'
     local expected='bareset'
     local actual="$(term.log 'a' 'b')"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -217,7 +217,7 @@ test.term.log_NOARGS() {
 test.term.log_INVALID_COLOR() {
     local expected='a message'
     local actual="$(term.log "$expected" 'invalid')"
-    assert_equals "$expected" "$actual" 
+    assert_equals "$expected" "$actual"
 }
 
 ##########################################################################################
@@ -226,7 +226,7 @@ test.term.log_INVALID_COLOR() {
 #
 ##########################################################################################
 
-# load all the bash libraries, setup location for running test_suite, 
+# load all the bash libraries, setup location for running test_suite,
 setup_suite() {
 
     # create a temp directory for any files etc created by tests
@@ -234,7 +234,7 @@ setup_suite() {
     mkdir -p "$tmpUserDir"
     local temporaryDir=$(mktemp -d --tmpdir="$tmpUserDir" --suffix=test bash_unit_XXXXXXXXXXXXXXXXXX 2>/dev/null)
     mkdir -p "$temporaryDir"
-    test_term_bashlib_UT_TEST_DIR="$temporaryDir" 
+    test_term_bashlib_UT_TEST_DIR="$temporaryDir"
 
     # point CBF & CRF to locations in tmp workspace.  Will load libs from there
     export CBF_LOCATION="$temporaryDir/tmp"            # set CBF_LOCATION for testing
@@ -250,10 +250,10 @@ setup_suite() {
         cp -r "${cbf_location}/${dir}" "$CBF_LOCATION"
     done
     cp -r "${cbf_location}/crf"/* "$CRF_LOCATION"
-    
+
     # now init stuff for testing
     source "${CBF_LOCATION}/bin/init.libraries" #> /dev/null
-} 
+}
 
 # remove anything generated by test suite
 teardown_suite() {
@@ -273,7 +273,7 @@ teardown_suite() {
 setup() {
     [ "$test_term_bashlib_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running setup'
     export LOG=__test_term_bashlib.mock_logger
-    test_term_bashlib_LOG_file=$(__test_term_bashlib.mktemp) 
+    test_term_bashlib_LOG_file=$(__test_term_bashlib.mktemp)
     fake 'term.log' '__test_term_bashlib.mock_logger "$FAKE_PARAMS"'
     touch "$test_term_bashlib_LOG_file"
 }
@@ -305,7 +305,7 @@ __test_term_bashlib.mock_logger() {
 }
 export -f __test_term_bashlib.mock_logger
 
-export test_term_bashlib_LOG_file 
+export test_term_bashlib_LOG_file
 export test_term_bashlib_UT_TEST_DIR
 export test_term_bashlib_DEBUG=0
 

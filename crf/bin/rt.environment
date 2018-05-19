@@ -3,7 +3,7 @@
 #
 # This script should contain all appropriate environment variables for the runtime environment
 #
-# this script is indirectly 'sourced' at runtime by /usr/local/bin/docker-entrypoint.sh  
+# this script is indirectly 'sourced' at runtime by /usr/local/bin/docker-entrypoint.sh
 
 export CONTAINER_NAME=${CONTAINER_NAME}
 export WORKDIR=${WORKDIR:-/}

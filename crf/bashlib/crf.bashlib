@@ -81,7 +81,7 @@ function crf.STARTUP()
     lib.getProperty "${FUNCNAME[0]##*.}" "$( crf.propertiesFile )"
 }
 export -f crf.STARTUP
-  
+
 #############################################################################
 function crf.copyFileToRuntime()
 {
@@ -90,15 +90,15 @@ function crf.copyFileToRuntime()
 
     case "$loc" in
         BIN)         : ;;
-        ENV)         : ;; 
+        ENV)         : ;;
         LIB)         : ;;
         STARTUP)     : ;;
         *)  trap.die "Invalid runtime location '$loc' specified";;
     esac
-    
+
     local -r rtFile="$( "crf.$loc" )/$( basename "$file" )"
     [ ! -e "$rtFile" ] || trap.die "Attempt to overwrite file '$rtFile' will likely result in unintented consequences"
-    
+
     # use input file if it exists, otherwise determine if file exists in coresponding '/usr/local/crf' folder
     local srcFile="$file"
     [ -e "$srcFile" ] || srcFile="$( cbf.BASE )/usr/local/crf/$( basename "$( "crf.$loc" )" )/$( basename "$file" )"
@@ -132,7 +132,7 @@ function crf.fixupDirectory()
 {
     local -r dir="${1:?'Input parameter "dir" must be defined'}"
     local -r user=${2:-$(crf.currentUser)}
-    
+
     if [ "${dir}" != '/' ]; then
         term.log "Fixing up directory: ${dir}\n" 'info'
         [ -d "${dir}" ] || mkdir -p "${dir}"
@@ -140,7 +140,7 @@ function crf.fixupDirectory()
         find "$dir" -type f ! -perm 666 -exec chmod a+rw '{}' \; | :
         # set owner to uid & login group for uid
         if [ "$user" != root ] && [ "$user" != 0 ]; then
-            find "$dir" ! -user "$user" -exec chown "${user}:" '{}' \; | :
+            find "$dir" ! -user "$user" -exec chown "${user}:$(getent passwd "${user}" | cut -d: -f4)" '{}' \; | :
         fi
         return 0
     fi
@@ -167,8 +167,10 @@ function crf.prepareEnvironment()
 #            trap.die "failed to execute all scripts"
         else
             term.log "Finished executing startup scripts\n" 'info'
-        fi 
+        fi
     fi
+    chmod a+x "/usr/local/bin/"*
+
 }
 export -f crf.prepareEnvironment
 
@@ -176,7 +178,7 @@ export -f crf.prepareEnvironment
 function crf.propertiesFile()
 {
     echo "${CRF_PROPERTIES_FILE:="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P )/CRF.properties"}"
-} 
+}
 export -f crf.propertiesFile
 
 #############################################################################
@@ -186,7 +188,7 @@ function crf.removeFromRuntimeEnvironment()
     local -r envFile="$( crf.RT_ENVIRON )"
 
     if grep -qE "^.*\s+${key}=" "$envFile" ; then
-        sed -i "s|^.* ${key}=.*$||" "$envFile" 
+        sed -i "s|^.* ${key}=.*$||" "$envFile"
     fi
 }
 export -f crf.removeFromRuntimeEnvironment
@@ -216,7 +218,7 @@ cd "$WORKDIR"
 source "$file"
 EOF
 
-    chmod 755 "$tmpScript"    
+    chmod 755 "$tmpScript"
     local -i status
     ( command "$tmpScript" ) && status=$? || status=$?
     rm  "$tmpScript"
@@ -246,7 +248,7 @@ function crf.updateRuntimeEnvironment()
     for line in ${in_array[@]}; do
         local key="${line%%=*}"
         if grep -qE "^.*\s+${key}=" "$envFile" ; then
-            sed -i "s|^.* ${key}=.*$|$(crf.RT_ENVIRON_PREFIX)$line|" "$envFile" 
+            sed -i "s|^.* ${key}=.*$|$(crf.RT_ENVIRON_PREFIX)$line|" "$envFile"
         else
             echo "$(crf.RT_ENVIRON_PREFIX)$line" >> "$envFile"
         fi

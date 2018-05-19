@@ -43,7 +43,7 @@ if [ ! -e "$( cbf.BASE )/override.entrypoint" ]; then
         echo 'Creating docker-entrypoint.sh'
         cp "$( cbf.CRF_BIN )/default.entrypoint" /usr/local/bin/docker-entrypoint.sh
 
-    elif [ -e "$( cbf.BASE )/usr/local/bin/docker-entrypoint.sh" ]; then 
+    elif [ -e "$( cbf.BASE )/usr/local/bin/docker-entrypoint.sh" ]; then
         echo 'Potential conflict detected with existing file: /usr/local/bin/docker-entrypoint.sh'
         echo 'To prevent this error, either:'
         echo "    remove the file:       $( cbf.BASE )/usr/local/bin/docker-entrypoint.sh"
@@ -51,11 +51,11 @@ if [ ! -e "$( cbf.BASE )/override.entrypoint" ]; then
         exit 1
     fi
     sed -i "s|^declare -rx CONTAINER_NAME=.*$|declare -rx CONTAINER_NAME=${CONTAINER_NAME}|" /usr/local/bin/docker-entrypoint.sh
-fi    
+fi
 
 
 
-# setup some variables based on runtime properties in the Dockerfile 
+# setup some variables based on runtime properties in the Dockerfile
 declare props=/tmp/container.properties
 if [ -e "$props" ]; then
     declare -i val
@@ -68,5 +68,5 @@ if [ -e "$props" ]; then
             workdir)    declare workdir="$val";;
         esac
     done < "$props"
-    
+
 fi

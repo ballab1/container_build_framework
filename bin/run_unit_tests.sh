@@ -21,7 +21,7 @@ declare -r DIR_OF_TESTS_TO_RUN="$( cd "$( dirname "${BASH_SOURCE[0]}" )/test_sui
 #############################################################################
 function test.downloadFramework()
 {
-    local -r download_dir=${1:?"must pass parameter 'download_dir' to 'function ${FUNCNAME[0]}()'"} 
+    local -r download_dir=${1:?"must pass parameter 'download_dir' to 'function ${FUNCNAME[0]}()'"}
 
     if [[ -n "${download_dir}" && "${download_dir}" != '/' ]]; then
         pushd "$download_dir"
@@ -65,7 +65,7 @@ function test.downloadFramework()
     fi
     echo "FATAL ERROR: there was an issue when downloading the unit_test framework from: ${BASH_UNIT['url']}"
     return 1
-} 
+}
 
 #############################################################################
 function test.processArgs()
@@ -74,14 +74,14 @@ function test.processArgs()
 
     if [ ${#args[*]} -eq 0 ]; then
         args=( test* )
-    
+
     else
         for (( i=0; i<${#args[@]}; i++ )); do
             local f="${args[i]}"
 
             # skip if nothing to do
             [ -e "$f" ] && continue
-         
+
             # move pattern definitions to beginning of args
             if [ "$f" = '-p' ]; then
                 (( i++ ))
@@ -115,7 +115,7 @@ function test.processArgs()
         done
     fi
     printf "%s\n" "${args[@]}"
-} 
+}
 
 #############################################################################
 function test.main()
@@ -127,9 +127,9 @@ printf "%s\n" "${args[@]}"
 
     # configure where our test framework comes from, and in which dir it resides
     if [ ${#test[*]} -eq 0 ]; then
-        local -r test_dir="${BASH_UNIT_ROOT:-$(test.tmpDir)}" 
+        local -r test_dir="${BASH_UNIT_ROOT:-$(test.tmpDir)}"
         test['BASH_UNIT_DIR']="$( cd "$test_dir" && pwd )"
-    
+
         # run tests
         if [ "$BASH_UNIT_ROOT" = "${test['BASH_UNIT_DIR']}" ]; then
             test['BASH_UNIT']="${test['BASH_UNIT_DIR']}/bash_unit"

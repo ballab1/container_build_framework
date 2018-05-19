@@ -12,7 +12,7 @@
 # usage: lib.file_env VAR [DEFAULT]
 #    ie: lib.file_env 'XYZ_DB_PASSWORD' 'example'
 # (will allow for "$XYZ_DB_PASSWORD_FILE" to fill in the value of
-#  "$XYZ_DB_PASSWORD" from a file, especially for Docker's secrets feature) 
+#  "$XYZ_DB_PASSWORD" from a file, especially for Docker's secrets feature)
 #
 function lib.file_env()
 {
@@ -40,7 +40,7 @@ function lib.getFiles()
 {
     local -r dir=${1:?"Input parameter 'dir' must be passed to 'function ${FUNCNAME[0]}()'"}
     local OIFS=$IFS
-    
+
     IFS=$'\r\n'
     [ ! -d "$dir" ] || find "$dir"  -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort
     IFS=$OIFS
@@ -109,7 +109,7 @@ function lib.lookupId()
     [ $? -eq 0 ] || id=''
     [[ "$id" =~ 'Try '* ]] && id=''
     [ -z "$id" ] || id=$(echo "$id" | cut -d: -f3)
-    
+
     if [ -z "$id" ] && [ -n "$default" ]; then
         id=$default
     fi
@@ -189,7 +189,7 @@ function lib.relativize()
     local down=''
 
     pos="$(lib.normalizePath "$pos")"
-    ref="$(lib.normalizePath "$ref")" 
+    ref="$(lib.normalizePath "$ref")"
 
     while :; do
         [ "$ref" = '/' ] && break
@@ -211,7 +211,7 @@ function lib.removeProperty()
     local -r config_file="${2:?"Input parameter 'config_file' must be passed to 'function ${FUNCNAME[0]}()'"}"
 
     if grep -qE "^\s+${key}\s+=" "config_file" ; then
-        sed -i "s|^$key=.*$||" "$config_file" 
+        sed -i "s|^$key=.*$||" "$config_file"
     fi
 }
 export -f lib.removeProperty
@@ -225,7 +225,7 @@ function lib.updatePropertyFile()
 
     if [[ "$val" ]]; then
         if grep -qE "^\s+${key}\s+=" "config_file" ; then
-            sed -i "s|^$key=.*$|$key=$val|" "$config_file" 
+            sed -i "s|^$key=.*$|$key=$val|" "$config_file"
         else
             echo "$key=$val" >> "$config_file"
         fi

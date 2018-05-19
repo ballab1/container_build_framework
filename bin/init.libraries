@@ -1,6 +1,6 @@
 #!/bin/bash
 
-############################################################################# 
+#############################################################################
 function libNotLoaded()
 {
     local -r filename=${1:?"Input parameter 'filename' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -13,7 +13,7 @@ function libNotLoaded()
     return 0
 }
 
-############################################################################# 
+#############################################################################
 function loadLibs()
 {
     local -a path=${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -22,7 +22,7 @@ function loadLibs()
     [ -d "${path}" ] || return 0
     local -ar files=( $(find "$path" -maxdepth 1 -mindepth 1 -name '*.bashlib') )
     [ ${#files[@]} -gt 0 ] || return 0
-    
+
     local src
     for src in "${files[@]}" ; do
         if  libNotLoaded "$src" ; then
@@ -32,9 +32,9 @@ function loadLibs()
     done
 }
 
-############################################################################# 
+#############################################################################
 
-: ${CBF_LOCATION:="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P )"} 
+: ${CBF_LOCATION:="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P )"}
 : ${CRF_LOCATION:=/usr/local/crf}
 : ${DEBUG_TRACE:=0}
 

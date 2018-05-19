@@ -25,7 +25,7 @@ function trap.__init()
 function trap.catch_error()
 {
     local err=$?
-    
+
     set +o verbose
     set +o xtrace
     trap.die "Error in ${BASH_SOURCE[1]}:${BASH_LINENO[0]}. '${BASH_COMMAND}' exited with status ${err}"
@@ -62,7 +62,7 @@ function trap.die()
 
     ( echo ''; trap.log "FATAL ERROR: $*" ; echo '') >&2
     [ "${DEBUG_TRACE:-}" = "2" ] || exit $status
-}  
+}
 export -f trap.die
 
 #----------------------------------------------------------------------------
@@ -80,8 +80,8 @@ function trap.stacktrace()
     set +o nounset
     set +o verbose
     set +o xtrace
-    
-    # Print out the stack trace described by $function_stack  
+
+    # Print out the stack trace described by $function_stack
     if [ ${#FUNCNAME[@]} -gt 2 ]; then
         trap.log "Stack trace:"
         for ((i=1;i<${#FUNCNAME[@]}-1;i++)); do

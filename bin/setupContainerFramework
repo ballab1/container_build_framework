@@ -10,7 +10,7 @@ function setupCBF.createStructure()
     local actionFolders=${1:?"must pass parameter 'actionFolders' to 'function ${FUNCNAME[0]}()'"}
     local templatesFolder=${2:?"must pass parameter 'templatesFolder' to 'function ${FUNCNAME[0]}()'"}
 
-    
+
     # create actions folder [ should be a sibling of 'container_build_framework' ]
     if [ -d "$( dirname "$actionFolders")/container" ]; then
         # migrate old framework
@@ -36,20 +36,20 @@ function setupCBF.removeSymlinks()
     local templatesFolder=${2:?"must pass parameter 'templatesFolder' to 'function ${FUNCNAME[0]}()'"}
 
     while read -r template; do
-    
+
         local actionDir="${actionFolders}/$( basename "$template" )"
         if [ ! -d "$actionDir" ]; then
             mkdir -p "$actionDir"
             continue
         fi
-        
+
         cd "${actionDir}"
         while read -r fl;do
             local file="$( basename "$fl" )"
             [ ! -f "$file" ] || rm "$file"
             [ ! -h "$file" ] || rm "$file"
         done < <(find "${template}" -maxdepth 1 -type f ! -name '.*')
-        
+
     done < <( find "$templatesFolder" -maxdepth 1 -mindepth 1 -type d ! -name '.*' )
 }
 
@@ -63,11 +63,11 @@ function setupCBF.migrateOldFx()
     mv "$( cbf.BASE )/container" "$actionFolders"
 
     cd "$actionFolders"
-    
+
     # get rid of links and files to keep folders in GIT
     find . -type l -delete
     find . -name '.Do Not Delete' -delete
-    
+
     # migrate the folder structure
     setupCBF.updateFiles "02.packages" "01.packages"
     setupCBF.updateFiles "03.users_groups" "02.users_groups"
@@ -76,7 +76,7 @@ function setupCBF.migrateOldFx()
     setupCBF.updateFiles "06.customizations" "05.customizations"
     setupCBF.updateFiles "07.permissions" "06.permissions"
     setupCBF.updateFiles "08.cleanup" "07.cleanup"
-    
+
     #remove any references to our scripts since they are no longer needed
     for file in $(find . -type f -name '0*' -exec grep -Hc '01.bashlib' '{}' \; | grep -v ':0' | awk -F: '{ print $1 }'); do
         awk '!/01.bashlib/' "$file" > "${file}.tmp"
@@ -104,19 +104,19 @@ function setupCBF.main()
 #!/bin/bash
 . /tmp/container_build_frameworkd/bin/build.sh "$@"
 EOF
-    
+
     setupCBF.setupProjectFiles "$( setupCBF.getSuperProjectDir )"
 }
 
 ######################################################################
 function setupCBF.getSuperProjectDir()
-{   
+{
     cd "$( cbf.BASE )/.."
     pwd
 #    cd "$( cbf.BIN )"
 #    local top="$(git rev-parse --show-superproject-working-tree)"
 #    if [ "$top" ]; then
-#    
+#
 #    fi
 }
 
@@ -135,7 +135,7 @@ function setupCBF.setupProjectFiles()
     # ensure our folder structure exists
     while read -r abs_dir; do
         local dir="$( lib.relativize "$( cbf.CBFBASE )/project.templates" "$abs_dir" )"
-        mkdir -p "${top}/$dir"  
+        mkdir -p "${top}/$dir"
     done< <(find "$( cbf.CBFBASE )/project.templates" -mindepth 1 -type d)
 
     # copy any missing files from project templates
@@ -153,7 +153,7 @@ function setupCBF.updateFiles()
 {
     local old=${1:?"must pass parameter 'old' to 'function ${FUNCNAME[0]}()'"}
     local new=${2:?"must pass parameter 'new' to 'function ${FUNCNAME[0]}()'"}
-    
+
     [ ! -d "$old" ] || mv "$old" "$new"
 #    for file in $(find . -type f -name '0*'); do
 #        sed -i "s|\${TOOLS}/${old}|\\$\\{CBF['action']\\}/${new}|g" "$file"

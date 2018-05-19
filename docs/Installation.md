@@ -16,30 +16,30 @@ git init
 GIT_LFS_SKIP_SMUDGE=1 git submodule add https://github.com/ballab1/container_build_framework.git build/container_build_framework
 ```
 
-Once installed in a GIT project, configure the project defaults by running 
+Once installed in a GIT project, configure the project defaults by running
 ```bash
 build/container_build_framework/bin/setupContainerFramework
 ```
 
-Configuring the framework, will setup a `action_folder` folder in the build folder. This contains subfolders for each of the action categories performed. It also sets up symlinks in the action folders to 'canned scripts' maintained in the **action.templates** folder of the container build framework. These scripts perform the most common tasks. 
+Configuring the framework, will setup a `action_folder` folder in the build folder. This contains subfolders for each of the action categories performed. It also sets up symlinks in the action folders to 'canned scripts' maintained in the **action.templates** folder of the container build framework. These scripts perform the most common tasks.
 
 The project `Dockerfile` copies the action folders and the framework folder into the container **/tmp** directory (in the build environment), along with the other scripts and customizations, when building the container. The last command in the Dockerfile deletes the contents of the **/tmp** folder. The result is that none of the framework, or any of the action folders reside in the final container.
 
-![build folder contents](./build_folder_contents.png) 
+![build folder contents](./build_folder_contents.png)
 
 
 Folder | Action
---- | --- 
+--- | ---
 01.packages |  Install needed OS Support
 02.users_groups | Verify users and groups exist
 03.downloads | Download & verify external packages
 04.applications | Install applications
 05.customizations | Add customizations and configuration
 06.permissions | Make sure that ownership & permissions are correct
-07.cleanup | Clean up 
+07.cleanup | Clean up
 
 
-The `build` folder also contains zero or more **custom folders**. These folders are copied to the root of the of the file system of the container. 
+The `build` folder also contains zero or more **custom folders**. These folders are copied to the root of the of the file system of the container.
 This allows creation of files and subfolders which will be as-is inside your container. No errors occur when any of these folders do not exist.
 
 ### Action Folders
