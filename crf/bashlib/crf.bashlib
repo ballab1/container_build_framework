@@ -107,7 +107,7 @@ function crf.copyFileToRuntime()
         # copy file
         cp "$srcFile" "$rtFile"
     else
-        term.log "Attempt to copy non-existent file '$srcFile' to ${rtFile}\n" 'warning'
+        term.log "Attempt to copy non-existent file '$(basename "$srcFile")' to ${rtFile}\n" 'warning'
     fi
 }
 export -f crf.copyFileToRuntime
