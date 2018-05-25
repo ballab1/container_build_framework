@@ -22,7 +22,6 @@ where options may be one of:
                                   what functions have been tested, what still have to be tested, and what redundant tests exist (if any)
 
 EOF
-    exit 1
 }
 
 #----------------------------------------------------------------------------
@@ -194,14 +193,16 @@ function stub_testsuite.main()
             HELP | -H | --H | --HELP) stub_testsuite.usage;;
             gen | -g | --g | --gen)   stub_testsuite.generateTestFile "$file_under_test" "$test_file";;
             scan | -s | --s | --scan) stub_testsuite.scanTestFile "$file_under_test" "$test_file";;
-            *) echo '..Invalid argument suplied'; stub_testsuite.usage;;
+            *) echo '..Invalid argument suplied'; stub_testsuite.usage; exit 1;;
         esac
-    else
+        exit 0
+    fi
+
         echo ''
         echo 'No option to <scan> or <gen> supplied'
+    echo ''
+    stub_testsuite.usage
         exit 1
-    fi
-    exit 0
 }
 
 #----------------------------------------------------------------------------

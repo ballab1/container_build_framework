@@ -123,26 +123,25 @@ function test.main()
     cd "$DIR_OF_TESTS_TO_RUN"
 
     local -a args=( $(test.processArgs "$@") )
-printf "%s\n" "${args[@]}"
+    local -i status=0
 
     # configure where our test framework comes from, and in which dir it resides
-    if [ ${#test[*]} -eq 0 ]; then
-        local -r test_dir="${BASH_UNIT_ROOT:-$(test.tmpDir)}"
-        test['BASH_UNIT_DIR']="$( cd "$test_dir" && pwd )"
+    local -r test_dir="${BASH_UNIT_ROOT:-$(test.tmpDir)}"
+    test['BASH_UNIT_DIR']="$( cd "$test_dir" && pwd )"
 
-        # run tests
-        if [ "$BASH_UNIT_ROOT" = "${test['BASH_UNIT_DIR']}" ]; then
-            test['BASH_UNIT']="${test['BASH_UNIT_DIR']}/bash_unit"
-            "${test['BASH_UNIT']}" -f tap "${args[@]}"
+    # run tests
+    if [ "$BASH_UNIT_ROOT" = "${test['BASH_UNIT_DIR']}" ]; then
+        test['BASH_UNIT']="${test['BASH_UNIT_DIR']}/bash_unit"
+        ("${test['BASH_UNIT']}" -f tap "${args[@]}") && status=$? || status=$?
 
-        # download the test framework if needed
-        elif test.downloadFramework "${test['BASH_UNIT_DIR']}" ; then
+    # download the test framework if needed
+    elif test.downloadFramework "${test['BASH_UNIT_DIR']}" ; then
 
-            "${test['BASH_UNIT']}" -f tap "${args[@]}"
-            # remove framework that was downloaded
-            rm -rf "${test['BASH_UNIT_DIR']}"
-        fi
+        ("${test['BASH_UNIT']}" -f tap "${args[@]}") && status=$? || status=$?
+        # remove framework that was downloaded
+        rm -rf "${test['BASH_UNIT_DIR']}"
     fi
+    return $status
 }
 
 #############################################################################

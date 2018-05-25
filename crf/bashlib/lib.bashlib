@@ -122,8 +122,11 @@ function lib.normalizePath()
 {
     local path="${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}"
 
-    # Remove all /./ sequences.
-    path="${path//\/.\//\/}"
+    # Replace all '//' sequences with '/'
+    path="${path//\/\///}"
+
+    # Replace all /./ sequences with '/'
+    path="${path//\/.\///}"
     if [ ${#path} -gt 2 ]; then
         [ "${path:${#path}-2:2}" = '/.' ] && path="${path::-2}"
         [ "${path::2}" = './' ] && path="${path:2}"
@@ -210,6 +213,7 @@ function lib.removeProperty()
     local -r key="${1:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}"
     local -r config_file="${2:?"Input parameter 'config_file' must be passed to 'function ${FUNCNAME[0]}()'"}"
 
+    [ -f "$config_file" ] || trap.die 'Property file does not exist'
     if grep -qE "^\s+${key}\s+=" "config_file" ; then
         sed -i "s|^$key=.*$||" "$config_file"
     fi
@@ -223,6 +227,7 @@ function lib.updatePropertyFile()
     local -r val="${2:?"Input parameter 'val' must be passed to 'function ${FUNCNAME[0]}()'"}"
     local -r config_file="${3:?"Input parameter 'config_file' must be passed to 'function ${FUNCNAME[0]}()'"}"
 
+    [ -f "$config_file" ] || trap.die 'Property file does not exist'
     if [[ "$val" ]]; then
         if grep -qE "^\s+${key}\s+=" "config_file" ; then
             sed -i "s|^$key=.*$|$key=$val|" "$config_file"
@@ -239,6 +244,7 @@ function lib.updateProperties()
     local -a in_array="${1:?"Input parameter 'in_array' must be passed to 'function ${FUNCNAME[0]}()'"}"
     local -r config_file="${2:?"Input parameter 'config_file' must be passed to 'function ${FUNCNAME[0]}()'"}"
 
+    [ -f "$config_file" ] || trap.die 'Property file does not exist'
     for entry in ${in_array[@]}; do
         lib.updatePropertyFile "${entry%%=*}" "${entry##*=}" "$config_file"
     done

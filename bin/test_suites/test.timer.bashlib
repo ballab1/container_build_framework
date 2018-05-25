@@ -38,48 +38,57 @@
 ##########################################################################################
 
 #-----------------------------------------------------------------------------------------
-# provide brief explanation of what test does
-test.timer.fmt_elapsed() {
-    local expected=0
-    local actual=0
-#    assert_equals "$expected" "$actual"
-    fail 'test not implemented'
+# verify correctly formatted value returned
+test.timer.fmtElapsed_ZERO() {
+    local expected='00:00:00'
+    local actual="$( timer.fmtElapsed 0 )"
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify correctly formatted value returned
+test.timer.fmtElapsed_86399() {
+    local expected='23:59:59'
+    local actual="$( timer.fmtElapsed 86399 )"
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify correctly formatted value returned
+test.timer.fmtElapsed_86401() {
+    local expected='24:00:01'
+    local actual="$( timer.fmtElapsed 86401 )"
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify correctly formatted string returned
+test.timer.logElapsed() {
+    local expected='Time elapsed (test): 00:00:00'
+    local actual="$( timer.logElapsed 'test' 0 )"
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-test.timer.getTimestamp() {
-    local expected=0
-    local actual=0
-#    assert_equals "$expected" "$actual"
-    fail 'test not implemented'
+test.timer.measureCmd_NONAME() {
+    export -f timer.measureCmd
+    assert_status_code 1 'timer.measureCmd' 
 }
 
 #-----------------------------------------------------------------------------------------
-# provide brief explanation of what test does
-test.timer.log_elapsed() {
-    local expected=0
-    local actual=0
-#    assert_equals "$expected" "$actual"
-    fail 'test not implemented'
+# verify error returned when no cmd provided
+test.timer.measureCmd_NOCMD() {
+    export -f timer.measureCmd
+    assert_status_code 1 'timer.measureCmd sleep' 
 }
 
 #-----------------------------------------------------------------------------------------
-# provide brief explanation of what test does
-test.timer.measureCmd() {
-    local expected=0
-    local actual=0
-#    assert_equals "$expected" "$actual"
-    fail 'test not implemented'
-}
-
-#-----------------------------------------------------------------------------------------
-# provide brief explanation of what test does
-test.timer.tracking_file() {
-    local expected=0
-    local actual=0
-#    assert_equals "$expected" "$actual"
-    fail 'test not implemented'
+# verify correctly formatted string returned when command takes 2 secs
+test.timer.measureCmd_FORREAL() {
+    local expected='Time elapsed (test): 00:00:02'
+    local actual="$( timer.measureCmd test sleep 2 )"
+    assert_equals "$expected" "$actual"
 }
 
 ##########################################################################################
