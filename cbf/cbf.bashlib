@@ -147,13 +147,11 @@ function cbf.buildContainer()
         local notice="$(< "$info" )"
 
         if [ "$dir" = '06.permissions' ]; then
-set -x
             term.log "${notice} - copying files to $(cbf.CRT_BASE)\n" 'task'
-            for file in "${files[*]}"; do
+            for file in "${files[@]}"; do
                 crf.copyFileToRuntime 'STARTUP' "$file"
                 term.log "    ${file} - copied\n"
             done
-set +x
             continue
         fi
 
