@@ -146,6 +146,15 @@ function cbf.buildContainer()
         [ -e "$info" ] || info="$( cbf.TEMPLATES )/${dir}/.info"
         local notice="$(< "$info" )"
 
+        if [ "$dir" = '06.permissions' ]; then
+            term.log "${notice} - copying files to $(cbf.CRT_BASE)\n" 'task'
+            for file in "${files[*]}"; do
+                crf.copyFileToRuntime 'STARTUP' "$file"
+                term.log "    ${file} - copied\n"
+            done
+            continue
+        fi
+
         # show notice if there are files to process
         term.log "${notice}\n" 'task'
 
@@ -159,13 +168,7 @@ function cbf.buildContainer()
             echo "$action: (unsorted)"
             printf "    %s\n" "${files[@]}"
         fi
-        if [ "$dir" = '06.permissions' ]; then
-            for file in "${files[*]}"; do
-                crf.copyFileToRuntime 'STARTUP' "$file"
-            done
-        else
-            "$action" "${files[*]}"
-        fi
+        "$action" "${files[*]}"
     done
 }
 export -f cbf.buildContainer
