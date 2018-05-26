@@ -134,10 +134,19 @@ function cbf.buildContainer()
     for dir in $( printf "%s\n" "${!steps[@]}" | sort ); do
         [ "$dir" != '07.cleanup' ] || [ "$DEBUG_TRACE" = 0 ] || continue
 
+
         # get array of files in directory
         local -a files=( $( lib.getFiles "$( cbf.ACTION )/$dir" ) )
+        if [ ${#files[*]} -gt 0 ] && [ "$dir" = '06.permissions' ]; then
+            term.log "${notice} - copying files to $(cbf.CRT_BASE)\n" 'task'
+            for file in "${files[@]}"; do
+                crf.copyFileToRuntime 'STARTUP' "$file"
+            done
+            files=()
+        fi
         files+=( $( lib.getFiles "$( cbf.TEMPLATES )/$dir" ) )
         [ ${#files[*]} -gt 0 ] || continue
+
 
         # decode action
         local action="${steps[$dir]}"
@@ -146,13 +155,6 @@ function cbf.buildContainer()
         [ -e "$info" ] || info="$( cbf.TEMPLATES )/${dir}/.info"
         local notice="$(< "$info" )"
 
-        if [ "$dir" = '06.permissions' ]; then
-            term.log "${notice} - copying files to $(cbf.CRT_BASE)\n" 'task'
-            for file in "${files[@]}"; do
-                crf.copyFileToRuntime 'STARTUP' "$file"
-            done
-            continue
-        fi
 
         # show notice if there are files to process
         term.log "${notice}\n" 'task'
