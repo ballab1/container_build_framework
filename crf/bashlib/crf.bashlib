@@ -98,19 +98,19 @@ function crf.copyFileToRuntime()
     esac
 
     local -r rtFile="$( "crf.$loc" )/$( basename "$file" )"
-    [ -e "$rtFile" ] && rtSha="$(sha256sum "$rtFile")"
+    [ -e "$rtFile" ] && rtSha="$(sha256sum "$rtFile" | awk '{ print $1}')"
 
 
     # use input file if it exists, otherwise determine if file exists in coresponding '/usr/local/crf' folder
     local srcFile="$file"
     [ -e "$srcFile" ] || srcFile="$( cbf.BASE )/usr/local/crf/$( basename "$( "crf.$loc" )" )/$( basename "$file" )"
 
-set -x
+
     # copy file to crf folder for use by runtime
     if [ -e "$srcFile" ]; then
         if [ "${rtSha:-}" ]; then
             # about to overrite an existing file, just return if it si same as current
-            [ "$(sha256sum "$srcFile")" == "$rtSha" ] && return
+            [ "$(sha256sum "$srcFile" | awk '{ print $1}')" == "$rtSha" ] && return
             trap.die "Attempt to overwrite file '$rtFile' will likely result in unintented consequences"
         fi
 
@@ -120,7 +120,6 @@ set -x
     else
         term.log "Attempt to copy non-existent file '$(basename "$srcFile")' to ${rtFile}\n" 'warning'
     fi
-set +x
 }
 export -f crf.copyFileToRuntime
 
