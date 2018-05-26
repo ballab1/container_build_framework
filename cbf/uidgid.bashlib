@@ -42,29 +42,29 @@ function uidgid.createUserAndGroup()
     fi
 
     local wanted=$( printf '%s:%s' $group $gid )
-    local nameMatch=$( getent group "${group}" | awk -F ':' '{ printf "%s:%s",$1,$3 }' )
-    local idMatch=$( getent group "${gid}" | awk -F ':' '{ printf "%s:%s",$1,$3 }' )
+    local nameMatch=$( lib.getGroupInfo "$group" 'extended' )
+    local idMatch=$( lib.getGroupInfo "$gid" 'extended' )
     term.log "INFO: group/gid (${wanted}):  is currently (${nameMatch})/(${idMatch})\n" 'info'
 
     if [[ $wanted != $nameMatch  ||  $wanted != $idMatch ]]; then
         if [[ "$idMatch" ]]; then
-            local oldName=$( getent group "${gid}" | cut -d: -f1 )
+            local oldName=$( lib.getGroupInfo "$gid" )
             term.log "renaming group:  ${oldName} to ${group}\n" 'info'
             /usr/sbin/groupmod --new-name "$group" "$oldName"
         elif [[ "$nameMatch" ]]; then
-            local oldId=$( getent group "${group}" | cut -d: -f3 )
+            local oldId=$( lib.getGID "$group" )
             term.log "renaming group:  ${oldId} to ${gid}\n" 'info'
             /usr/sbin/groupmod --gid ${gid} "$group"
         else
             term.log "create group:  ${group}\n" 'info'
-            /usr/sbin/groupadd --gid "${gid}" "${group}"
+            /usr/sbin/groupadd --gid "$gid" "$group"
         fi
     fi
 
 
     wanted=$( printf '%s:%s' $user $uid )
-    nameMatch=$( getent passwd "${user}" | awk -F ':' '{ printf "%s:%s",$1,$3 }' )
-    idMatch=$( getent passwd "${uid}" | awk -F ':' '{ printf "%s:%s",$1,$3 }' )
+    nameMatch=$( lib.getUserInfo "$user" 'extended' )
+    idMatch=$( lib.getUserInfo "$uid" 'extended' )
     term.log "INFO: user/uid (${wanted}):  is currently (${nameMatch})/(${idMatch})\n" 'info'
 
     if [[ $wanted != $nameMatch  ||  $wanted != $idMatch ]]; then
@@ -72,19 +72,19 @@ function uidgid.createUserAndGroup()
             term.log "update user:  ${user}\n" 'info'
             if [ "$homedir" ]; then
                 [ -d "$homedir" ] || mkdir -p "$homedir"
-                /usr/sbin/usermod --home "$homedir" --uid "${uid}" --gid "${gid}" --shell "${shell}" "${user}"
+                /usr/sbin/usermod --home "$homedir" --uid "$uid" --gid "$gid" --shell "$shell" "$user"
             else
-                /usr/sbin/usermod --uid "${uid}" --gid "${gid}" --shell "${shell}" "${user}"
+                /usr/sbin/usermod --uid "$uid" --gid "$gid" --shell "$shell" "$user"
             fi
         else
             term.log "create user: ${user}\n" 'info'
-            [[ "$nameMatch"  &&  $wanted != $nameMatch ]] && userdel "$( getent passwd ${user} | cut -d: -f1 )"
-            [[ "$idMatch"    &&  $wanted != $idMatch ]]   && userdel "$( getent passwd ${uid} | cut -d: -f1 )"
+            [[ "$nameMatch"  &&  $wanted != $nameMatch ]] && userdel "$( lib.getUserInfo "$user" )"
+            [[ "$idMatch"    &&  $wanted != $idMatch ]]   && userdel "$( lib.getUserInfo "$uid" )"
             if [ "$homedir" ]; then
                 [ -d "$homedir" ] || mkdir -p "$homedir"
-                /usr/sbin/useradd --home-dir "$homedir" --uid "${uid}" --gid "${gid}" --shell "${shell}" "${user}"
+                /usr/sbin/useradd --home-dir "$homedir" --uid "$uid" --gid "$gid" --shell "$shell" "$user"
             else
-                /usr/sbin/useradd --no-create-home --uid "${uid}" --gid "${gid}" --shell "${shell}" "${user}"
+                /usr/sbin/useradd --no-create-home --uid "$uid" --gid "$gid" --shell "$shell" "$user"
             fi
         fi
     fi

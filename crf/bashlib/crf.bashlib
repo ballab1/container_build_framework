@@ -89,16 +89,19 @@ function crf.alreadyFixed()
     local -r user=${2:-$(crf.currentUser)}
 
     local cacheFile=/tmp/fixUpCache
-    local previous="$(lib.getProperty "$dir" "$cacheFile")"
+    touch "$cacheFile"
+
+    local -r uid="$(lib.getUID "$user")"
+    local -r previous="$(lib.getProperty "$dir" "$cacheFile")"
     if [ "$previous" ]; then
-        if [ "$previous" = "$user" ]; then
+        if [ "$previous" = "$uid" ]; then
             term.log "    ${dir} already fixed up. Skipping request"
         else
-            term.log "    ${dir} already fixed up. Skipping request to change to user: $user" 'lt_yellow'
+            term.log "    ${dir} already fixed up. Skipping request to change to user: $(lib.getUserInfo "$user" 'extended')" 'lt_yellow'
         fi
         return 0
     fi
-    lib.updatePropertyFile "$dir" "$user" "$cacheFile"
+    lib.updatePropertyFile "$dir" "$uid" "$cacheFile"
     return 1
 }
 export -f crf.alreadyFixed
@@ -167,13 +170,13 @@ function crf.fixupDirectory()
 
     if [ "${dir}" != '/' ]; then
         (crf.alreadyFixed "$dir" "$user") && return 0    # check/update cache of what has been 'fixed up'
-        term.log "    Fixing up directory: ${dir},  for user: ${user}\n"
+        term.log "    Fixing up directory: ${dir},  for user: $(lib.getUserInfo "$user" 'extended')\n"
         [ -d "${dir}" ] || mkdir -p "${dir}"
         find "$dir" -type d ! -perm 777 -exec chmod 777 '{}' \; | :
         find "$dir" -type f ! -perm 666 -exec chmod a+rw '{}' \; | :
         # set owner to uid & login group for uid
         if [ "$user" != root ] && [ "$user" != 0 ]; then
-            find "$dir" ! -user "$user" -exec chown "${user}:$(getent passwd "${user}" | cut -d: -f4)" '{}' \; | :
+            find "$dir" ! -user "$user" -exec chown "${user}:$(lib.getGroupOfUser "${user}")" '{}' \; | :
         fi
         return 0
     fi

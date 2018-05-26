@@ -48,6 +48,38 @@ function lib.getFiles()
 export -f lib.getFiles
 
 #############################################################################
+function lib.getGroupInfo()
+{
+    local -r group=${1:-$(lib.getGroupOfUser)}
+    local -r extended=${2:-}
+
+    if [ -z "$extended" ]; then
+        lib.lookupId 'group' "${group}" | cut -d: -f1
+    else
+        lib.lookupId 'group' "${group}" | awk -F ':' '{ printf "%s:%s",$1,$3 }'
+    fi
+}
+export -f lib.getGroupInfo
+
+#############################################################################
+function lib.getGroupOfUser()
+{
+    local -r user=${1:-$(crf.currentUser)}
+
+    lib.lookupId 'passwd' "${user}" | cut -d: -f4
+}
+export -f lib.getGroupOfUser
+
+#############################################################################
+function lib.getGID()
+{
+    local -r group=${1:-$(lib.getGroupOfUser)}
+
+    lib.lookupId 'group' "${group}" | cut -d: -f3
+}
+export -f lib.getGID
+
+#############################################################################
 function lib.getProperty()
 {
     local -r prop=${1:?"Input parameter 'prop' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -65,6 +97,29 @@ function lib.getProperty()
     fi
 }
 export -f lib.getProperty
+
+#############################################################################
+function lib.getUserInfo()
+{
+    local -r user=${1:-$(crf.currentUser)}
+    local -r extended=${2:-}
+
+    if [ -z "$extended" ]; then
+        lib.lookupId 'passwd' "${user}" | cut -d: -f1
+    else
+        lib.lookupId 'passwd' "${user}" | awk -F ':' '{ printf "%s:%s",$1,$3 }'
+    fi
+}
+export -f lib.getUserInfo
+
+#############################################################################
+function lib.getUID()
+{
+    local -r user=${1:-$(crf.currentUser)}
+
+    lib.lookupId 'passwd' "${user}" | cut -d: -f3
+}
+export -f lib.getUID
 
 #############################################################################
 function lib.indirectReference()
