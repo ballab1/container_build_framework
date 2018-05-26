@@ -83,6 +83,27 @@ function crf.STARTUP()
 export -f crf.STARTUP
 
 #############################################################################
+function crf.alreadyFixed()
+{
+    local -r dir="${1:?'Input parameter "dir" must be defined'}"
+    local -r user=${2:-$(crf.currentUser)}
+
+    local cacheFile=/tmp/fixUpCache
+    local previous="$(lib.getProperty "$dir" "$cacheFile")"
+    if [ "$previous" ]; then
+        if [ "$previous" = "$user" ]; then
+            term.log "    ${dir} already fixed up. Skipping request"
+        else
+            term.log "    ${dir} already fixed up. Skipping request to change to user: $user" 'lt_yellow'
+        fi
+        return 0
+    fi
+    lib.updatePropertyFile "$dir" "$user" "$cacheFile"
+    return 1
+}
+export -f crf.alreadyFixed
+
+#############################################################################
 function crf.copyFileToRuntime()
 {
     local -r loc="${1^^:?"Input parameter 'loc' must be passed to 'function ${FUNCNAME[0]}()'"}"
@@ -145,7 +166,8 @@ function crf.fixupDirectory()
     local -r user=${2:-$(crf.currentUser)}
 
     if [ "${dir}" != '/' ]; then
-        term.log "Fixing up directory: ${dir}\n" 'info'
+        (crf.alreadyFixed "$dir" "$user") && return 0    # check/update cache of what has been 'fixed up'
+        term.log "    Fixing up directory: ${dir},  for user: ${user}\n"
         [ -d "${dir}" ] || mkdir -p "${dir}"
         find "$dir" -type d ! -perm 777 -exec chmod 777 '{}' \; | :
         find "$dir" -type f ! -perm 666 -exec chmod a+rw '{}' \; | :
@@ -224,6 +246,7 @@ IFS=\$'\n\t'
 # load the associative array defitions
 declare -ra _files=( \$(lib.getFiles "\$(crf.ENV)") )
 for _src in "$(printf "%s\n" "\${_files[@]}" | sort)"; do
+    echo "    sourcing: \${_src}" 
     source "\$_src"
 done
 
@@ -236,8 +259,6 @@ EOF
     local -i status
     ( command "$tmpScript" ) && status=$? || status=$?
     if [ $status -ne 0 ]; then
-        echo '-------------------------------------------------------------'
-        cat "$tmpScript"
         echo '-------------------------------------------------------------'
         cat "$file"
         echo '-------------------------------------------------------------'
