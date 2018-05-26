@@ -235,7 +235,6 @@ EOF
     chmod 755 "$tmpScript"
     local -i status
     ( command "$tmpScript" ) && status=$? || status=$?
-    rm  "$tmpScript"
     if [ $status -ne 0 ]; then
         echo '-------------------------------------------------------------'
         cat "$tmpScript"
@@ -244,6 +243,7 @@ EOF
         echo '-------------------------------------------------------------'
         term.log ">>>>> issue while executing $( basename "$file" ) <<<<<\n" 'warn'
     fi
+    rm  "$tmpScript"
     return $status
 }
 export -f crf.runScript
