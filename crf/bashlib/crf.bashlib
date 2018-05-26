@@ -221,14 +221,17 @@ set -o nounset
 set -o pipefail
 IFS=$'\n\t'
 
-# init the framework
-declare -r __init="\$(crf.BIN)/init.runtime"
-[ ! -e "\$__init" ] || source "\$__init"
+# load the associative array defitions
+declare -ra _files=( \$(lib.getFiles "\$(crf.ENV)") )
+for _src in "$(printf "%s\n" "${_files[@]}" | sort)"; do
+    source "$_src"
+done
 
 cd "$WORKDIR"
 source "$file"
 EOF
 
+    chmod 755 "$file"
     chmod 755 "$tmpScript"
     local -i status
     ( command "$tmpScript" ) && status=$? || status=$?
