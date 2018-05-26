@@ -87,6 +87,7 @@ function crf.copyFileToRuntime()
 {
     local -r loc="${1^^:?"Input parameter 'loc' must be passed to 'function ${FUNCNAME[0]}()'"}"
     local -r file="${2:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local rtSha
 
     case "$loc" in
         BIN)         : ;;
@@ -97,12 +98,21 @@ function crf.copyFileToRuntime()
     esac
 
     local -r rtFile="$( "crf.$loc" )/$( basename "$file" )"
-    [ ! -e "$rtFile" ] || trap.die "Attempt to overwrite file '$rtFile' will likely result in unintented consequences"
+    [ -e "$rtFile" ] || rtSha="$(sha256sum "$rtFile")"
+
 
     # use input file if it exists, otherwise determine if file exists in coresponding '/usr/local/crf' folder
     local srcFile="$file"
     [ -e "$srcFile" ] || srcFile="$( cbf.BASE )/usr/local/crf/$( basename "$( "crf.$loc" )" )/$( basename "$file" )"
+    
+    # copy file to crf folder for use by runtime
     if [ -e "$srcFile" ]; then
+        if [ "${rtSha:-}" ]; then
+            # about to overrite an existing file, just return if it si same as current
+            [ "$(sha256sum "$srcFile")" == "$rtSha" ] && return
+            trap.die "Attempt to overwrite file '$rtFile' will likely result in unintented consequences"
+        fi
+
         echo "copying $srcFile to $rtFile"
         # copy file
         cp "$srcFile" "$rtFile"
