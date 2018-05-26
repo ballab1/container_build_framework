@@ -83,7 +83,7 @@ test.lib.file_env_CONFLICT() {
     local t4='1'
     local t4_FILE='2'
     export -f lib.file_env
-    assert_status_code 1 'lib.file_env'
+    assert_status_code 255 'lib.file_env "t4"'
 }
 
 #-----------------------------------------------------------------------------------------
@@ -138,6 +138,19 @@ sc=this is a property
 EOF
     local expected='this is a property'
     local actual="$( lib.getProperty 'sc' "$propFile" )"
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify we can get a value from a generic property file
+test.lib.getProperty_SIMPLE_default() {
+    local propFile="$(__test_lib_bashlib.mktemp)"
+cat << EOF > "$propFile"
+# property file
+sc=this is NOT the expected property
+EOF
+    local expected='this is a property'
+    local actual="$( lib.getProperty 'SOMEVAL' "$propFile" "$expected" )"
     assert_equals "$expected" "$actual"
 }
 
@@ -489,16 +502,8 @@ test.lib.updatePropertyFile_FAIL_noFile() {
 #-----------------------------------------------------------------------------------------
 # verify error returned when properties file does not exist
 test.lib.updatePropertyFile_FAIL_fileNotExists() {
-    local -r propFile="$(__test_lib_bashlib.mktemp)"
-    local -r key='AKEY'
-    local -r expeccted='aval'
-
-cat << EOF > "$propFile"
-KEY0=---
-AKEY=someval
-EOF
-    lib.updatePropertyFile "$key" "$expected" "$propFile"
-    assert_equals "$expected" "$actual"
+    export -f lib.updatePropertyFile
+    assert_status_code 1 'lib.updatePropertyFile "akey" "aval"'
 }
 
 #-----------------------------------------------------------------------------------------
@@ -506,14 +511,31 @@ EOF
 test.lib.updatePropertyFile_FAIL_propNotExists() {
     local -r propFile="$(__test_lib_bashlib.mktemp)"
     local -r key='AKEY'
-    local -r expeccted='aval'
+    local -r expected='aval'
 
 cat << EOF > "$propFile"
 KEY0=---
-AKEY=someval
+AKEY2=someval
 EOF
     lib.updatePropertyFile "$key" "$expected" "$propFile"
+    actual="$(grep -E "^${key}=" "$propFile" | awk -F '=' '{print $2}')"
     assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify error returned when property does not exist
+test.lib.updatePropertyFile_FAIL_propNotExists_RO() {
+    local -r propFile="$(__test_lib_bashlib.mktemp)"
+    local -r key='AKEY'
+    local -r expected='aval'
+
+cat << EOF > "$propFile"
+KEY0=---
+AKEY2=someval
+EOF
+    lib.updatePropertyFile "$key" "$expected" "$propFile" 'must_exist'
+    actual="$(grep -E "^${key}=" "$propFile" | awk -F '=' '{print $2}')"
+    assert_not_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -521,13 +543,13 @@ EOF
 test.lib.updatePropertyFile_OK_onlyprop() {
     local -r propFile="$(__test_lib_bashlib.mktemp)"
     local -r key='AKEY'
-    local -r expeccted='aval'
+    local -r expected='aval'
 
 cat << EOF > "$propFile"
 AKEY=someval
 EOF
     lib.updatePropertyFile "$key" "$expected" "$propFile"
-    actual="$(grep -E "^${key}=" | awk -F ':' '{print $2}')"
+    actual="$(grep -E "^${key}=" "$propFile" | awk -F '=' '{print $2}')"
     assert_equals "$expected" "$actual"
 }
 
@@ -536,7 +558,7 @@ EOF
 test.lib.updatePropertyFile_OK_middleprop() {
     local -r propFile="$(__test_lib_bashlib.mktemp)"
     local -r key='AKEY'
-    local -r expeccted='aval'
+    local -r expected='aval'
 
 cat << EOF > "$propFile"
 KEY10=-----
@@ -544,7 +566,7 @@ AKEY=someval
 KEY11=-----
 EOF
     lib.updatePropertyFile "$key" "$expected" "$propFile"
-    actual="$(grep -E "^${key}=" | awk -F ':' '{print $2}')"
+    actual="$(grep -E "^${key}=" "$propFile" | awk -F '=' '{print $2}')"
     assert_equals "$expected" "$actual"
 }
 
@@ -553,14 +575,14 @@ EOF
 test.lib.updatePropertyFile_OK_lastprop() {
     local -r propFile="$(__test_lib_bashlib.mktemp)"
     local -r key='AKEY'
-    local -r expeccted='aval'
+    local -r expected='aval'
 
 cat << EOF > "$propFile"
 KEY11=-----
 AKEY=someval
 EOF
     lib.updatePropertyFile "$key" "$expected" "$propFile"
-    actual="$(grep -E "^${key}=" | awk -F ':' '{print $2}')"
+    actual="$(grep -E "^${key}=" "$propFile" | awk -F '=' '{print $2}')"
     assert_equals "$expected" "$actual"
 }
 
@@ -569,14 +591,14 @@ EOF
 test.lib.updatePropertyFile_OK_lastprop() {
     local -r propFile="$(__test_lib_bashlib.mktemp)"
     local -r key='AKEY'
-    local -r expeccted='aval'
+    local -r expected='aval'
 
 cat << EOF > "$propFile"
 KEY11=-----
 AKEY=someval
 EOF
     lib.updatePropertyFile "$key" "$expected" "$propFile"
-    actual="$(grep -E "^${key}=" | awk -F ':' '{print $2}')"
+    actual="$(grep -E "^${key}=" "$propFile" | awk -F '=' '{print $2}')"
     assert_equals "$expected" "$actual"
 }
 

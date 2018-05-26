@@ -21,8 +21,7 @@ function lib.file_env()
 
     local fileVar="${var}_FILE"
     if [ "${!var:-}" ] && [ "${!fileVar:-}" ]; then
-        echo >&2 "error: both $var and $fileVar are set (but are exclusive)"
-        exit 1
+        trap.die "both $var and $fileVar are set (but are exclusive) in 'function ${FUNCNAME[0]}()'"
     fi
     local val="$def"
     if [ "${!var:-}" ]; then
@@ -120,6 +119,20 @@ function lib.getUID()
     lib.lookupId 'passwd' "${user}" | cut -d: -f3
 }
 export -f lib.getUID
+
+#############################################################################
+function lib.hostIp()
+{
+    nslookup "$(hostname -f)" | grep 'Address:' | awk '{if(NR==2){print $2}}'
+}
+export -f lib.hostIp
+
+#############################################################################
+function lib.hostName()
+{
+    hostname -f
+}
+export -f lib.hostName
 
 #############################################################################
 function lib.indirectReference()
@@ -269,7 +282,7 @@ function lib.removeProperty()
     local -r config_file="${2:?"Input parameter 'config_file' must be passed to 'function ${FUNCNAME[0]}()'"}"
 
     [ -f "$config_file" ] || trap.die 'Property file does not exist'
-    if grep -qE "^\s+${key}\s+=" "config_file" ; then
+    if grep -qE "^\s*${key}\s*=" "$config_file" ; then
         sed -i "s|^$key=.*$||" "$config_file"
     fi
 }
@@ -281,12 +294,13 @@ function lib.updatePropertyFile()
     local -r key="${1:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}"
     local -r val="${2:?"Input parameter 'val' must be passed to 'function ${FUNCNAME[0]}()'"}"
     local -r config_file="${3:?"Input parameter 'config_file' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r must_exist=${4:-}
 
     [ -f "$config_file" ] || trap.die 'Property file does not exist'
     if [[ "$val" ]]; then
-        if grep -qE "^\s+${key}\s+=" "config_file" ; then
+        if grep -qE "^\s*${key}\s*=" "$config_file" ; then
             sed -i "s|^$key=.*$|$key=$val|" "$config_file"
-        else
+        elif [ -z "$must_exist" ]; then
             echo "$key=$val" >> "$config_file"
         fi
     fi
