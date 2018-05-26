@@ -219,12 +219,12 @@ cat << EOF > "$tmpScript"
 set -o errexit
 set -o nounset
 set -o pipefail
-IFS=$'\n\t'
+IFS=\$'\n\t'
 
 # load the associative array defitions
 declare -ra _files=( \$(lib.getFiles "\$(crf.ENV)") )
-for _src in "$(printf "%s\n" "${_files[@]}" | sort)"; do
-    source "$_src"
+for _src in "$(printf "%s\n" "\${_files[@]}" | sort)"; do
+    source "\$_src"
 done
 
 cd "$WORKDIR"
@@ -237,7 +237,11 @@ EOF
     ( command "$tmpScript" ) && status=$? || status=$?
     rm  "$tmpScript"
     if [ $status -ne 0 ]; then
+        echo '-------------------------------------------------------------'
+        cat "$tmpScript"
+        echo '-------------------------------------------------------------'
         cat "$file"
+        echo '-------------------------------------------------------------'
         term.log ">>>>> issue while executing $( basename "$file" ) <<<<<\n" 'warn'
     fi
     return $status
