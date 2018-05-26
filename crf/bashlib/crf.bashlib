@@ -105,7 +105,7 @@ function crf.copyFileToRuntime()
     local srcFile="$file"
     [ -e "$srcFile" ] || srcFile="$( cbf.BASE )/usr/local/crf/$( basename "$( "crf.$loc" )" )/$( basename "$file" )"
 
-
+set -x
     # copy file to crf folder for use by runtime
     if [ -e "$srcFile" ]; then
         if [ "${rtSha:-}" ]; then
@@ -120,6 +120,7 @@ function crf.copyFileToRuntime()
     else
         term.log "Attempt to copy non-existent file '$(basename "$srcFile")' to ${rtFile}\n" 'warning'
     fi
+set +x
 }
 export -f crf.copyFileToRuntime
 
