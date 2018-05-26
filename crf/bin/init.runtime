@@ -96,7 +96,7 @@ loadLibs "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 # load our environment
 if [ -e "${CRF_LOCATION}/bin/rt.environment" ]; then
-    echo "    loading: ${CRF_LOCATION}/bin/rt.environment"
+    echo "    sourcing: ${CRF_LOCATION}/bin/rt.environment"
     source "${CRF_LOCATION}/bin/rt.environment"
 fi
 
@@ -107,7 +107,7 @@ _files+=( $(loadEnvars "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )") )
 if [ "${#_files[@]}" -gt 0 ]; then
     for _src in "${_files[@]}" ; do
         if envNotLoaded "$_src" ; then
-            echo "    loading: ${_src}"
+            echo "    sourcing: ${_src}"
             source "$_src"
         fi
     done
