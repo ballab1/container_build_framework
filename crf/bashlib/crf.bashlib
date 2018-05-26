@@ -88,10 +88,14 @@ function crf.alreadyFixed()
     local -r dir="${1:?'Input parameter "dir" must be defined'}"
     local -r user=${2:-$(crf.currentUser)}
 
+    [ -z "$user" ] && trap.die "Must specify a user when checking the 'fixUpCache'"
+
     local cacheFile=/tmp/fixUpCache
     touch "$cacheFile"
 
     local -r uid="$(lib.getUID "$user")"
+    [ -z "$uid" ] && trap.die "Anable to find specified user '$user' on system, when checking the 'fixUpCache'"
+    
     local -r previous="$(lib.getProperty "$dir" "$cacheFile")"
     if [ "$previous" ]; then
         if [ "$previous" = "$uid" ]; then
@@ -101,6 +105,8 @@ function crf.alreadyFixed()
         fi
         return 0
     fi
+    
+    # user not found. Add to cache
     lib.updatePropertyFile "$dir" "$uid" "$cacheFile"
     return 1
 }
@@ -158,6 +164,8 @@ function crf.currentUser()
     [ "${user:-}" ] || [ -z "${UID:-}" ] || user=$(lib.lookupId 'passwd' "$UID")
     [ "${user:-}" ] || user=0
 
+    [ -z "$user" ] && trap.log "No current user identified"
+
     echo "$user"
 }
 export -f crf.currentUser
@@ -167,6 +175,8 @@ function crf.fixupDirectory()
 {
     local -r dir="${1:?'Input parameter "dir" must be defined'}"
     local -r user=${2:-$(crf.currentUser)}
+
+    [ -z "$user" ] && trap.die "Must specify a user when fixing up a directory"
 
     if [ "${dir}" != '/' ]; then
         (crf.alreadyFixed "$dir" "$user") && return 0    # check/update cache of what has been 'fixed up'
