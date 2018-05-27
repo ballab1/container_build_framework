@@ -45,19 +45,19 @@ function uidgid.createUserAndGroup()
     local wanted=$( printf '%s:%s' $group $gid )
     local nameMatch=$( lib.getGroupInfo "$group" 'extended' )
     local idMatch=$( lib.getGroupInfo "$gid" 'extended' )
-    term.log "INFO: group/gid (${wanted}):  is currently (${nameMatch})/(${idMatch})\n" 'info'
+    term.log "    INFO: group/gid (${wanted}):  is currently (${nameMatch})/(${idMatch})\n"
 
     if [[ $wanted != $nameMatch  ||  $wanted != $idMatch ]]; then
         if [[ "$idMatch" ]]; then
             local oldName=$( lib.getGroupInfo "$gid" )
-            term.log "renaming group:  ${oldName} to ${group}\n" 'info'
+            term.log "    renaming group:  ${oldName} to ${group}\n" 'info'
             groupmod --new-name "$group" "$oldName"
         elif [[ "$nameMatch" ]]; then
             local oldId=$( lib.getGID "$group" )
-            term.log "renaming group:  ${oldId} to ${gid}\n" 'info'
+            term.log "    renaming group:  ${oldId} to ${gid}\n" 'info'
             groupmod --gid ${gid} "$group"
         else
-            term.log "create group:  ${group}\n" 'info'
+            term.log "    create group:  ${group}\n" 'info'
             groupadd --gid "$gid" "$group"
         fi
     fi
@@ -66,11 +66,11 @@ function uidgid.createUserAndGroup()
     wanted=$( printf '%s:%s' $user $uid )
     nameMatch=$( lib.getUserInfo "$user" 'extended' )
     idMatch=$( lib.getUserInfo "$uid" 'extended' )
-    term.log "INFO: user/uid (${wanted}):  is currently (${nameMatch})/(${idMatch})\n" 'info'
+    term.log "    INFO: user/uid (${wanted}):  is currently (${nameMatch})/(${idMatch})\n"
 
     if [[ $wanted != $nameMatch  ||  $wanted != $idMatch ]]; then
         if [[ -z "$idMatch"  &&  -n "$nameMatch" ]]; then
-            term.log "update user:  ${user}\n" 'info'
+            term.log "    update user:  ${user}\n" 'info'
             if [ "$homedir" ]; then
                 [ -d "$homedir" ] || mkdir -p "$homedir"
                 usermod --home "$homedir" --uid "$uid" --gid "$gid" --shell "$shell" "$user"
@@ -78,7 +78,7 @@ function uidgid.createUserAndGroup()
                 usermod --uid "$uid" --gid "$gid" --shell "$shell" "$user"
             fi
         else
-            term.log "create user: ${user}\n" 'info'
+            term.log "    create user: ${user}\n" 'info'
             [[ "$nameMatch"  &&  $wanted != $nameMatch ]] && userdel "$( lib.getUserInfo "$user" )"
             [[ "$idMatch"    &&  $wanted != $idMatch ]]   && userdel "$( lib.getUserInfo "$uid" )"
             if [ "$homedir" ]; then
@@ -98,6 +98,6 @@ function uidgid.runScript()
     local -a file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
     source /usr/local/crf/bin/init.runtime
 
-    eval uidgid.createUserAndGroup "$file" || term.log "..*** issue while executing $( basename "$file" ) ***\n" 'warn'
+    eval uidgid.createUserAndGroup "$file" || term.log "..*** issue while executing $( basename "$file" ) ***\n" 'yellow'
 }
 export -f uidgid.check

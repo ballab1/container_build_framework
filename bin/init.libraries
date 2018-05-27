@@ -66,6 +66,8 @@ loadLibs "${CBF_LOCATION}/cbf" 35
 [ ! -e "${CBF_LOCATION}/crf/bin/init.runtime" ] || source "${CBF_LOCATION}/crf/bin/init.runtime"
 cbf.__init "${CBF_LOCATION}" "${CRF_LOCATION}"
 
+unset __libCount
+
 # verify init was successful
 [ "$( cbf.CBFBASE )" ] || trap.die 'error when setting up container build framework'
 [ "$( cbf.CRT_BASE )" ] || trap.die 'error when setting up container build framework'

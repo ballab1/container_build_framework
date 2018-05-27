@@ -25,7 +25,7 @@ declare -ra dirs=( bin
 for dir in "${dirs[@]}" ; do
     declare custom_folder="$( cbf.BASE )/$dir"
     if [ -d "$custom_folder" ]; then
-        echo "Updating ${dir} from ${custom_folder}"
+        echo "    updating ${dir} from ${custom_folder}"
         cp -r "${custom_folder}/". "/${dir}/"
     fi
 done
