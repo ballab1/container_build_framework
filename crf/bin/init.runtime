@@ -45,8 +45,7 @@ function loadingMessage()
     local -r color=${2:-0}
     local -r name="$(basename "$src")"
 
-    [ $__libCount -eq 0 ] && printf "    loading libraries:  "
-    (( __libCount++ ))
+    [ $((__libCount2++ )) -eq 0 ] && printf "    loading libraries:  "
     printf "\e[%dm%s\e[0m " "$color" "$name"
 }
 
@@ -98,8 +97,7 @@ function sourcingMessage()
         *) color=0;;
     esac
 
-    [ $__envCount -eq 0 ] && printf "    sourcing:  "
-    (( __envCount++ ))
+    [ $(( __envCount++ )) -eq 0 ] && printf "    sourcing:  "
     printf "\e[%dm%s\e[0m " "$color" "$name"
 }
 

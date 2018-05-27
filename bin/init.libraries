@@ -20,8 +20,7 @@ function loadingMessage()
     local -r color=${2:-0}
     local -r name="$(basename "$src")"
 
-    [ $__libCount -eq 0 ] && printf "    loading libraries:  "
-    (( __libCount++ ))
+    [ $(( __libCount++ )) -eq 0 ] && printf "    loading libraries:  "
     printf "\e[%dm%s\e[0m " "$color" "$name"
 }
 
