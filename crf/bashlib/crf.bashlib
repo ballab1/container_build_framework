@@ -306,7 +306,7 @@ export -f crf.runtimeProperty
 #############################################################################
 function crf.updateRuntimeEnvironment()
 {
-    local -a in_array="${1:?"Input parameter 'in_array' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -a in_array=( $@ )
     local -r envFile="$( crf.RT_ENVIRON )"
 
     for line in ${in_array[@]}; do
