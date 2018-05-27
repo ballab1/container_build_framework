@@ -99,9 +99,9 @@ function crf.alreadyFixed()
     local -r previous="$(lib.getProperty "$dir" "$cacheFile")"
     if [ "$previous" ]; then
         if [ "$previous" = "$uid" ]; then
-            term.log "    ${dir} already fixed up. Skipping request"
+            term.log "    ${dir} already fixed up. Skipping request\n"
         else
-            term.log "    ${dir} already fixed up. Skipping request to change to user: $(lib.getUserInfo "$user" 'extended')" 'lt_yellow'
+            term.log "    ${dir} already fixed up. Skipping request to change to user: $(lib.getUserInfo "$user" 'extended')\n" 'lt_yellow'
         fi
         return 0
     fi
@@ -256,12 +256,24 @@ set -o nounset
 set -o pipefail
 IFS=\$'\n\t'
 
+function sourcingMessage()
+{
+    local -r src=\$1
+    local -r name="\$(basename "\$src")"
+    local \dir="\$(dirname "\$src")"
+    [ \$(( __envCount++ )) -eq 0 ] && printf "    sourcing:  "
+    printf "\e[%dm%s\e[0m " 97 "\$name"
+}
+
+
 # load the associative array defitions
+declare -i __envCount=0
 declare -ra _files=( \$(lib.getFiles "\$(crf.ENV)") )
 for _src in "$(printf "%s\n" "\${_files[@]}" | sort)"; do
-    echo "    sourcing: \${_src}" 
+    sourcingMessage "\${_src}" 
     source "\$_src"
 done
+[ \$__envCount -gt 0 ] && printf "\n"
 
 cd "$WORKDIR"
 source "$file"
@@ -272,9 +284,9 @@ EOF
     local -i status
     ( command "$tmpScript" ) && status=$? || status=$?
     if [ $status -ne 0 ]; then
-        echo '-------------------------------------------------------------'
+        term.log "-------------------------------------------------------------\n"
         cat "$file"
-        echo '-------------------------------------------------------------'
+        term.log "\n-------------------------------------------------------------\n"
         term.log ">>>>> issue while executing $( basename "$file" ) <<<<<\n" 'warn'
     fi
     rm  "$tmpScript"

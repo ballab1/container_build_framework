@@ -39,7 +39,19 @@ function envNotLoaded()
 }
 
 #############################################################################
-function loadingMessage()
+function loadEnvars()
+{
+    local -a path=${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -a files=()
+
+    if [ "${path}" ] && [  -d "${path}/environment" ]; then
+        files=( $(find "${path}/environment" -maxdepth 1 -mindepth 1 -type f ! -name '.*'  -print) )
+    fi
+    [ "${#files[@]}" -eq 0 ] || printf "%s\n" "${files[@]}"
+}
+
+#############################################################################
+function loadLibrary()
 {
     local -r src=${1:?"Input parameter 'src' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r color=${2:-0}
@@ -47,6 +59,7 @@ function loadingMessage()
 
     [ $((__libCount2++ )) -eq 0 ] && printf "    loading libraries:  "
     printf "\e[%dm%s\e[0m " "$color" "$name"
+    source "$src"
 }
 
 #############################################################################
@@ -64,22 +77,9 @@ function loadLibs()
     local src
     for src in "${files[@]}" ; do
         if  libNotLoaded "$src" ; then
-            loadingMessage "${src}" "$color"
-            source "$src"
+            loadLibrary "${src}" "$color"
         fi
     done
-}
-
-#############################################################################
-function loadEnvars()
-{
-    local -a path=${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local -a files=()
-
-    if [ "${path}" ] && [  -d "${path}/environment" ]; then
-        files=( $(find "${path}/environment" -maxdepth 1 -mindepth 1 -type f ! -name '.*'  -print) )
-    fi
-    [ "${#files[@]}" -eq 0 ] || printf "%s\n" "${files[@]}"
 }
 
 #############################################################################

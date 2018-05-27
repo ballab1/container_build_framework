@@ -1,20 +1,7 @@
 #!/bin/bash
 
 #############################################################################
-function libNotLoaded()
-{
-    local -r filename=${1:?"Input parameter 'filename' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local -r libname="$( basename "$filename" )"
-
-    local -i status
-    (grep -sq "$libname" "$libTracker" > /dev/null 2>&1 ) && status=$? || status=$?
-    [ "$status" -ne 0 ] || return 1
-    echo "$libname" >> "$libTracker"
-    return 0
-}
-
-#############################################################################
-function loadingMessage()
+function loadLibrary()
 {
     local -r src=${1:?"Input parameter 'src' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r color=${2:-0}
@@ -22,6 +9,7 @@ function loadingMessage()
 
     [ $(( __libCount++ )) -eq 0 ] && printf "    loading libraries:  "
     printf "\e[%dm%s\e[0m " "$color" "$name"
+    source "$src"
 }
 
 #############################################################################
@@ -38,10 +26,22 @@ function loadLibs()
     local src
     for src in "${files[@]}" ; do
         if  libNotLoaded "$src" ; then
-            loadingMessage "${src}" "$color"
-            source "$src"
+            loadLibrary "${src}" "$color"
         fi
     done
+}
+
+#############################################################################
+function libNotLoaded()
+{
+    local -r filename=${1:?"Input parameter 'filename' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r libname="$( basename "$filename" )"
+
+    local -i status
+    (grep -sq "$libname" "$libTracker" > /dev/null 2>&1 ) && status=$? || status=$?
+    [ "$status" -ne 0 ] || return 1
+    echo "$libname" >> "$libTracker"
+    return 0
 }
 
 #############################################################################
