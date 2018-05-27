@@ -14,9 +14,20 @@ function libNotLoaded()
 }
 
 #############################################################################
+function loadingMessage()
+{
+    local -r src=${1:?"Input parameter 'src' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r color=${2:-0}
+    local -r name="$(basename "$src")"
+    
+    printf "\e[%dm%s\e[0m " "$color" "$name"
+}
+
+#############################################################################
 function loadLibs()
 {
-    local -a path=${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r path=${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r color=${2:-0}
 
     [ "$path" ] || return 0
     [ -d "${path}" ] || return 0
@@ -26,7 +37,7 @@ function loadLibs()
     local src
     for src in "${files[@]}" ; do
         if  libNotLoaded "$src" ; then
-            echo "    loading library: ${src}"
+            loadingMessage "${src}" "$color"
             source "$src"
         fi
     done
@@ -43,10 +54,12 @@ function loadLibs()
 :> "$libTracker"
 
 # load our bashlibs
-loadLibs "${CBF_LOCATION}/crf/bashlib"
-loadLibs "${CBF_LOCATION}${CRF_LOCATION}/bashlib"
-loadLibs "${CRF_LOCATION}/bashlib"
-loadLibs "${CBF_LOCATION}/cbf"
+printf "    loading libraries:  "
+loadLibs "${CBF_LOCATION}/crf/bashlib" 32
+loadLibs "${CBF_LOCATION}${CRF_LOCATION}/bashlib" 33
+loadLibs "${CRF_LOCATION}/bashlib" 34
+loadLibs "${CBF_LOCATION}/cbf" 35
+printf "\n"
 
 # init the framework
 [ ! -e "${CBF_LOCATION}/crf/bin/init.runtime" ] || source "${CBF_LOCATION}/crf/bin/init.runtime"

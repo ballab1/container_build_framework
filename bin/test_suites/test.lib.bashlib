@@ -227,7 +227,14 @@ test.lib.intersect_NONE() {
 #-----------------------------------------------------------------------------------------
 # verify /etc/passwd lookup of uid:0 is 0
 test.lib.lookupId_UID_0() {
-    local expected=0
+
+    fake_getent() {
+        echo "getent: $*" >> "$test_lib_bashlib_LOG_file"
+        echo 'bobb:x:1000:1234:Bob Ballantyne,,,:/home/bobb:/bin/bash'
+    }
+    fake 'getent' 'fake_getent "$@"'
+
+    local expected=1000
     local actual="$(lib.lookupId 0 'passwd')"
     assert_equals "$expected" "$actual"
 }
@@ -235,7 +242,13 @@ test.lib.lookupId_UID_0() {
 #-----------------------------------------------------------------------------------------
 # verify /etc/group lookup of gid:0 is 0
 test.lib.lookupId_GID_0() {
-    local expected=0
+    fake_getent() {
+        echo "getent: $*" >> "$test_lib_bashlib_LOG_file"
+        echo 'bob2:x:1234:'
+    }
+    fake 'getent' 'fake_getent "$@"'
+
+    local expected=1234
     local actual="$(lib.lookupId 0 'group')"
     assert_equals "$expected" "$actual"
 }
@@ -599,6 +612,132 @@ AKEY=someval
 EOF
     lib.updatePropertyFile "$key" "$expected" "$propFile"
     actual="$(grep -E "^${key}=" "$propFile" | awk -F '=' '{print $2}')"
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify property file contains correct value after update
+test.lib.getGID() {
+    fake_getent() {
+        echo "getent: $*" >> "$test_lib_bashlib_LOG_file"
+        if [ "$1" = 'passwd' ]; then
+            echo 'bobb:x:1000:1234:Bob Ballantyne,,,:/home/bobb:/bin/bash'
+        elif [ "$1" = 'group' ]; then
+            echo 'bob2:x:1234:'
+        fi
+    }
+    fake 'getent' 'fake_getent "$@"'
+    
+    local -r expected='1234'
+    local -r actual="$(lib.getGID)"
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify property file contains correct value after update
+test.lib.getGroupInfo() {
+    fake_getent() {
+        echo "getent: $*" >> "$test_lib_bashlib_LOG_file"
+        if [ "$1" = 'passwd' ]; then
+            echo 'bobb:x:1000:1234:Bob Ballantyne,,,:/home/bobb:/bin/bash'
+        elif [ "$1" = 'group' ]; then
+            echo 'bob2:x:1234:'
+        fi
+    }
+    fake 'getent' 'fake_getent "$@"'
+    
+    local -r expected='bob2'
+    local -r actual="$(lib.getGroupInfo)"
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify property file contains correct value after update
+test.lib.getGroupInfo_X() {
+    fake_getent() {
+        echo "getent: $*" >> "$test_lib_bashlib_LOG_file"
+        if [ "$1" = 'passwd' ]; then
+            echo 'bobb:x:1000:1234:Bob Ballantyne,,,:/home/bobb:/bin/bash'
+        elif [ "$1" = 'group' ]; then
+            echo 'bob2:x:1234:'
+        fi
+    }
+    fake 'getent' 'fake_getent "$@"'
+    
+    local -r expected='bob2:1234'
+    local -r actual="$(lib.getGroupInfo 'root' 'extended')"
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify property file contains correct value after update
+test.lib.getGroupOfUser() {
+    fake_getent() {
+        echo "getent: $*" >> "$test_lib_bashlib_LOG_file"
+        if [ "$1" = 'passwd' ]; then
+            echo 'bobb:x:1000:1234:Bob Ballantyne,,,:/home/bobb:/bin/bash'
+        elif [ "$1" = 'group' ]; then
+            echo 'bob2:x:1234:'
+        fi
+    }
+    fake 'getent' 'fake_getent "$@"'
+    
+    local -r expected='bob2'
+    local -r actual="$(lib.getGroupOfUser)"
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify property file contains correct value after update
+test.lib.getUID() {
+    fake_getent() {
+        echo "getent: $*" >> "$test_lib_bashlib_LOG_file"
+        if [ "$1" = 'passwd' ]; then
+            echo 'bobb:x:1000:1234:Bob Ballantyne,,,:/home/bobb:/bin/bash'
+        elif [ "$1" = 'group' ]; then
+            echo 'bob2:x:1234:'
+        fi
+    }
+    fake 'getent' 'fake_getent "$@"'
+    
+    local -r expected='1000'
+    local -r actual="$(lib.getUID)"
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify property file contains correct value after update
+test.lib.getUserInfo() {
+    fake_getent() {
+        echo "getent: $*" >> "$test_lib_bashlib_LOG_file"
+        if [ "$1" = 'passwd' ]; then
+            echo 'bobb:x:1000:1234:Bob Ballantyne,,,:/home/bobb:/bin/bash'
+        elif [ "$1" = 'group' ]; then
+            echo 'bob2:x:1234:'
+        fi
+    }
+    fake 'getent' 'fake_getent "$@"'
+    
+    local -r expected='bobb'
+    local -r actual="$(lib.getUserInfo 'bobb')"
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify property file contains correct value after update
+test.lib.getUserInfo_X() {
+    fake_getent() {
+        echo "getent: $*" >> "$test_lib_bashlib_LOG_file"
+        if [ "$1" = 'passwd' ]; then
+            echo 'bobb:x:1000:1234:Bob Ballantyne,,,:/home/bobb:/bin/bash'
+        elif [ "$1" = 'group' ]; then
+            echo 'bob2:x:1234:'
+        fi
+    }
+    fake 'getent' 'fake_getent "$@"'
+    
+    local -r expected='bobb:1000'
+    local -r actual="$(lib.getUserInfo 'root' 'extended')"
     assert_equals "$expected" "$actual"
 }
 

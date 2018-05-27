@@ -23,6 +23,7 @@ function uidgid.createUserAndGroup()
 {
     local -r file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
 
+    [ -f "$file" ] || trap.die 'must specify a valid file'
     source "$file"
 
     #strip path & prefix from file to get name
@@ -50,14 +51,14 @@ function uidgid.createUserAndGroup()
         if [[ "$idMatch" ]]; then
             local oldName=$( lib.getGroupInfo "$gid" )
             term.log "renaming group:  ${oldName} to ${group}\n" 'info'
-            /usr/sbin/groupmod --new-name "$group" "$oldName"
+            groupmod --new-name "$group" "$oldName"
         elif [[ "$nameMatch" ]]; then
             local oldId=$( lib.getGID "$group" )
             term.log "renaming group:  ${oldId} to ${gid}\n" 'info'
-            /usr/sbin/groupmod --gid ${gid} "$group"
+            groupmod --gid ${gid} "$group"
         else
             term.log "create group:  ${group}\n" 'info'
-            /usr/sbin/groupadd --gid "$gid" "$group"
+            groupadd --gid "$gid" "$group"
         fi
     fi
 
@@ -72,9 +73,9 @@ function uidgid.createUserAndGroup()
             term.log "update user:  ${user}\n" 'info'
             if [ "$homedir" ]; then
                 [ -d "$homedir" ] || mkdir -p "$homedir"
-                /usr/sbin/usermod --home "$homedir" --uid "$uid" --gid "$gid" --shell "$shell" "$user"
+                usermod --home "$homedir" --uid "$uid" --gid "$gid" --shell "$shell" "$user"
             else
-                /usr/sbin/usermod --uid "$uid" --gid "$gid" --shell "$shell" "$user"
+                usermod --uid "$uid" --gid "$gid" --shell "$shell" "$user"
             fi
         else
             term.log "create user: ${user}\n" 'info'
@@ -82,9 +83,9 @@ function uidgid.createUserAndGroup()
             [[ "$idMatch"    &&  $wanted != $idMatch ]]   && userdel "$( lib.getUserInfo "$uid" )"
             if [ "$homedir" ]; then
                 [ -d "$homedir" ] || mkdir -p "$homedir"
-                /usr/sbin/useradd --home-dir "$homedir" --uid "$uid" --gid "$gid" --shell "$shell" "$user"
+                useradd --home-dir "$homedir" --uid "$uid" --gid "$gid" --shell "$shell" "$user"
             else
-                /usr/sbin/useradd --no-create-home --uid "$uid" --gid "$gid" --shell "$shell" "$user"
+                useradd --no-create-home --uid "$uid" --gid "$gid" --shell "$shell" "$user"
             fi
         fi
     fi

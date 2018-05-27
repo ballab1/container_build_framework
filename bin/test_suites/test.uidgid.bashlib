@@ -39,7 +39,7 @@
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-test.uidgid.check() {
+skip.test.uidgid.check() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -47,17 +47,142 @@ test.uidgid.check() {
 }
 
 #-----------------------------------------------------------------------------------------
-# provide brief explanation of what test does
-test.uidgid.createUserAndGroup() {
-    local expected=0
-    local actual=0
-#    assert_equals "$expected" "$actual"
-    fail 'test not implemented'
+# verify function handles no args correctly
+test.uidgid.createUserAndGroup_NOARGS() {
+    assert_status_code 1 'uidgid.createUserAndGroup'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify function returns correctly when a bad file is given
+test.uidgid.createUserAndGroup_BADFILE() {
+    assert_status_code 1 'uidgid.createUserAndGroup "/XXX"'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify function returns correctly when an empty file is given
+test.uidgid.createUserAndGroup_EMPTYFILE() {
+    local fut="$test_uidgid_bashlib_UT_TEST_DIR/01.WWW"
+cat << EOF > "$fut"
+EOF
+    assert_status_code 255 'uidgid.createUserAndGroup "$fut"'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify function returns correctly when an empty file is given
+test.uidgid.createUserAndGroup_MISSINGname() {
+    local fut="$test_uidgid_bashlib_UT_TEST_DIR/01.WWW"
+cat << EOF > "$fut"
+declare -A WWW=(
+#  ['user']=www-data
+  ['uid']=82
+  ['group']=www-data
+  ['gid']=82
+)
+EOF
+    assert_status_code 255 'uidgid.createUserAndGroup "$fut"'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify function returns correctly when an empty file is given
+test.uidgid.createUserAndGroup_MISSINGuid() {
+    local fut="$test_uidgid_bashlib_UT_TEST_DIR/01.WWW"
+cat << EOF > "$fut"
+declare -A WWW=(
+  ['user']=www-data
+#  ['uid']=82
+  ['group']=www-data
+  ['gid']=82
+)
+EOF
+    assert_status_code 255 'uidgid.createUserAndGroup "$fut"'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify function returns correctly when an empty file is given
+test.uidgid.createUserAndGroup_MISSINGgroup() {
+    local fut="$test_uidgid_bashlib_UT_TEST_DIR/01.WWW"
+cat << EOF > "$fut"
+declare -A WWW=(
+  ['user']=www-data
+  ['uid']=82
+#  ['group']=www-data
+  ['gid']=82
+)
+EOF
+    assert_status_code 255 'uidgid.createUserAndGroup "$fut"'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify function returns correctly when an empty file is given
+test.uidgid.createUserAndGroup_MISSINGgid() {
+    local fut="$test_uidgid_bashlib_UT_TEST_DIR/01.WWW"
+cat << EOF > "$fut"
+declare -A WWW=(
+  ['user']=www-data
+  ['uid']=82
+  ['group']=www-data
+#  ['gid']=82
+)
+EOF
+    assert_status_code 255 'uidgid.createUserAndGroup "$fut"'
+}
+
+#-----------------------------------------------------------------------------------------
+# verify function returns correctly when an empty file is given
+test.uidgid.createUserAndGroup_BASIC() {
+    fake 'term.log' 'echo "term.log: $1" >> "$test_uidgid_bashlib_LOG_file"'
+    fake 'groupmod' 'echo "groupmod: $1" >> "$test_uidgid_bashlib_LOG_file"'
+    fake 'groupadd' 'echo "groupaddg: $1" >> "$test_uidgid_bashlib_LOG_file"'
+    fake 'usermod' 'echo "usermod: $1" >> "$test_uidgid_bashlib_LOG_file"'
+    fake 'useradd' 'echo "useradd: $1" >> "$test_uidgid_bashlib_LOG_file"'
+    fake 'userdel' 'echo "userdel: $1" >> "$test_uidgid_bashlib_LOG_file"'
+    fake_getent() {
+        echo "getent: $*" >> "$test_uidgid_bashlib_LOG_file"
+        if [ "$1" = 'passwd' ]; then
+            echo 'bobb:x:1000:1000:Bob Ballantyne,,,:/home/bobb:/bin/bash'
+        elif [ "$1" = 'group' ]; then
+            echo 'bobb:x:1000:'
+        fi
+    }
+    fake 'getent' 'fake_getent "$@"'
+
+    local fut="$test_uidgid_bashlib_UT_TEST_DIR/01.WWW"
+cat << EOF > "$fut"
+declare -A WWW=(
+  ['user']=www-data
+  ['uid']=82
+  ['group']=www-data
+  ['gid']=82
+)
+EOF
+
+#    assert_status_code 255 'uidgid.createUserAndGroup "$fut"'
+    (uidgid.createUserAndGroup "$fut") | :
+    
+    local expected="getent: group 82
+term.log: INFO: group/gid (www-data:82):  is currently (bobb:1000)/(bobb:1000)\\n
+getent: group 82
+term.log: renaming group:  bobb to www-data\\n
+groupmod: --new-name
+getent: passwd www-data
+getent: passwd 82
+term.log: INFO: user/uid (www-data:82):  is currently (bobb:1000)/(bobb:1000)\\n
+term.log: create user: www-data\\n
+getent: passwd www-data
+userdel: bobb
+getent: passwd 82
+userdel: bobb
+useradd: --no-create-home"
+    local actual="$(< "$test_uidgid_bashlib_LOG_file" )"
+
+#cp "$test_uidgid_bashlib_LOG_file" /home/bobb/support/container_build_framework/bin/test_suites/actual.txt
+#printf "$expected" > /home/bobb/support/container_build_framework/bin/test_suites/expected.txt
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-test.uidgid.runScript() {
+skip.test.uidgid.runScript() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
