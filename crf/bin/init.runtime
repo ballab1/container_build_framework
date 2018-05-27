@@ -88,14 +88,20 @@ function sourcingMessage()
     local -r src=${1:?"Input parameter 'src' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r name="$(basename "$src")"
 
-    local color=0
-    [ "$name" = 'rt.environment' ] && color=95
-    case "$( dirname "$src" )" in
-        "$CRF_LOCATION") color=0;;
-        "${CBF_LOCATION}${CRF_LOCATION}") color=0;;
-        "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )") color=0;;
-        *) color=0;;
-    esac
+    local dir="$( dirname "$src" )"
+
+    local color
+    if [ "$name" = 'rt.environment' ]; then
+        color=97
+    elif [ "$dir" = "$CRF_LOCATION" ]; then
+        color=96
+    elif [ "$dir" = "${CBF_LOCATION}${CRF_LOCATION}" ]; then
+        color=95
+    elif [ "$dir" = "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )" ]; then
+        color=94
+    else
+        color=93
+    fi
 
     [ $(( __envCount++ )) -eq 0 ] && printf "    sourcing:  "
     printf "\e[%dm%s\e[0m " "$color" "$name"
