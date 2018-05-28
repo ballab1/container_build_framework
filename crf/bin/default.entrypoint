@@ -7,13 +7,12 @@ set -o pipefail
 IFS=$'\n\t'
 
 printf "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n"
+printf "args: %s\n\n"  "$*"
 
 source /usr/local/crf/bin/init.runtime
 
 printf "%s starting.\n" "${CONTAINER_NAME:-}"
-printf "args: %s\n\n"  "$*"
-
-printf "\nrt.environment:"
+printf "\nrt.environment:\n"
 for ln in $(cat "$(crf.RT_ENVIRON)" | sort); do
     [ "${ln:0:6}" = 'export' ] && printf "    %s\n" "$(eval echo ${ln:7})"
 done

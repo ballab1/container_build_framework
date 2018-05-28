@@ -159,9 +159,9 @@ function crf.currentUser()
     local user=''
 
     local __lib_savedOptions=$(set +o)
-    [ "${user:-}" ] || user=$(lib.lookupId 'passwd' "$(crf.runtimeProperty 'USER')")
-    [ "${user:-}" ] || [ -z "${USER:-}" ] || user=$(lib.lookupId 'passwd' "$USER")
-    [ "${user:-}" ] || [ -z "${UID:-}" ] || user=$(lib.lookupId 'passwd' "$UID")
+    [ "${user:-}" ] || user=$(lib.lookupId "$(crf.runtimeProperty 'USER')" 'passwd')
+    [ "${user:-}" ] || [ -z "${USER:-}" ] || user=$(lib.lookupId "$USER" 'passwd')
+    [ "${user:-}" ] || [ -z "${UID:-}" ] || user=$(lib.lookupId "$UID" 'passwd')
     [ "${user:-}" ] || user=0
 
     [ -z "$user" ] && trap.log "No current user identified"
