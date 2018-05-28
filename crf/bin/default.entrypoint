@@ -14,8 +14,8 @@ printf "%s starting.\n" "${CONTAINER_NAME:-}"
 printf "args: %s\n\n"  "$*"
 
 printf "\nrt.environment:"
-for ln in "$(cat "$(crf.RT_ENVIRON)" | sort)"; do
-    [ ${ln:0:6} = export ] && printf "    %s\n" "$(eval echo ${ln:7})"
+for ln in $(cat "$(crf.RT_ENVIRON)" | sort); do
+    [ "${ln:0:6}" = 'export' ] && printf "    %s\n" "$(eval echo ${ln:7})"
 done
 printf "\n\n" 
 
