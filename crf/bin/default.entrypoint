@@ -6,22 +6,17 @@ set -o nounset
 set -o pipefail
 IFS=$'\n\t'
 
-printf "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n"
 printf "args: %s\n\n"  "$*"
 
 source /usr/local/crf/bin/init.runtime
 
-printf "%s starting.\n" "${CONTAINER_NAME:-}"
-printf "\nrt.environment:\n"
-for ln in $(cat "$(crf.RT_ENVIRON)" | sort); do
-    [ "${ln:0:6}" = 'export' ] && printf "    %s\n" "$(eval echo ${ln:7})"
-done
-printf "\n\n" 
-
 declare -r config_entry="${CONTAINER_NAME}-setup"
 
+
+#  startup container
 if [[ "$1" = "${CONTAINER_NAME}" ]]; then
     # this is the primary (default) codepath invoked by the Dockerfile
+    crf.logEnvironment
     printf "\e[32m>>>>>>>> entering \e[33m'%s'\e[0m\n" "$1"
 
     # run the startup scripts defined in the framework
@@ -45,6 +40,7 @@ elif [[ "$1" = "$config_entry" && "$(id -u)" -eq 0 ]]; then
 
 elif [ $# -gt 0 ]; then
     # this codepath is invoked when a user invokes the container using 'docker run'
+    crf.logEnvironment
     printf "\e[32m>>>>>>>> entering \e[33m'%s'\e[0m\n" 'custom'
     shift
     exec $@

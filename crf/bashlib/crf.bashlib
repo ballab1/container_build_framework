@@ -197,6 +197,19 @@ function crf.fixupDirectory()
 export -f crf.fixupDirectory
 
 #############################################################################
+function crf.logEnvironment()
+{
+    printf "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n"
+    printf "%s starting.\n" "${CONTAINER_NAME:-}"
+    printf "\nrt.environment:\n"
+    for ln in $(cat "$(crf.RT_ENVIRON)" | sort); do
+        [ "${ln:0:6}" = 'export' ] && printf "    %s\n" "$(eval echo ${ln:7})"
+    done
+    printf "\n    Current UID%s\n\n"  "$UID"
+}
+export -f crf.logEnvironment
+
+#############################################################################
 function crf.prepareEnvironment()
 {
     local -a files=( $( lib.getFiles "$( crf.STARTUP )" ) )
