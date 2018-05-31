@@ -32,7 +32,7 @@ if [[ "$1" = "${CONTAINER_NAME}" ]]; then
 
     declare -r tools=/usr/local/bin
     [ -e "${tools}/run.sh" ] || trap.die "No ${tools}/run.sh detected"
-    term.log "Finished executing startup scripts after $(timer.fmtElapsed (( $(timer.getTimestamp)  - startTm )))\n" 'info' 
+    term.log "Finished executing startup scripts after $(timer.fmtElapsed $(( $(timer.getTimestamp)  - startTm )) )\n" 'info' 
     cd ${WORKDIR}
     exec "${tools}/run.sh" "$@"
 

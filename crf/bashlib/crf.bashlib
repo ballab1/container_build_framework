@@ -205,7 +205,7 @@ function crf.logEnvironment()
     for ln in $(cat "$(crf.RT_ENVIRON)" | sort); do
         [ "${ln:0:6}" = 'export' ] && printf "    %s\n" "$(eval echo ${ln:7})"
     done
-    printf "\n    Current UID%s\n\n"  "$UID"
+    printf "\n    Current user info: %s\n\n"  "$(getent 'passwd' "$UID")"
 }
 export -f crf.logEnvironment
 
