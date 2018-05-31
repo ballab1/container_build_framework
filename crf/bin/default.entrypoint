@@ -6,6 +6,7 @@ set -o nounset
 set -o pipefail
 IFS=$'\n\t'
 
+declare startTm=$(date +%s) 
 printf "args: %s\n\n"  "$*"
 
 source /usr/local/crf/bin/init.runtime
@@ -17,7 +18,8 @@ declare -r config_entry="${CONTAINER_NAME}-setup"
 if [[ "$1" = "${CONTAINER_NAME}" ]]; then
     # this is the primary (default) codepath invoked by the Dockerfile
     crf.logEnvironment
-    printf "\e[32m>>>>>>>> entering \e[33m'%s'\e[0m\n" "$1"
+    term.log '>>>>>>>> entering ' 'green'
+    term.log "${*}\n" 'yellow'
 
     # run the startup scripts defined in the framework
     if [ "$(id -u)" -eq 0 ]; then
@@ -25,24 +27,28 @@ if [[ "$1" = "${CONTAINER_NAME}" ]]; then
     elif [ "$( which sudo )" ]; then
         sudo -E "$0" "$config_entry"
     else
-        printf "\e[35m>>>>>>>> Current user 'uid:$(id -u)' does not have super powers. Unable to configure environment\e[0m\n"
+        term.log ">>>>>>>> Current user 'uid:$(id -u)' does not have super powers. Unable to prepare environment" 'magenta'
     fi
 
     declare -r tools=/usr/local/bin
     [ -e "${tools}/run.sh" ] || trap.die "No ${tools}/run.sh detected"
+    term.log "Finished executing startup scripts after $(timer.fmtElapsed (( $(timer.getTimestamp)  - startTm )))\n" 'info' 
     cd ${WORKDIR}
     exec "${tools}/run.sh" "$@"
 
 elif [[ "$1" = "$config_entry" && "$(id -u)" -eq 0 ]]; then
     # this codepath is invoked (from above) to perpare the runtime environment. User is 'root' so chmod & chown succeed
-    printf "\e[32m>>>>>>>> entering \e[33m'%s'\e[0m\n" "$*"
+    term.log '>>>>>>>> entering ' 'green'
+    term.log "${*}\n" 'yellow'
     crf.prepareEnvironment
 
 elif [ $# -gt 0 ]; then
     # this codepath is invoked when a user invokes the container using 'docker run'
     crf.logEnvironment
-    printf "\e[32m>>>>>>>> entering \e[33m'%s'\e[0m\n" 'custom'
+    term.log '>>>>>>>> entering ' 'green'
+    term.log 'custom' 'yellow'
     shift
     exec $@
 fi
-printf "\e[32m<<<<<<<< returning from \e[33m'%s'\e[0m\n" "$*"
+term.log '<<<<<<<< returning from ' 'green'
+term.log "${*}\n" 'yellow'

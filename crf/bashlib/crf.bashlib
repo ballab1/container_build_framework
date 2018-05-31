@@ -224,8 +224,6 @@ function crf.prepareEnvironment()
             term.log "Failed to run: ${#failedToRun[*]} out of ${#files[*]} startup scripts..\n" 'lt_gray'
             [ "$DEBUG_TRACE" = 0 ] || term.log "  files:\n$(printf "    %s\n"  "${files[@]}")\n" 'lt_gray'
 #            trap.die "failed to execute all scripts"
-        else
-            term.log "Finished executing startup scripts\n" 'info'
         fi
     fi
     chmod a+x "/usr/local/bin/"*
