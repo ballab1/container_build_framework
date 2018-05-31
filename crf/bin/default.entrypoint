@@ -1,4 +1,5 @@
 #!/bin/bash
+declare startTm=$(date +%s) 
 
 # Use the Unofficial Bash Strict Mode
 set -o errexit
@@ -6,8 +7,8 @@ set -o nounset
 set -o pipefail
 IFS=$'\n\t'
 
-declare startTm=$(date +%s) 
-printf "args: %s\n\n"  "$*"
+[ "${1:-}" = *-setup ] || printf "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n"
+printf "\nargs: %s\n\n"  "$*"
 
 source /usr/local/crf/bin/init.runtime
 
@@ -32,9 +33,9 @@ if [[ "$1" = "${CONTAINER_NAME}" ]]; then
 
     declare -r tools=/usr/local/bin
     [ -e "${tools}/run.sh" ] || trap.die "No ${tools}/run.sh detected"
-    term.log "Finished executing startup scripts after $(timer.fmtElapsed $(( $(timer.getTimestamp)  - startTm )) )\n" 'info' 
     cd ${WORKDIR}
-    exec "${tools}/run.sh" "$@"
+    term.log "\nFinished executing startup scripts after $(timer.fmtElapsed $(( $(timer.getTimestamp)  - startTm )) )\n\n" 'info' 
+    exec sudo su -s '/bin/bash' -c "${tools}/run.sh $*" "$USER"
 
 elif [[ "$1" = "$config_entry" && "$(id -u)" -eq 0 ]]; then
     # this codepath is invoked (from above) to perpare the runtime environment. User is 'root' so chmod & chown succeed

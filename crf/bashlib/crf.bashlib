@@ -199,13 +199,14 @@ export -f crf.fixupDirectory
 #############################################################################
 function crf.logEnvironment()
 {
-    printf "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n"
     printf "%s starting.\n" "${CONTAINER_NAME:-}"
     printf "\nrt.environment:\n"
     for ln in $(cat "$(crf.RT_ENVIRON)" | sort); do
         [ "${ln:0:6}" = 'export' ] && printf "    %s\n" "$(eval echo ${ln:7})"
     done
-    printf "\n    Current user info: %s\n\n"  "$(getent 'passwd' "$UID")"
+    printf "\n"
+    printf "    Current user info: %s\n"  "$(getent 'passwd' "$UID")"
+    printf "    Target  user info: %s\n\n"  "$(getent 'passwd' "$USER")"
 }
 export -f crf.logEnvironment
 
