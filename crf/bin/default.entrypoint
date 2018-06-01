@@ -35,7 +35,7 @@ if [[ "$1" = "${CONTAINER_NAME}" ]]; then
     [ -e "${tools}/run.sh" ] || trap.die "No ${tools}/run.sh detected"
     cd ${WORKDIR}
     term.log "\nFinished executing startup scripts after $(timer.fmtElapsed $(( $(timer.getTimestamp)  - startTm )) )\n\n" 'info' 
-    exec su -s '/bin/bash' -c "${tools}/run.sh $*" "$USER"
+    exec "${tools}/run.sh" "$@"
 
 elif [[ "$1" = "$config_entry" && "$(id -u)" -eq 0 ]]; then
     # this codepath is invoked (from above) to perpare the runtime environment. User is 'root' so chmod & chown succeed
