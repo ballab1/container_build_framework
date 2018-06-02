@@ -9,6 +9,13 @@ if [ ! -d "$cbf_dir" ] && [ "${CBF_VERSION}" ]; then
     wget --no-check-certificate --quiet --output-document=- "$CBF_URL" | tar -xz
     cbf_dir="$( ls -d container_build_framework-* )"
 fi
+
+declare CBF_TGZ=/usr/local/crf/cbf.tar.gz
+if [ ! -d "$cbf_dir" ] && [ -e "$CBF_TGZ" ]; then
+    tar --extract --uncompress --file "$CBF_TGZ" --directory /tmp
+    cbf_dir="$( ls -d container_build_framework-* )"
+fi
+
 if [ -z "$cbf_dir" ] || [ ! -d "$cbf_dir" ]; then
     echo 'No framework directory located'
     exit 1
