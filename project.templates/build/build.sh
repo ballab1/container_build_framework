@@ -12,7 +12,7 @@ fi
 
 declare CBF_TGZ=/usr/local/crf/cbf.tar.gz
 if [ ! -d "$cbf_dir" ] && [ -e "$CBF_TGZ" ]; then
-    tar --extract --uncompress --file "$CBF_TGZ" --directory /tmp
+    tar -xzf "$CBF_TGZ" -C /tmp
     cbf_dir="$( ls -d container_build_framework-* )"
 fi
 

@@ -74,5 +74,5 @@ fi
 # create an archive of parts of CBF that exists in /tmp
 if [ -f "$( cbf.BIN )/files.txt" ]; then
     cd "$( cbf.BASE )"
-    tar --create --compress --file "$(cbf.CRT_BASE)/cbf.tar.gz" --files-from "$( cbf.BIN )/files.txt"
+    tar -czf "$(cbf.CRT_BASE)/cbf.tar.gz" -T "$( cbf.BIN )/files.txt"
 fi
