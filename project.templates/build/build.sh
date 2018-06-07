@@ -1,16 +1,22 @@
-#!/bin/bash
+#!/bin/sh
+
+# ensure we have bash support
+if [ -z "$(which bash)" ]; then
+    apk update
+    apk add --no-cache bash ca-certificates openssl 
+fi
 
 cd /tmp
-declare cbf_dir=/tmp/container_build_framework
+cbf_dir=/tmp/container_build_framework
 
 if [ ! -d "$cbf_dir" ] && [ "${CBF_VERSION}" ]; then
     # since no CBF directory located, attempt to download CBF based on specified verion
-    declare CBF_URL="https://github.com/ballab1/container_build_framework/archive/${CBF_VERSION}.tar.gz"
+    CBF_URL="https://github.com/ballab1/container_build_framework/archive/${CBF_VERSION}.tar.gz"
     wget --no-check-certificate --quiet --output-document=- "$CBF_URL" | tar -xz
     cbf_dir="$( ls -d container_build_framework-* )"
 fi
 
-declare CBF_TGZ=/usr/local/crf/cbf.tar.gz
+CBF_TGZ=/usr/local/crf/cbf.tar.gz
 if [ ! -d "$cbf_dir" ] && [ -e "$CBF_TGZ" ]; then
     cbf_dir=/tmp/container_build_framework
     mkdir -p "$cbf_dir"
