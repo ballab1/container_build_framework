@@ -1,4 +1,4 @@
-ARG FROM_BASE=alpine:3.6
+ARG FROM_BASE=alpine:3.7
 FROM $FROM_BASE
 
 # name and version of this docker image
