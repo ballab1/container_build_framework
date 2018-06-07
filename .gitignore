@@ -3,6 +3,7 @@ bashlibs.loaded
 ENVIRONMENT.loaded
 CBF.properties
 crf/CRF.properties
+bashlibs.loaded
 crf.bashlibs.loaded
 environment.loaded
 scanned.paths

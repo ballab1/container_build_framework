@@ -4,6 +4,7 @@ services:
     newContainer:
         build:
             args:
+                CBF_VERSION: ${CBF_VERSION:-dev}
                 CONTAINER_NAME: newContainer
                 CONTAINER_VERSION: 1.0.0
                 FROM_BASE: alpine:3.7
