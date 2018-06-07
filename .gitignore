@@ -3,6 +3,9 @@ bashlibs.loaded
 ENVIRONMENT.loaded
 CBF.properties
 crf/CRF.properties
+crf.bashlibs.loaded
+environment.loaded
+scanned.paths
 *.log
 *.tgz
 *.zip
