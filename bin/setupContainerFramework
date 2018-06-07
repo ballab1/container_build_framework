@@ -77,6 +77,10 @@ function setupCBF.setupProjectFiles()
         if [ ! -e "$file" ]; then
             sed "s|newcontainer|${projectName}|gi" "$abs_file" > "$file"
             echo "  created: ${file}"
+        elif [ "$file" = build/build.sh ]; then
+            echo "  updating: ${file}"
+            [ -f "$file" ] && mv "$file"  "${file}.bak"
+            cp "$abs_file" "$file"
         fi
     done
 

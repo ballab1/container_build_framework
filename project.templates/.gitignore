@@ -3,7 +3,9 @@
 *.iml
 *.tgz
 *.zip
-build/container_build_framework
+build/container_build_framework*
+**/*.bak
+*.log
 
 # OSX
 .DS_Store
