@@ -42,6 +42,7 @@ function setupCBF.main()
     # since no CBF directory located, attempt to download CBF based on specified verion
     local CBF_URL="https://github.com/ballab1/container_build_framework/archive/${cbf_version}.tar.gz"
     wget --no-check-certificate --quiet --output-document=- "$CBF_URL" | tar -xzC "$temporaryDir"
+    [ $? -eq 0 ] || trap.die "$(basename "$projectDir") not setup: Failed to download $CBF_URL"
 
     # point CBF & CRF to locations in tmp workspace.  Will load libs from there
     export CBF_LOCATION="$( ls -d "$temporaryDir/container_build_framework-"* )"            # set CBF_LOCATION for testing

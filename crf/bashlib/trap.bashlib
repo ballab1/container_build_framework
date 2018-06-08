@@ -28,7 +28,7 @@ function trap.catch_error()
 
     set +o verbose
     set +o xtrace
-    trap.die "Error in ${BASH_SOURCE[1]}:${BASH_LINENO[0]}. '${BASH_COMMAND}' exited with status ${err}"
+    trap.die "***ERROR at ${BASH_SOURCE[1]}:${BASH_LINENO[0]}. '${BASH_COMMAND}' exited with status ${err}"
     trap.stacktrace
     exit 1
 }
@@ -60,7 +60,7 @@ function trap.die()
     [[ $status -ne 0 ]] || status=255
     dying+=1
 
-    ( echo ''; trap.log "FATAL ERROR: $*" ; echo '') >&2
+    ( echo ''; trap.log "*** ERROR: $*" ; echo '') >&2
     [ "${DEBUG_TRACE:-}" = "2" ] || exit $status
 }
 export -f trap.die
