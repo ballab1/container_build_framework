@@ -56,10 +56,10 @@ function libNotLoaded()
 
 # load our bashlibs
 declare -i __libCount=0
-loadLibs "${CBF_LOCATION}/crf/bashlib" 32
-loadLibs "${CBF_LOCATION}${CRF_LOCATION}/bashlib" 33
-loadLibs "${CRF_LOCATION}/bashlib" 34
-loadLibs "${CBF_LOCATION}/cbf" 35
+loadLibs "${CBF_LOCATION}/crf/bashlib" 32              # green
+loadLibs "${CBF_LOCATION}${CRF_LOCATION}/bashlib" 34   # blue
+loadLibs "${CRF_LOCATION}/bashlib" 35                  # magenta
+loadLibs "${CBF_LOCATION}/cbf" 36                      # cyan
 
 
 # init the framework
