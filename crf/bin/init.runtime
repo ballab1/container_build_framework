@@ -58,7 +58,7 @@ function loadLibrary()
     local -r name="$(basename "$src")"
 
     [ $((__libCount2++ )) -eq 0 ] && printf "    loading libraries:  "
-    printf "\e[%dm%s\e[0m " "$color" "$name"
+    printf "\e[%sm%s\e[0m " "$color" "$name"
     source "$src"
 }
 
@@ -100,11 +100,11 @@ function sourcingMessage()
     elif [ "$dir" = "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )" ]; then
         color=94   # lt_blue
     else
-        color=92   # lt_green
+        color=32   # green
     fi
 
     [ $(( __envCount++ )) -eq 0 ] && printf "    sourcing:  "
-    printf "\e[%dm%s\e[0m " "$color" "$name"
+    printf "\e[%sm%s\e[0m " "$color" "$name"
 }
 
 #############################################################################

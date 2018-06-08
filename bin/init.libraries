@@ -8,7 +8,7 @@ function loadLibrary()
     local -r name="$(basename "$src")"
 
     [ $(( __libCount++ )) -eq 0 ] && printf "    loading libraries:  "
-    printf "\e[%dm%s\e[0m " "$color" "$name"
+    printf "\e[%sm%s\e[0m " "$color" "$name"
     source "$src"
 }
 
