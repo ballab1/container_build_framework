@@ -114,8 +114,8 @@ function cbf.buildContainer()
                      ['02.users_groups']='uidgid.check'
                      ['03.downloads']='download.getPackages'
                      ['04.applications']='cbf.runScripts'
-                     ['05.bt.customizations']='cbf.runScripts'
-                     ['06.rt.startup']='cbf.runScripts'
+                     ['05.build.customizations']='cbf.runScripts'
+                     ['06.run.startup']='cbf.runScripts'
                      ['07.cleanup']='cbf.runScripts'
                    )
 
@@ -134,10 +134,9 @@ function cbf.buildContainer()
     for dir in $( printf "%s\n" "${!steps[@]}" | sort ); do
         [ "$dir" != '07.cleanup' ] || [ "$DEBUG_TRACE" = 0 ] || continue
 
-
         # get array of files in directory
         local -a files=( $( lib.getFiles "$( cbf.ACTION )/$dir" ) )
-        if [ ${#files[*]} -gt 0 ] && [ "$dir" = '06.rt.startup' ]; then
+        if [ ${#files[*]} -gt 0 ] && [ "$dir" = '06.run.startup' ]; then
             term.log "${notice} - copying files to $(cbf.CRT_BASE)\n" 'task'
             for file in "${files[@]}"; do
                 crf.copyFileToRuntime 'STARTUP' "$file"
@@ -145,6 +144,7 @@ function cbf.buildContainer()
             files=()
         fi
         files+=( $( lib.getFiles "$( cbf.TEMPLATES )/$dir" ) )
+
         [ ${#files[*]} -gt 0 ] || continue
 
 
