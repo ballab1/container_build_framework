@@ -137,7 +137,7 @@ function cbf.buildContainer()
 
         # get array of files in directory
         local -a files=( $( lib.getFiles "$( cbf.ACTION )/$dir" ) )
-        if [ ${#files[*]} -gt 0 ] && [ "$dir" = '06.permissions' ]; then
+        if [ ${#files[*]} -gt 0 ] && [ "$dir" = '06.rt.startup' ]; then
             term.log "${notice} - copying files to $(cbf.CRT_BASE)\n" 'task'
             for file in "${files[@]}"; do
                 crf.copyFileToRuntime 'STARTUP' "$file"
