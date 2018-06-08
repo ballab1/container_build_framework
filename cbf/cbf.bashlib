@@ -114,8 +114,8 @@ function cbf.buildContainer()
                      ['02.users_groups']='uidgid.check'
                      ['03.downloads']='download.getPackages'
                      ['04.applications']='cbf.runScripts'
-                     ['05.customizations']='cbf.runScripts'
-                     ['06.permissions']='cbf.runScripts'
+                     ['05.bt.customizations']='cbf.runScripts'
+                     ['06.rt.startup']='cbf.runScripts'
                      ['07.cleanup']='cbf.runScripts'
                    )
 

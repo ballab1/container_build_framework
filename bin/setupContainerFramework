@@ -10,19 +10,16 @@ function setupCBF.createStructure()
     local actionFolders=${1:?"must pass parameter 'actionFolders' to 'function ${FUNCNAME[0]}()'"}
     local templatesFolder=${2:?"must pass parameter 'templatesFolder' to 'function ${FUNCNAME[0]}()'"}
 
+    # create actions folder [ is a sibling of 'container_build_framework' directory]
+    [ -d "$actionFolders" ] || mkdir -p "$actionFolders"
 
-    # create actions folder [ should be a sibling of 'container_build_framework' ]
-    if [ ! -d "$( dirname "$actionFolders")/container" ]; then
-        mkdir -p "${actionFolders}/00.setup"
-        mkdir -p "${actionFolders}/01.packages"
-        mkdir -p "${actionFolders}/02.users_groups"
-        mkdir -p "${actionFolders}/03.downloads"
-        mkdir -p "${actionFolders}/04.applications"
-        mkdir -p "${actionFolders}/05.customizations"
-        mkdir -p "${actionFolders}/06.permissions"
-        mkdir -p "${actionFolders}/07.cleanup"
-        cd "$actionFolders"
-    fi
+    [ -d "${actionFolders}/05.customizations" ] || mv "${actionFolders}/05.customizations" "${actionFolders}/05.build.customizations"
+    [ -d "${actionFolders}/06.permissions" ] || mv "${actionFolders}/06.permissions" "${actionFolders}/06.run.startup"
+
+    for dir in $(find "$templatesFolder" -mindepth 1 -maxdepth 1 -type d); do
+        local subdir="$(basename "$dir")"
+        [ -d "${actionFolders}/$subdir" ] ||  mkdir -p "${actionFolders}/$subdir"
+    done
 }
 
 ######################################################################
@@ -79,7 +76,7 @@ function setupCBF.setupProjectFiles()
             echo "  created: ${file}"
         elif [ "$file" = build/build.sh ]; then
             echo "  updating: ${file}"
-            [ -f "$file" ] && mv "$file"  "${file}.bak"
+            [ -f "$file" ] && mv "$file" "${file}.bak"
             cp "$abs_file" "$file"
         fi
     done
