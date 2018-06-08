@@ -13,12 +13,20 @@ function setupCBF.createStructure()
     # create actions folder [ is a sibling of 'container_build_framework' directory]
     [ -d "$actionFolders" ] || mkdir -p "$actionFolders"
 
-    [ -d "${actionFolders}/05.customizations" ] || mv "${actionFolders}/05.customizations" "${actionFolders}/05.build.customizations"
-    [ -d "${actionFolders}/06.permissions" ] || mv "${actionFolders}/06.permissions" "${actionFolders}/06.run.startup"
-
+    if [ -d "${actionFolders}/05.customizations" ]; then
+        echo "  renaming action folder:  '05.customizations' to '05.build.customizations'"
+        mv "${actionFolders}/05.customizations" "${actionFolders}/05.build.customizations"
+    fi
+    if [ -d "${actionFolders}/06.permissions" ]; then
+        echo "  renaming action folder:  '06.permissions' to '06.run.startup'"
+        mv "${actionFolders}/06.permissions" "${actionFolders}/06.run.startup"
+    fi
+    
     for dir in $(find "$templatesFolder" -mindepth 1 -maxdepth 1 -type d); do
         local subdir="$(basename "$dir")"
-        [ -d "${actionFolders}/$subdir" ] ||  mkdir -p "${actionFolders}/$subdir"
+        [ -d "${actionFolders}/$subdir" ] && continue
+        echo "  creating action folder:  $subdir"
+        mkdir -p "${actionFolders}/$subdir"
     done
 }
 
@@ -75,7 +83,8 @@ function setupCBF.setupProjectFiles()
             sed "s|newcontainer|${projectName}|gi" "$abs_file" > "$file"
             echo "  created: ${file}"
         elif [ "$file" = build/build.sh ]; then
-            echo "  updating: ${file}"
+            (printf "%s %s\n" "$(sha256sum "$file" | awk '{print $1}')" "$abs_file" | sha256sum -c --status) && continue
+            echo "  updating: ${file}   previous file renamed to ${file}.bak"
             [ -f "$file" ] && mv "$file" "${file}.bak"
             cp "$abs_file" "$file"
         fi
@@ -83,10 +92,10 @@ function setupCBF.setupProjectFiles()
 
     local -r actionFolders="${top}/build/action_folders"
     # remove symlinks
-    find "$top" -type l -delete
+    find "$top" -mindepth 1 -type l -delete
 
     # setup out structure
-    setupCBF.createStructure "$actionFolders" "$templatesFolder"
+    setupCBF.createStructure "$actionFolders" "$( cbf.CBFBASE )/action.templates"
 }
 
 ######################################################################
