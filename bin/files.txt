@@ -2,6 +2,4 @@ action.templates
 bin/build.sh
 bin/default.entrypoint
 bin/init.libraries
-cbf/cbf.bashlib
-cbf/package.bashlib
-cbf/uidgid.bashlib
+cbf/*.bashlib

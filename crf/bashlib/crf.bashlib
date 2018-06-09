@@ -94,7 +94,7 @@ function crf.alreadyFixed()
     touch "$cacheFile"
 
     local -r uid="$(lib.getUID "$user")"
-    [ -z "$uid" ] && trap.die "Anable to find specified user '$user' on system, when checking the 'fixUpCache'"
+    [ -z "$uid" ] && trap.die "Unable to find specified user '$user' on system, when checking the 'fixUpCache'"
     
     local -r previous="$(lib.getProperty "$dir" "$cacheFile")"
     if [ "$previous" ]; then
