@@ -69,10 +69,10 @@ function term.log()
 
     if [ "$msg_type" ]; then
         msg_type="$( term.decode $msg_type )"
-        [ -z "$msg_type" ] || echo -n "$msg_type"
+        [ -z "$msg_type" ] || echo -en "$msg_type"
     fi
-    echo -n "$msg"
-    [ -z "$msg_type" ] || echo -n $( term.decode 'reset' )
+    echo -en "$msg"
+    [ -z "$msg_type" ] || echo -en $( term.decode 'reset' )
 }
 export -f term.log
 
