@@ -180,7 +180,7 @@ function crf.fixupDirectory()
 
     if [ "${dir}" != '/' ]; then
         (crf.alreadyFixed "$dir" "$user") && return 0    # check/update cache of what has been 'fixed up'
-        term.log "    Fixing up directory: ${dir},  for user: $(lib.getUserInfo "$user" 'extended')\n"
+        term.log "    Fixing up directory: ${dir}  for user: $(lib.getUserInfo "$user" 'extended')\n"
         [ -d "${dir}" ] || mkdir -p "${dir}"
         find "$dir" -type d ! -perm 777 -exec chmod 777 '{}' \; | :
         find "$dir" -type f ! -perm 666 -exec chmod a+rw '{}' \; | :
