@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # ensure we have bash support
-if [ -z "$(which bash)" ]; then
+if  [ -z "$(which bash)" ] && [ -e /etc/os-release ] && [ "$(grep -c 'ID=alpine' /etc/os-release 2>/dev/null)" -ne 0 ]; then
     apk update
     apk add --no-cache bash ca-certificates openssl 
 fi
@@ -31,4 +31,4 @@ fi
 
 echo "loading framework from ${cbf_dir}"
 chmod 755 "${cbf_dir}/bin/build.sh"
-exec "${cbf_dir}/bin/build.sh" "$@"
+exec "${cbf_dir}/cbf/bin/build.sh" "$@"

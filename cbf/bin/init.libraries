@@ -46,7 +46,7 @@ function libNotLoaded()
 
 #############################################################################
 
-: ${CBF_LOCATION:="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P )"}
+: ${CBF_LOCATION:="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P )"}
 : ${CRF_LOCATION:=/usr/local/crf}
 : ${DEBUG_TRACE:=0}
 
@@ -56,14 +56,12 @@ function libNotLoaded()
 
 # load our bashlibs
 declare -i __libCount=0
-loadLibs "${CBF_LOCATION}/crf/bashlib" 32              # green
-loadLibs "${CBF_LOCATION}${CRF_LOCATION}/bashlib" 34   # blue
+loadLibs "${CBF_LOCATION}/bashlib" 32                  # green
 loadLibs "${CRF_LOCATION}/bashlib" 35                  # magenta
-loadLibs "${CBF_LOCATION}/cbf" 36                      # cyan
 
 
 # init the framework
-[ ! -e "${CBF_LOCATION}/crf/bin/init.runtime" ] || source "${CBF_LOCATION}/crf/bin/init.runtime"
+[ ! -e "${CBF_LOCATION}/cbf/bin/init.runtime" ] || source "${CBF_LOCATION}/cbf/bin/init.runtime"
 cbf.__init "${CBF_LOCATION}" "${CRF_LOCATION}"
 
 unset __libCount

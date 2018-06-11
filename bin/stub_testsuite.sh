@@ -306,11 +306,22 @@ setup_suite() {
     mkdir -p "\$temporaryDir"
     ${namespace}_UT_TEST_DIR="\$temporaryDir"
 
-    # pwd is location of test definition file. Need to load libs relative to there
-    source "\$( cd "\$( dirname "\${BASH_SOURCE[0]}" )/../../bashlib" && pwd )/init.libraries" > /dev/null
+    # point CBF & CRF to locations in tmp workspace.  Will load libs from there
+    export CBF_LOCATION="\$temporaryDir/tmp"            # set CBF_LOCATION for testing
+    mkdir -p "\$CBF_LOCATION"
+    export CRF_LOCATION="\$temporaryDir/usr/local/crf"  # set CRF_LOCATION for testing
+    mkdir -p "\$CRF_LOCATION"
 
-    # initialize test dir
-    dev_env.environment "\$${namespace}_UT_TEST_DIR"
+    # pwd is location of test definition file.
+    local cbf_location="\$( cd "$( dirname "\${BASH_SOURCE[0]}" )/../.." && pwd )"
+
+    # copy CBF & CRF to workspace
+    for dir in 'action.templates' 'cbf' 'project.template' ; do
+        cp -r "\${cbf_location}/\${dir}" "\$CBF_LOCATION"
+    done
+
+    # now init stuff for testing
+    source "\${CBF_LOCATION}/cbf/bin/init.libraries" #> /dev/null
 }
 EOF
 }

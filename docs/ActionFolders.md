@@ -14,7 +14,7 @@ CBF method | property returned
  cbf.BIN | cbf bin folder. this contains the _setupContainerFramework_ script and test script.
  cbf.ACTION | project actions folder. This contains the folders over which the framework iterates.
  cbf.LIB | cbf library folder. This contains the framework bashlib scripts.
- cbf.TEMPLATES | action template folders. This is the framework copy of the `action_folders`
+ cbf.TEMPLATE | action template folders. This is the framework copy of the `action_folders`
 
 These environment variables may be used to source any of the scripts in the action folders using "$( cbf.ACTION )" or from the `action_folders` directories using "$( cbf.ACTION )".
 Any script language may be used in the any of the `action_folders', other than *02.users_groups* and *03.downloads*.
