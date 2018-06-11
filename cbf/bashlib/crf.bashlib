@@ -156,10 +156,9 @@ export -f crf.copyFileToRuntime
 #############################################################################
 function crf.currentUser()
 {
-    local user=''
+    local user="$(crf.runtimeProperty 'USER')"
 
-    local __lib_savedOptions=$(set +o)
-    [ "${user:-}" ] || user=$(lib.lookupId "$(crf.runtimeProperty 'USER')" 'passwd')
+    [ "${user:-}" ] && user=$(lib.lookupId "$user" 'passwd')
     [ "${user:-}" ] || [ -z "${USER:-}" ] || user=$(lib.lookupId "$USER" 'passwd')
     [ "${user:-}" ] || [ -z "${UID:-}" ] || user=$(lib.lookupId "$UID" 'passwd')
     [ "${user:-}" ] || user=0
@@ -200,8 +199,10 @@ export -f crf.fixupDirectory
 function crf.logEnvironment()
 {
     printf "%s starting.\n" "${CONTAINER_NAME:-}"
+    local envFile="$(crf.RT_ENVIRON)"
+    [ -e "$envFile" ] || trap.die "No CRF environment definition file: $envFile"
     printf "\nrt.environment:\n"
-    for ln in $(cat "$(crf.RT_ENVIRON)" | sort); do
+    for ln in $(cat "$rt_environment" | sort); do
         [ "${ln:0:6}" = 'export' ] && printf "    %s\n" "$(eval echo ${ln:7})"
     done
     printf "\n"
@@ -245,7 +246,7 @@ function crf.removeFromRuntimeEnvironment()
     local -r key="${1:?"Input parameter 'entry' must be passed to 'function ${FUNCNAME[0]}()'"}"
     local -r envFile="$( crf.RT_ENVIRON )"
 
-    if grep -qE "^.*\s+${key}=" "$envFile" ; then
+    if [ -e "$envFile" ] && grep -qE "^.*\s+${key}=" "$envFile" ; then
         sed -i "s|^.* ${key}=.*$||" "$envFile"
     fi
 }
@@ -311,7 +312,10 @@ function crf.runtimeProperty()
 {
     local key="${1:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}"
 
-    lib.getProperty "$(crf.RT_ENVIRON_PREFIX)${key}" "$(crf.RT_ENVIRON)"
+    local envFile="$(crf.RT_ENVIRON)"
+    [ -e "$envFile" ] || return
+
+    lib.getProperty "$(crf.RT_ENVIRON_PREFIX)${key}" "$envFile"
 }
 export -f crf.runtimeProperty
 
@@ -321,6 +325,7 @@ function crf.updateRuntimeEnvironment()
     local -a in_array=( $@ )
     local -r envFile="$( crf.RT_ENVIRON )"
 
+    [ -e "$envFile" ] || return
     for line in ${in_array[@]}; do
         local key="${line%%=*}"
         if grep -qE "^.*\s+${key}=" "$envFile" ; then

@@ -122,7 +122,7 @@ test.lib.getFiles_INVALID() {
 # provide brief explanation of what test does
 test.lib.getProperty_USER() {
     local expected='root'
-    local propFile="$( crf.RT_ENVIRON )"
+    local propFile="${CBF_LOCATION}/cbf/bin/rt.environment"
     local key='export USER'
     local actual="$(lib.getProperty "$key" "$propFile" )"
     assert_equals "$expected" "$actual"
@@ -172,7 +172,7 @@ EOF
 # provide brief explanation of what test does
 test.lib.getProperty_WORKDIR() {
     local expected='/'
-    local propFile="$( crf.RT_ENVIRON )"
+    local propFile="${CBF_LOCATION}/cbf/bin/rt.environment"
     local key='export WORKDIR'
     local actual="$(lib.getProperty "$key" "$propFile" )"
     assert_equals "$expected" "$actual"
