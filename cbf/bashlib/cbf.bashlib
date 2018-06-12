@@ -22,7 +22,7 @@ function cbf.__init()
 CBFBASE=$cbf_base
 BIN=${cbf_base}/bin
 LIB=${cbf_base}/cbf/bashlib
-TEMPLATE=${cbf_base}/action.template
+TEMPLATE=${cbf_base}/action.templates
 BASE=$_base
 ACTION=${_base}/action_folders
 CRF_BASE=${cbf_base}/cbf
