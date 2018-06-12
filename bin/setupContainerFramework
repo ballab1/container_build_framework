@@ -82,7 +82,7 @@ function setupCBF.main()
     export CONTAINER_NAME=NewContainer
 
     # now init stuff so we can use lib functionality
-    source "${CBF_LOCATION}/bin/init.libraries" #> /dev/null 
+    source "${CBF_LOCATION}/cbf/bin/init.libraries"
     
     setupCBF.setupProjectFiles "$projectDir"
 
