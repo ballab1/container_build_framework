@@ -191,9 +191,9 @@ function cbf.initFramework()
     [ -e "$( cbf.CRT_BASE )/bashlib" ] || mkdir -p "$( cbf.CRT_BASE )/bashlib"
     [ -e "$( cbf.CRT_BASE )/bin" ] || mkdir -p "$( cbf.CRT_BASE )/bin"
     [ -e "$( cbf.CRT_BASE )/environment" ] || mkdir -p "$( cbf.CRT_BASE )/environment"
-    [ -e "$( cbf.CRT_BASE )/environment/.info.md" ] || cp "$( cbf.CBF_BIN )/.environment.info.md" "$( cbf.CRT_BASE )/environment/"
+    [ -e "$( cbf.CRT_BASE )/environment/.info.md" ] || cp "$( cbf.BIN )/.environment.info.md" "$( cbf.CRT_BASE )/environment/"
     [ -e "$( cbf.CRT_BASE )/startup" ] || mkdir -p "$( cbf.CRT_BASE )/startup"
-    [ -e "$( cbf.CRT_BASE )/startup/.info.md" ] || cp "$( cbf.CBF_BIN )/.startup.info.md" "$( cbf.CRT_BASE )/startup/"
+    [ -e "$( cbf.CRT_BASE )/startup/.info.md" ] || cp "$( cbf.BIN )/.startup.info.md" "$( cbf.CRT_BASE )/startup/"
 
 
 

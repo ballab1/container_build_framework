@@ -30,5 +30,5 @@ if [ -z "$cbf_dir" ] || [ ! -d "$cbf_dir" ]; then
 fi
 
 echo "loading framework from ${cbf_dir}"
-chmod 755 "${cbf_dir}/bin/build.sh"
+chmod 755 "${cbf_dir}/cbf/bin/build.sh"
 exec "${cbf_dir}/cbf/bin/build.sh" "$@"
