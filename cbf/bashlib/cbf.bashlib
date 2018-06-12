@@ -149,7 +149,7 @@ function cbf.buildContainer()
             done
             files=()
         fi
-        files+=( $( lib.getFiles "$( cbf.TEMPLATE )/$dir" ) )
+        files+=( $( lib.getFiles "$( cbf.TEMPLATES )/$dir" ) )
 
         [ ${#files[*]} -gt 0 ] || continue
 
