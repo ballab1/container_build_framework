@@ -64,7 +64,7 @@ function cbf.TEMPLATES()
 {
     lib.getProperty "${FUNCNAME[0]##*.}" "$( cbf.propertiesFile )"
 }
-export -f cbf.TEMPLATE
+export -f cbf.TEMPLATES
 
 #############################################################################
 function cbf.BASE()
