@@ -135,7 +135,7 @@ function cbf.buildContainer()
     for dir in $( printf "%s\n" "${!steps[@]}" | sort ); do
         [ "$dir" != '08.cleanup' ] || [ "$DEBUG_TRACE" = 0 ] || continue
         
-        if [ "$dir" != '00.bashlibs' ]; then
+        if [ "$dir" = '00.bashlibs' ]; then
             cbf.initFramework
             continue
         fi
