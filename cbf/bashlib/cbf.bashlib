@@ -130,12 +130,11 @@ function cbf.buildContainer()
         package.installTimezone "$timezone"
     fi
 
-
     # iterate through list
     for dir in $( printf "%s\n" "${!steps[@]}" | sort ); do
         [ "$dir" != '08.cleanup' ] || [ "$DEBUG_TRACE" = 0 ] || continue
         
-        if [ "$dir" != '00.bashlib' ]; then
+        if [ "$dir" = '00.bashlib' ]; then
             cbf.initFramework
             continue
         fi
@@ -217,18 +216,21 @@ function cbf.initFramework()
 
 
     # copy any custom bashlibs to crf
-    for bashlib in $(find "$(cbf.ACTION)/00.bashlib" -maxdepth 1 -mindepth 1 -type f ! -name '.*'); do
-        crf.copyFileToRuntime 'LIB' "$file"
-    done
+    files=( $(lib.getFiles "$(cbf.ACTION)/00.bashlib") )
+    if [ ${#files[*]} -gt 0 ]; then
+        for file in "${files[@]}"; do
+            crf.copyFileToRuntime 'LIB' "$file"
+        done
+    fi
 
 
     # create docker-entrypoint.sh from copy default entrypoint script if none exists to invoke the CRF
-    if [ ! -e "$( cbf.BASE )/override.entrypoint" ]; then
+    if [ ! -e "$(cbf.BASE)/override.entrypoint" ]; then
         # this may get refactored into processing of 'container.properties'
-        if [ ! -e /usr/local/bin/docker-entrypoint.sh ]; then
+        if [ !	 -e /usr/local/bin/docker-entrypoint.sh ]; then
             mkdir -p /usr/local/bin
             echo 'Creating docker-entrypoint.sh'
-            cp "$( cbf.CRF_BIN )/default.entrypoint" /usr/local/bin/docker-entrypoint.sh
+            cp "$(cbf.CRF_BIN)/default.entrypoint" /usr/local/bin/docker-entrypoint.sh
 
         elif [ -e "$( cbf.BASE )/usr/local/bin/docker-entrypoint.sh" ]; then
             echo 'Potential conflict detected with existing file: /usr/local/bin/docker-entrypoint.sh'
@@ -243,7 +245,7 @@ function cbf.initFramework()
 
 
     # setup some variables based on runtime properties in the Dockerfile
-    local props=/tmp/container.properties
+    local props="$(cbf.BASE)/container.properties)"
     if [ -e "$props" ]; then
         local -i val
         while IFS='=' read -r key value; do
@@ -282,7 +284,7 @@ set -o pipefail
 IFS=$'\n\t'
 [ ! -e "$(cbf.CRF_BASE)/bin/init.runtime" ] || source "$(cbf.CRF_BASE)/bin/init.runtime"
 if [ "$DEBUG_TRACE" != "0" ]; then
-    declare -p > "$tmpScript".env
+    declare -p > "${tmpScript}.env"
     set -o verbose
 fi
 source "$file"
