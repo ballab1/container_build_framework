@@ -15,7 +15,7 @@ function setupCBF.createStructure()
 
     if [ -d "${actionFolders}/00.setup" ]; then
         echo "  renaming action folder:  '00.setup' to '01.setup'"
-        mv "${actionFolders}/01.setup" "${actionFolders}/00.setup"
+        mv "${actionFolders}/00.setup" "${actionFolders}/01.setup"
     fi
     if [ -d "${actionFolders}/01.packages" ]; then
         echo "  renaming action folder:  '01.packages' to '02.packages'"
@@ -128,7 +128,7 @@ function setupCBF.setupProjectFiles()
     find "$top" -mindepth 1 -type l -delete
 
     # setup out structure
-    setupCBF.createStructure "$actionFolders" "$( cbf.CBFBASE )/action.template"
+    setupCBF.createStructure "$actionFolders" "$( cbf.CBFBASE )/action.templates"
 }
 
 ######################################################################
