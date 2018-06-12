@@ -22,7 +22,7 @@ function cbf.__init()
 CBFBASE=$cbf_base
 BIN=${cbf_base}/bin
 LIB=${cbf_base}/cbf/bashlib
-TEMPLATE=${cbf_base}/action.templates
+TEMPLATE=${cbf_base}/action.template
 BASE=$_base
 ACTION=${_base}/action_folders
 CRF_BASE=${cbf_base}/cbf
@@ -109,7 +109,7 @@ function cbf.buildContainer()
     local -r timezone=${3:-null}
 
     # list of 'notice, directory, action' to perform
-    local -A steps=( ['00.bashlibs']='cbf.initFramework'
+    local -A steps=( ['00.bashlib']='cbf.initFramework'
                      ['01.setup']='cbf.runScripts'
                      ['02.packages']='package.runScripts'
                      ['03.users_groups']='uidgid.check'
@@ -135,7 +135,7 @@ function cbf.buildContainer()
     for dir in $( printf "%s\n" "${!steps[@]}" | sort ); do
         [ "$dir" != '08.cleanup' ] || [ "$DEBUG_TRACE" = 0 ] || continue
         
-        if [ "$dir" = '00.bashlibs' ]; then
+        if [ "$dir" != '00.bashlib' ]; then
             cbf.initFramework
             continue
         fi
@@ -217,7 +217,7 @@ function cbf.initFramework()
 
 
     # copy any custom bashlibs to crf
-    for bashlib in $(find "$(cbf.ACTION)/00.bashlibs" -maxdepth 1 -mindepth 1 -type f ! -name '.*'); do
+    for bashlib in $(find "$(cbf.ACTION)/00.bashlib" -maxdepth 1 -mindepth 1 -type f ! -name '.*'); do
         crf.copyFileToRuntime 'LIB' "$file"
     done
 
