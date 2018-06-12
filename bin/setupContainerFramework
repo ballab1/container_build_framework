@@ -33,9 +33,17 @@ function setupCBF.createStructure()
         echo "  renaming action folder:  '04.applications' to '05.applications'"
         mv "${actionFolders}/04.applications" "${actionFolders}/05.applications"
     fi
+    if [ -d "${actionFolders}/05.build.customizations" ]; then
+        echo "  renaming action folder:  '05.build.customizations' to '06.build.customizations'"
+        mv "${actionFolders}/05.build.customizations" "${actionFolders}/06.build.customizations"
+    fi
     if [ -d "${actionFolders}/05.customizations" ]; then
         echo "  renaming action folder:  '05.customizations' to '06.build.customizations'"
         mv "${actionFolders}/05.customizations" "${actionFolders}/06.build.customizations"
+    fi
+    if [ -d "${actionFolders}/06.run.startup" ]; then
+        echo "  renaming action folder:  '06.run.startup' to '07.run.startup'"
+        mv "${actionFolders}/06.run.startup" "${actionFolders}/07.run.startup"
     fi
     if [ -d "${actionFolders}/06.permissions" ]; then
         echo "  renaming action folder:  '06.permissions' to '07.run.startup'"
