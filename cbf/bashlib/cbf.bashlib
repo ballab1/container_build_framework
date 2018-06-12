@@ -22,7 +22,7 @@ function cbf.__init()
 CBFBASE=$cbf_base
 BIN=${cbf_base}/bin
 LIB=${cbf_base}/cbf/bashlib
-TEMPLATE=${cbf_base}/action.template
+TEMPLATES=${cbf_base}/action.templates
 BASE=$_base
 ACTION=${_base}/action_folders
 CRF_BASE=${cbf_base}/cbf
@@ -60,7 +60,7 @@ function cbf.LIB()
 export -f cbf.LIB
 
 #############################################################################
-function cbf.TEMPLATE()
+function cbf.TEMPLATES()
 {
     lib.getProperty "${FUNCNAME[0]##*.}" "$( cbf.propertiesFile )"
 }
@@ -158,7 +158,7 @@ function cbf.buildContainer()
         local action="${steps[$dir]}"
         # get .info file, & read for 'notice'
         local info="$( cbf.ACTION )/$dir/.info"
-        [ -e "$info" ] || info="$( cbf.TEMPLATE )/${dir}/.info"
+        [ -e "$info" ] || info="$( cbf.TEMPLATES )/${dir}/.info"
         local notice="$(< "$info" )"
 
 
