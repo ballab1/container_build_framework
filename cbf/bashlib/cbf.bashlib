@@ -228,7 +228,7 @@ function cbf.initFramework()
         if [ ! -e /usr/local/bin/docker-entrypoint.sh ]; then
             mkdir -p /usr/local/bin
             echo 'Creating docker-entrypoint.sh'
-            cp "$( cbf.BIN )/default.entrypoint" /usr/local/bin/docker-entrypoint.sh
+            cp "$( cbf.CRF_BIN )/default.entrypoint" /usr/local/bin/docker-entrypoint.sh
 
         elif [ -e "$( cbf.BASE )/usr/local/bin/docker-entrypoint.sh" ]; then
             echo 'Potential conflict detected with existing file: /usr/local/bin/docker-entrypoint.sh'
