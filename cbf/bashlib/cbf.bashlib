@@ -174,9 +174,9 @@ function cbf.buildContainer()
             echo "$action: (unsorted)"
             printf "    %s\n" "${files[@]}"
         fi
-[ "$dir" = '03.users_groups' ] && set -x
+
         "$action" "${files[@]}"
-[ "$dir" = '03.users_groups' ] && set -x
+
     done
 }
 export -f cbf.buildContainer
