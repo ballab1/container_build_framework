@@ -18,7 +18,7 @@ function term.codes()
     local -r name=${2:?"Input parameter 'code' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     local fmt=''
-    local -r code=$(lib.getProperty "$name" "$(term.propertiesDir)/term_${mode^^}.properties")
+    local -r code=$(lib.getProperty "$name" "$(term.propertiesDir "term_${mode^^}.properties"))
     [ $? -ne 0 ] || [ -z "$code" ] || fmt="\e[%dm"
     printf "$fmt" "$code"
 }
@@ -41,8 +41,8 @@ function term.decode()
         esac
     else
         local fmt=''
-        local -r bg_code=$(lib.getProperty "$bg" "$(term.propertiesDir)/term_BACKGROUND.properties")
-        local -r fg_code=$(lib.getProperty "$fg" "$(term.propertiesDir)/term_FOREGROUND.properties")
+        local -r bg_code=$(lib.getProperty "$bg" "$(term.propertiesDir "term_BACKGROUND.properties"))
+        local -r fg_code=$(lib.getProperty "$fg" "$(term.propertiesDir "term_FOREGROUND.properties")_
         [ -z "$bg_code" ] || [ -z "$fg_code" ] || fmt="\e[%d;%dm"
         printf "$fmt" "$fg_code" "$bg_code"
     fi
@@ -79,13 +79,26 @@ export -f term.log
 #############################################################################
 function term.propertiesDir()
 {
-    if [ -z "${TERM_DIR:-}" ]; then
-        TERM_DIR="$(crf.LIB)/properties"
-        [ -e "$TERM_DIR" ] || TERM_DIR="$(cbf.CRF_BASE)/bashlib/properties"
-        [ -e "$TERM_DIR" ] || TERM_DIR="$(cbf.CRT_BASE)/bashlib/properties"
-        [ -e "$TERM_DIR" ] || TERM_DIR="/usr/local/crf/bashlib/properties"
-    fi
-    echo "$TERM_DIR"
+    local -r file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    local propertyFile="$file"
+    for dir in "${TERM_DIR:-}" "$(crf.LIB)" "$(cbf.CRF_BASE)" "$(cbf.CRT_BASE)" "/usr/local/crf" "."; do
+        [ -z "$dir" ] && continue
+        
+        if [ -f "${dir}/bashlib/properties/$file" ]; then
+            propertyFile="${dir}/bashlib/properties/$file"
+            break
+        fi
+        if [ -f "${dir}/properties/$file" ]; then
+            propertyFile="${dir}/properties/$file"
+            break
+        fi
+        if [ -f "${dir}/$file" ]; then
+            propertyFile="${dir}/$file"
+            break
+        fi
+    done
+    echo "$propertyFile"
 }
 export -f term.propertiesDir
 
