@@ -46,7 +46,7 @@ function libNotLoaded()
 
 #############################################################################
 
-: ${CBF_LOCATION:="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P )"}
+: ${CBF_LOCATION:="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P )"}
 : ${CRF_LOCATION:=/usr/local/crf}
 : ${DEBUG_TRACE:=0}
 
