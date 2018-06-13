@@ -182,7 +182,7 @@ useradd: --no-create-home"
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.uidgid.runScript() {
+skip.test.uidgid.verify() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -269,7 +269,7 @@ export -f __test_uidgid_bashlib.mktemp
 
 # MOCK logger implementation
 __test_uidgid_bashlib.mock_logger() {
-    printf "%s\n" "$*" >> "${test_uidgid_bashlib_LOG_file}"
+    printf "%s\n" "$*" >> "$test_uidgid_bashlib_LOG_file"
 }
 export -f __test_uidgid_bashlib.mock_logger
 

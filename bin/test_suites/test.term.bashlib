@@ -183,7 +183,7 @@ test.term.header() {
     local test_LOG=$( __test_term_bashlib.mktemp )
     fake 'term.log' 'printf "|%s|%s|" $2 $1 >> "$test_LOG"'
     term.header 'Starting CONTAINER BUILD' 'info'
-    local actual="$(< "${test_LOG}" )"
+    local actual="$(< "$test_LOG" )"
     assert_equals "$expected" "$actual"
 }
 
@@ -298,7 +298,7 @@ export -f __test_term_bashlib.mktemp
 
 # MOCK logger implementation
 __test_term_bashlib.mock_logger() {
-    printf "%s\n" "$*" >> "${test_term_bashlib_LOG_file}"
+    printf "%s\n" "$*" >> "$test_term_bashlib_LOG_file"
 }
 export -f __test_term_bashlib.mock_logger
 

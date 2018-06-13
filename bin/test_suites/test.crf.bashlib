@@ -40,7 +40,7 @@
 #-----------------------------------------------------------------------------------------
 # verify correct location of crf.BASE
 test.crf.BASE() {
-    local expected="${CRF_LOCATION}"
+    local expected="$CRF_LOCATION"
     local actual="$( crf.BASE )"
     assert_equals "$expected" "$actual"
 }
@@ -324,7 +324,7 @@ export -f __test_crf_bashlib.mktemp
 
 # MOCK logger implementation
 __test_crf_bashlib.mock_logger() {
-    printf "%s\n" "$*" >> "${test_crf_bashlib_LOG_file}"
+    printf "%s\n" "$*" >> "$test_crf_bashlib_LOG_file"
 }
 export -f __test_crf_bashlib.mock_logger
 

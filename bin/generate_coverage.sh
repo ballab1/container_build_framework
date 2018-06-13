@@ -12,7 +12,7 @@ echo "Generating Coverage information. This will take a few seconds."
 #   https://simonkagstrom.livejournal.com/50380.html
 docker run --security-opt seccomp=unconfined \
            --rm \
-           -v "${base}":/source \
+           -v "$base":/source \
            afeoscyc-mw.cec.lab.emc.com/kcov:v33 \
            --exclude-pattern "/tmp,/source/unit-tests" \
            /source/out \

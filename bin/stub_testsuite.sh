@@ -30,8 +30,8 @@ function stub_testsuite.createFile()
     local -r file_under_test=${1:?"Input parameter 'file_under_test' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r test_file=${2:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
 
-    printf "\nGenerating test suite file: %s\n" "${test_file}"
-    [ -e "${test_file}" ] && mv "${test_file}" "${test_file}.sav"
+    printf "\nGenerating test suite file: %s\n" "$test_file"
+    [ -e "$test_file" ] && mv "$test_file" "${test_file}.sav"
 
     local namespace="$( stub_testsuite.nameSpace "$test_file" )"
 
@@ -103,7 +103,7 @@ export -f __${namespace}.mktemp
 
 # MOCK logger implementation
 __${namespace}.mock_logger() {
-    printf "%s\n" "\$@" >> "\${${namespace}_LOG_file}"
+    printf "%s\n" "\$@" >> "\$${namespace}_LOG_file"
 }
 export -f __${namespace}.mock_logger
 
@@ -181,7 +181,7 @@ function stub_testsuite.main()
     # fully qualified name of file_under_test
     local -r file_under_test="$( cd "$( dirname "$fut" )" && pwd )/$( basename "$fut" )"
 
-    printf "\nFile under test:            %s\n" "${file_under_test}"
+    printf "\nFile under test:            %s\n" "$file_under_test"
 
     # test file in test directory. name:  remove extension and prefix with 'test.'
     local -r test_file="${test_dir}/test.$( basename "$fut" )"
@@ -219,7 +219,7 @@ function stub_testsuite.scanTestFile()
     local -r file_under_test=${1:?"Input parameter 'file_under_test' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r test_file=${2:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
 
-    printf "\nTest suite being checked:   %s" "${test_file}"
+    printf "\nTest suite being checked:   %s" "$test_file"
 
     local -ar functions=( $(stub_testsuite.getFunctionNames "$file_under_test") )
     local -a tests=( $(stub_testsuite.getTestNames "$test_file") )
@@ -240,7 +240,7 @@ function stub_testsuite.scanTestFile()
         let used_count=( used_count + count )
         [ "$count" -eq 0 ] && unused+=( "$function_name" )
     done
-    printf "\n\n  %d out of %d tests used" "${used_count}" "${#tests[@]}"
+    printf "\n\n  %d out of %d tests used" "$used_count" "${#tests[@]}"
     if [ "${#unused[@]}" -gt 0 ]; then
         printf "\n  The following functions have no tests: "
         printf "%s " "${unused[@]}"

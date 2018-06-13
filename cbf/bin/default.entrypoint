@@ -16,7 +16,7 @@ declare -r config_entry="${CONTAINER_NAME}-setup"
 
 
 #  startup container
-if [[ "$1" = "${CONTAINER_NAME}" ]]; then
+if [[ "$1" = "$CONTAINER_NAME" ]]; then
     # this is the primary (default) codepath invoked by the Dockerfile
     crf.logEnvironment
     term.log '>>>>>>>> entering ' 'green'

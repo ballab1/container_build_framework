@@ -23,7 +23,7 @@ function test.downloadFramework()
 {
     local -r download_dir=${1:?"must pass parameter 'download_dir' to 'function ${FUNCNAME[0]}()'"}
 
-    if [[ -n "${download_dir}" && "${download_dir}" != '/' ]]; then
+    if [[ -n "$download_dir" && "$download_dir" != '/' ]]; then
         pushd "$download_dir"
 
         echo "Downloading unit_test framework:"
@@ -38,7 +38,7 @@ function test.downloadFramework()
             wget -O "${BASH_UNIT['file']}" --no-check-certificate "${BASH_UNIT['url']}" > /dev/null 2>&1
             [ $? -eq 0 ] || continue
             local result=$(echo "${BASH_UNIT['sha256']}  ${BASH_UNIT['file']}" | sha256sum -cw 2>&1)
-            echo "${result}"
+            echo "$result"
             if [[ "$result" == *'FAILED'* ]]; then
                 echo "..Incorrect checksum for ${BASH_UNIT['file']}"
                 echo "    actual:   $( sha256sum "${BASH_UNIT['file']}" | awk '{ print $1 }')"
@@ -91,7 +91,7 @@ function test.processArgs()
                     args[j]="${args[k]}"
                 done
                 args[0]='-p'
-                args[1]="${pattern}"
+                args[1]="$pattern"
                 continue
             fi
 

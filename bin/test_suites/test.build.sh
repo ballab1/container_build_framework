@@ -117,7 +117,7 @@ export -f __test_build_sh.mktemp
 
 # MOCK logger implementation
 __test_build_sh.mock_logger() {
-    printf "%s\n" "$*" >> "${test_build_sh_LOG_file}"
+    printf "%s\n" "$*" >> "$test_build_sh_LOG_file"
 }
 export -f __test_build_sh.mock_logger
 

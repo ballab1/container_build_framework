@@ -189,7 +189,7 @@ export -f __test_setupContainerFramework.mktemp
 
 # MOCK logger implementation
 __test_setupContainerFramework.mock_logger() {
-    printf "%s\n" "$*" >> "${test_setupContainerFramework_LOG_file}"
+    printf "%s\n" "$*" >> "$test_setupContainerFramework_LOG_file"
 }
 export -f __test_setupContainerFramework.mock_logger
 

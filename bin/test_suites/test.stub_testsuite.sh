@@ -207,7 +207,7 @@ export -f __test_stub_testsuite_sh.mktemp
 
 # MOCK logger implementation
 __test_stub_testsuite_sh.mock_logger() {
-    printf "%s\n" "$*" >> "${test_stub_testsuite_sh_LOG_file}"
+    printf "%s\n" "$*" >> "$test_stub_testsuite_sh_LOG_file"
 }
 export -f __test_stub_testsuite_sh.mock_logger
 

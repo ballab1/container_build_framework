@@ -116,7 +116,7 @@ function lib.getUID()
 {
     local -r user=${1:-$(crf.currentUser)}
 
-    lib.lookupId "${user}" 'passwd'
+    lib.lookupId "$user" 'passwd'
 }
 export -f lib.getUID
 

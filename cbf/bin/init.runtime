@@ -44,7 +44,7 @@ function loadEnvars()
     local -a path=${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -a files=()
 
-    if [ "${path}" ] && [  -d "${path}/environment" ]; then
+    if [ "$path" ] && [  -d "${path}/environment" ]; then
         files=( $(find "${path}/environment" -maxdepth 1 -mindepth 1 -type f ! -name '.*'  -print) )
     fi
     [ "${#files[@]}" -eq 0 ] || printf "%s\n" "${files[@]}"
@@ -57,7 +57,7 @@ function loadLibrary()
     local -r color=${2:-0}
     local -r name="$(basename "$src")"
 
-    [ $((__libCount2++ )) -eq 0 ] && printf "    loading libraries:  "
+    [ $(( __libCount2++ )) -eq 0 ] && printf "    %s (\e[35m%s\e[0m:\e[36m%s\e[0m):  " 'loading libraries' 'CRF' 'pwd'
     printf "\e[%sm%s\e[0m " "$color" "$name"
     source "$src"
 }
@@ -77,7 +77,7 @@ function loadLibs()
     local src
     for src in "${files[@]}" ; do
         if  libNotLoaded "$src" ; then
-            loadLibrary "${src}" "$color"
+            loadLibrary "$src" "$color"
         fi
     done
 }
@@ -103,7 +103,7 @@ function sourcingMessage()
         color=32   # green
     fi
 
-    [ $(( __envCount++ )) -eq 0 ] && printf "    sourcing:  "
+    [ $(( __envCount++ )) -eq 0 ] && printf "    sourcing (\e[96m%s\e[0m:\e[95m:%s\e[0m:\e[94m%s\e[0m:\e[32m%s\e[0m):  " 'CRF' 'tmp' 'pwd' 'other'
     printf "\e[%sm%s\e[0m " "$color" "$name"
 }
 
@@ -128,7 +128,7 @@ fi
 
 # load our bashlibs
 declare -i __libCount2=${__libCount:-0}
-loadLibs "${CRF_LOCATION}" 35                                        # magenta
+loadLibs "$CRF_LOCATION" 35                                          # magenta
 loadLibs "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )" 36   # cyan
 [ $__libCount2 -gt 0 ] && printf "\n"
 
@@ -140,7 +140,7 @@ if [ -e "${CRF_LOCATION}/bin/rt.environment" ]; then
 fi
 
 # load our definitions (associative arrays)
-declare -a _files=( $(loadEnvars "${CRF_LOCATION}") )
+declare -a _files=( $(loadEnvars "$CRF_LOCATION") )
 _files+=( $(loadEnvars "${CBF_LOCATION}${CRF_LOCATION}") )
 _files+=( $(loadEnvars "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )") )
 if [ "${#_files[@]}" -gt 0 ]; then

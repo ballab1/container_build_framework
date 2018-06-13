@@ -90,7 +90,7 @@ test.lib.file_env_CONFLICT() {
 # verify array of full pathname visible files is returned
 test.lib.getFiles() {
     local -r tmp=$(__test_lib_bashlib.mktemp -d)
-    mkdir -p "${tmp}"
+    mkdir -p "$tmp"
     local -a names=( a b c d )
     local -a expected=()
     for file in "${expected[@]}"; do
@@ -106,7 +106,7 @@ test.lib.getFiles() {
 # verify that we do not return input list if we remove a file
 test.lib.getFiles_INVALID() {
     local -r tmp=$(__test_lib_bashlib.mktemp -d)
-    mkdir -p "${tmp}"
+    mkdir -p "$tmp"
     local -a files=( a b c d )
     local -a expected=()
     for file in "${files[@]}"; do
@@ -327,7 +327,7 @@ test.lib.normalizePath_rootbase() {
 # verify error returned when no args provided
 test.lib.normalizePath_normal() {
     local expected='base/x/y/t'
-    local actual="$(lib.normalizePath "${expected}")"
+    local actual="$(lib.normalizePath "$expected")"
     assert_equals "$expected" "$actual"
 }
 
@@ -335,7 +335,7 @@ test.lib.normalizePath_normal() {
 # verify error returned when no args provided
 test.lib.normalizePath_normalbase() {
     local expected='/base/x/y/t'
-    local actual="$(lib.normalizePath "${expected}")"
+    local actual="$(lib.normalizePath "$expected")"
     assert_equals "$expected" "$actual"
 }
 
@@ -821,7 +821,7 @@ export -f __test_lib_bashlib.mktemp
 
 # MOCK logger implementation
 __test_lib_bashlib.mock_logger() {
-    printf "%s\n" "$*" >> "${test_lib_bashlib_LOG_file}"
+    printf "%s\n" "$*" >> "$test_lib_bashlib_LOG_file"
 }
 export -f __test_lib_bashlib.mock_logger
 

@@ -85,7 +85,7 @@ function term.propertiesDir()
         [ -e "$TERM_DIR" ] || TERM_DIR="$(cbf.CRT_BASE)/bashlib/properties"
         [ -e "$TERM_DIR" ] || TERM_DIR="/usr/local/crf/bashlib/properties"
     fi
-    echo "${TERM_DIR}"
+    echo "$TERM_DIR"
 }
 export -f term.propertiesDir
 

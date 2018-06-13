@@ -243,7 +243,7 @@ export -f __test_cbf_bashlib.mktemp
 
 # MOCK logger implementation
 __test_cbf_bashlib.mock_logger() {
-    printf "%s\n" "$*" >> "${test_cbf_bashlib_LOG_file}"
+    printf "%s\n" "$*" >> "$test_cbf_bashlib_LOG_file"
 }
 export -f __test_cbf_bashlib.mock_logger
 

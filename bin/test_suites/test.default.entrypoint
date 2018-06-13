@@ -117,7 +117,7 @@ export -f __test_default_entrypoint.mktemp
 
 # MOCK logger implementation
 __test_default_entrypoint.mock_logger() {
-    printf "%s\n" "$*" >> "${test_default_entrypoint_LOG_file}"
+    printf "%s\n" "$*" >> "$test_default_entrypoint_LOG_file"
 }
 export -f __test_default_entrypoint.mock_logger
 
