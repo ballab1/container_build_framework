@@ -8,7 +8,6 @@
 function uidgid.check()
 {
     local -a files=( "$@" )
-
     [ ${#files[*]} -gt 0 ] || return
     for file in "${files[@]}" ; do
         crf.copyFileToRuntime 'ENV' "$file"

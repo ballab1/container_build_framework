@@ -55,7 +55,7 @@ export -f download.getFile
 #############################################################################
 function download.getPackages()
 {
-    local -a files=${1:?"Input parameter 'files' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -a files=( "$@" )
 
     for file in ${files} ; do
         crf.copyFileToRuntime 'ENV' "$file"

@@ -133,7 +133,7 @@ function cbf.buildContainer()
     # iterate through list
     for dir in $( printf "%s\n" "${!steps[@]}" | sort ); do
         [ "$dir" != '08.cleanup' ] || [ "$DEBUG_TRACE" = 0 ] || continue
-        
+
         if [ "$dir" = '00.bashlib' ]; then
             cbf.initFramework
             continue
@@ -174,7 +174,9 @@ function cbf.buildContainer()
             echo "$action: (unsorted)"
             printf "    %s\n" "${files[@]}"
         fi
-        "$action" "${files[*]}"
+[ "$dir" = '03.users_groups' ] && set -x
+        "$action" "${files[@]}"
+[ "$dir" = '03.users_groups' ] && set -x
     done
 }
 export -f cbf.buildContainer
@@ -260,9 +262,9 @@ function cbf.initFramework()
     fi
 
     # create an archive of parts of CBF that exists in /tmp to permit otehr dependent containers to inherit the CBF
-    if [ -f "$( cbf.BIN )/files.txt" ]; then
+    if [ -f "$( cbf.CRF_BIN )/files.txt" ]; then
         cd "$( cbf.CBFBASE )"
-        tar -czf "$(cbf.CRT_BASE)/cbf.tar.gz" -T "$( cbf.BIN )/files.txt"
+        tar -czf "$(cbf.CRT_BASE)/cbf.tar.gz" -T "$( cbf.CRF_BIN )/files.txt"
     fi
 }
 export -f cbf.initFramework
@@ -313,8 +315,8 @@ export -f cbf.propertiesFile
 #############################################################################
 function cbf.runScripts()
 {
-    local -a files=${1:?"Input parameter 'files' must be passed to 'function ${FUNCNAME[0]}()'"}
-
+    local -a files=( "$@" )
+    
     # create a hash to sort the files by name & remove any templates that have been overridden
     local -A ahash
     for file in ${files[@]}; do
