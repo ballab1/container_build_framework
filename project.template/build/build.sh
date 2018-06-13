@@ -12,6 +12,7 @@ cbf_dir=/tmp/container_build_framework
 if [ ! -d "$cbf_dir" ] && [ "${CBF_VERSION}" ]; then
     # since no CBF directory located, attempt to download CBF based on specified verion
     CBF_URL="https://github.com/ballab1/container_build_framework/archive/${CBF_VERSION}.tar.gz"
+    echo "Attempting to download and unpack $CBF_URL"
     wget --no-check-certificate --quiet --output-document=- "$CBF_URL" | tar -xz
     [ $? -eq 0 ] || exit 1
     cbf_dir="$( ls -d container_build_framework-* 2>/dev/null )"

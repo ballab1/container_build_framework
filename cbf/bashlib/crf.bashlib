@@ -18,12 +18,11 @@ function crf.__init()
     if [ ! -e "$CRF_PROPERTIES_FILE" ]; then
         mkdir -p "$crf_base"
         cat << EOF > "$CRF_PROPERTIES_FILE"
-BASE="$crf_base"
-BIN="${crf_base}/bin"
-ENV="${crf_base}/environment"
-LIB="${crf_base}/bashlib"
-ROOT="${CRF_LOCATION:-${crf}}"
-STARTUP="${crf_base}/startup"
+BASE=$crf_base
+BIN=${crf_base}/bin
+ENV=${crf_base}/environment
+LIB=${crf_base}/bashlib
+STARTUP=${crf_base}/startup
 EOF
         [ "$DEBUG_TRACE" = 0 ] || cat "$CRF_PROPERTIES_FILE"
         [ -e "$(cbf.propertiesFile)" ] || term.log "runtime initialized\n"

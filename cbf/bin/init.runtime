@@ -103,7 +103,7 @@ function sourcingMessage()
         color=32   # green
     fi
 
-    [ $(( __envCount++ )) -eq 0 ] && printf "    sourcing (\e[96m%s\e[0m:\e[95m:%s\e[0m:\e[94m%s\e[0m:\e[32m%s\e[0m):  " 'CRF' 'tmp' 'pwd' 'other'
+    [ $(( __envCount++ )) -eq 0 ] && printf "    sourcing (\e[96m%s\e[0m:\e[95m%s\e[0m:\e[94m%s\e[0m:\e[32m%s\e[0m):  " 'CRF' 'tmp' 'pwd' 'other'
     printf "\e[%sm%s\e[0m " "$color" "$name"
 }
 

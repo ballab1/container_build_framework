@@ -16,7 +16,7 @@ function cbf.__init()
 
     CBF_PROPERTIES_FILE="${cbf_base}/CBF.properties"
     if [ ! -e "$CBF_PROPERTIES_FILE" ]; then
-        local -r _base="$( cd "$( dirname "$cbf_base" )/.." && pwd )"
+        local -r _base="$( cd "$( dirname "$cbf_base" )" && pwd )"
 
         cat << EOF > "$CBF_PROPERTIES_FILE"
 CBFBASE=$cbf_base
