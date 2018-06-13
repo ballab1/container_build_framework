@@ -42,7 +42,7 @@ function term.decode()
     else
         local fmt=''
         local -r bg_code=$(lib.getProperty "$bg" "$(term.propertiesDir "term_BACKGROUND.properties"))
-        local -r fg_code=$(lib.getProperty "$fg" "$(term.propertiesDir "term_FOREGROUND.properties")_
+        local -r fg_code=$(lib.getProperty "$fg" "$(term.propertiesDir "term_FOREGROUND.properties"))
         [ -z "$bg_code" ] || [ -z "$fg_code" ] || fmt="\e[%d;%dm"
         printf "$fmt" "$fg_code" "$bg_code"
     fi
