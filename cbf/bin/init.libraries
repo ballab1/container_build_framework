@@ -58,7 +58,7 @@ function libNotLoaded()
 declare -i __libCount=0
 loadLibs "${CBF_LOCATION}/cbf/bashlib" 32                      # green
 loadLibs "${CRF_LOCATION}/cbf/bashlib" 35                      # magenta
-loadLibs "${CBF_LOCATION}/action_folders/00.bashlib" 36    # cyan
+loadLibs "${CBF_LOCATION}/action_folders/00.bashlib" 36        # cyan
 
 
 # init the framework

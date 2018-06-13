@@ -94,16 +94,16 @@ function sourcingMessage()
     if [ "$name" = 'rt.environment' ]; then
         color=97   # white
     elif [ "$dir" = "$CRF_LOCATION" ]; then
-        color=96   # lt_cyan
+        color=35   # magenta
     elif [ "$dir" = "${CBF_LOCATION}${CRF_LOCATION}" ]; then
         color=95   # lt_magenta
     elif [ "$dir" = "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )" ]; then
         color=94   # lt_blue
     else
-        color=32   # green
+        color=36   # cyan
     fi
 
-    [ $(( __envCount++ )) -eq 0 ] && printf "    sourcing (\e[96m%s\e[0m:\e[95m%s\e[0m:\e[94m%s\e[0m:\e[32m%s\e[0m):  " 'CRF' 'tmp' 'pwd' 'other'
+    [ $(( __envCount++ )) -eq 0 ] && printf "    sourcing (\e[35m%s\e[0m:\e[95m%s\e[0m:\e[94m%s\e[0m:\e[36m%s\e[0m):  " 'CRF' 'tmp' 'pwd' 'other'
     printf "\e[%sm%s\e[0m " "$color" "$name"
 }
 

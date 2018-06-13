@@ -26,8 +26,7 @@ function uidgid.createUserAndGroup()
 
     term.log "..executing ${file}\n" 'info'
 
-#    source "$(crf.BIN)/init.runtime"
-#    chmod 755 "$file"
+    source "$(crf.BIN)/init.runtime"
     source "$file"
 
     #strip path & prefix from file to get name
