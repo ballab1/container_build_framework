@@ -77,24 +77,23 @@ function term.propertiesDir()
 {
     local -r file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
 
-    local propertyFile="$file"
     for dir in "${TERM_DIR:-}" "$(crf.LIB)" "$(cbf.CRF_BASE)" "$(cbf.CRT_BASE)" "/usr/local/crf" "."; do
         [ -z "$dir" ] && continue
         
         if [ -f "${dir}/bashlib/properties/$file" ]; then
-            propertyFile="${dir}/bashlib/properties/$file"
-            break
+            echo "${dir}/bashlib/properties/$file"
+            return
         fi
         if [ -f "${dir}/properties/$file" ]; then
-            propertyFile="${dir}/properties/$file"
-            break
+            echo "${dir}/properties/$file"
+            return
         fi
         if [ -f "${dir}/$file" ]; then
-            propertyFile="${dir}/$file"
-            break
+            echo "${dir}/$file"
+            return
         fi
     done
-    echo "$propertyFile"
+    trap.die "unable to locate property file: $file"
 }
 export -f term.propertiesDir
 
