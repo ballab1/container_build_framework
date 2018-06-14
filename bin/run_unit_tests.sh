@@ -70,7 +70,7 @@ function test.downloadFramework()
 #############################################################################
 function test.processArgs()
 {
-    local -a args=( $@ )
+    local -a args=( "$@" )
 
     if [ ${#args[*]} -eq 0 ]; then
         args=( test* )

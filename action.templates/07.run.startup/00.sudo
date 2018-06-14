@@ -19,7 +19,7 @@ if [ -d "$SUDOERS" ]; then
     declare -a files=( $( lib.getFiles "$SUDOERS" ) )
 
     if [ "${#files[*]}" -gt 0 ]; then
-        for file in ${files[@]} ; do
+        for file in "${files[@]}" ; do
             chown root:root "$file"
             chmod 600 "$file"
         done

@@ -7,15 +7,15 @@
 
 function package.checkIfInstalled()
 {
-    local -r pkgs=${1:?"Input parameter 'PKGS' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -ar pkgs=( "$@" )
 
-    local installed=$(lib.intersect "$pkgs" "$( package.packageList )")
+    local installed=$(lib.intersect "${pkgs[*]}" "$( package.packageList )")
     [ -z "$installed" ] || trap.die "attempting to reinstall following packages: '$installed'"
 
     # now verify that packages are actually valid for installation
     local -r checker=$( package.checkPackage )
 
-    for pkg in $pkgs; do
+    for pkg in "${pkgs[@]}"; do
         eval $checker "${pkg%%=*}" &>/dev/null || trap.die "Package $pkg not found"
     done
 }
@@ -37,7 +37,6 @@ export -f package.checkPackage
 function package.install()
 {
     local -r defnFile=${1:?"Input parameter 'defnFile' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local -ra empty=()
 
     term.log "Installing ${defnFile}\n" 'task'
 
@@ -87,9 +86,9 @@ export -f package.packageList
 #############################################################################
 function package.runScripts()
 {
-    local -a files=${1:?"Input parameter 'files' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -a files=( "$@" )
 
-    for file in ${files[@]}; do
+    for file in "${files[@]}"; do
         local _extension="${file##*.}"
         [ "$_extension" != "$( lib.OSid )" ] || ( package.install "$file" )
     done

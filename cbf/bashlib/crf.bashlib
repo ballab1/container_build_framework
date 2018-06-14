@@ -321,11 +321,11 @@ export -f crf.runtimeProperty
 #############################################################################
 function crf.updateRuntimeEnvironment()
 {
-    local -a in_array=( $@ )
+    local -a in_array=( "$@" )
     local -r envFile="$( crf.RT_ENVIRON )"
 
     [ -e "$envFile" ] || return
-    for line in ${in_array[@]}; do
+    for line in "${in_array[@]}"; do
         local key="${line%%=*}"
         if grep -qE "^.*\s+${key}=" "$envFile" ; then
             sed -i "s|^.* ${key}=.*$|$(crf.RT_ENVIRON_PREFIX)$line|" "$envFile"

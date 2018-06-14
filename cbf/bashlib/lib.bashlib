@@ -315,12 +315,15 @@ export -f lib.updatePropertyFile
 #############################################################################
 function lib.updateProperties()
 {
-    local -a in_array="${1:?"Input parameter 'in_array' must be passed to 'function ${FUNCNAME[0]}()'"}"
-    local -r config_file="${2:?"Input parameter 'config_file' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r config_file="${1:?"Input parameter 'config_file' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    shift
+    local -a in_array=( "$@" )
 
     [ -f "$config_file" ] || trap.die 'Property file does not exist'
-    for entry in ${in_array[@]}; do
-        lib.updatePropertyFile "${entry%%=*}" "${entry##*=}" "$config_file"
-    done
+    if [ ${#in_array[*]} -gt 0 ]; then
+        for entry in "${in_array[@]}"; do
+            lib.updatePropertyFile "${entry%%=*}" "${entry##*=}" "$config_file"
+        done
+    fi
 }
 export -f lib.updateProperties

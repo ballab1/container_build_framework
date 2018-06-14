@@ -150,7 +150,7 @@ test.crf.prepareEnvironment_2FILES() {
     export -f crf.prepareEnvironment
     mkdir -p "${CRF_LOCATION}/startup"
     local -a scripts=( 'file1' 'file2' )
-    for script in ${scripts[@]}; do
+    for script in "${scripts[@]}"; do
 cat << EOF > "${CRF_LOCATION}/startup/${script}"
 #!/bin/bash
 :
@@ -169,7 +169,7 @@ test.crf.prepareEnvironment_BADFILES() {
     mkdir -p "${CRF_LOCATION}/startup"
     fake 'crf.runScript' '(chmod 755 $1; exit 1)'
     local -a scripts=( 'file1' 'file2' )
-    for script in ${scripts[@]}; do
+    for script in "${scripts[@]}"; do
 cat << EOF > "${CRF_LOCATION}/startup/${script}"
 #!/bin/bash
 :

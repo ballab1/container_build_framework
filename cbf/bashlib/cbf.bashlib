@@ -319,7 +319,7 @@ function cbf.runScripts()
     
     # create a hash to sort the files by name & remove any templates that have been overridden
     local -A ahash
-    for file in ${files[@]}; do
+    for file in "${files[@]}"; do
         local name="$( basename "$file" )"
         local _name="${name//./_}"
         [[ "${ahash[$_name]:-}"  &&  "${ahash[$_name]:-}" =~ */action.templates/* ]] && continue

@@ -57,7 +57,7 @@ function download.getPackages()
 {
     local -a files=( "$@" )
 
-    for file in ${files} ; do
+    for file in "${files[@]}" ; do
         crf.copyFileToRuntime 'ENV' "$file"
         cd /tmp
         eval download.getFile "$file" || term.log ">>>>> issue while downloading $( basename "$file" ) <<<<<\n" 'warn'
