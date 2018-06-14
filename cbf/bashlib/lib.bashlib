@@ -86,6 +86,11 @@ function lib.getProperty()
     local -r default_val=${3:-}
 
     # get definition from property file
+    if [ ! -e "$file" ]; then
+        [ -z "$default_val" ] || echo "$default_val"
+        return
+    fi
+    
     local -r val="$( grep -e "^${prop}\s*=" "$file" )"
 
     # only report eval'd string (after removing 'prop=' prefix) if something was found
