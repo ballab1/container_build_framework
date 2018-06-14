@@ -48,7 +48,6 @@ elif [ $# -gt 0 ]; then
     crf.logEnvironment
     term.log '>>>>>>>> entering ' 'green'
     term.log 'custom' 'yellow'
-    shift
     exec $@
 fi
 term.log '<<<<<<<< returning from ' 'green'

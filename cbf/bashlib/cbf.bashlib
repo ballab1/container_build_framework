@@ -250,7 +250,7 @@ function cbf.initFramework()
     local props="$(cbf.BASE)/container.properties)"
     if [ -e "$props" ]; then
         local -i val
-        while IFS='=' read -r key value; do
+        while IFS='=' read -r key val; do
             case "$key" in
                 entrypoint) local entrypoint="$val";;
                 command)    local cmd="$val";;

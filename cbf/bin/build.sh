@@ -10,13 +10,16 @@ declare NAME=${1:?'Input parameter "NAME" must be defined'}
 declare TZ="${2:-null}"
 : ${DEBUG_TRACE:=0}
 
-if [ "$(pwd)" != '/tmp' ]; then
-    echo "This script should only be run from a container build environment"
+function die() {
+    echo "$1"
     exit 1
-fi
+}
+
+[ "$(pwd)" = '/tmp' ] || die "This script should only be run from a container build environment"
+
 
 # load our libraries
-[ ! -e /tmp/bashlibs.loaded ] || rm /tmp/bashlibs.loaded
+[ ! -e /tmp/bashlibs.loaded ] || rm /tmp/bashlibs.loaded ||  die "Failed to remove /tmp/bashlibs.loaded"
 source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/init.libraries"
 
 # build our container
