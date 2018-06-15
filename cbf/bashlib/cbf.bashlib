@@ -134,7 +134,9 @@ function cbf.buildContainer()
     for dir in $( printf "%s\n" "${!steps[@]}" | sort ); do
         [ "$dir" != '08.cleanup' ] || [ "$DEBUG_TRACE" = 0 ] || continue
 
+        local lastNotice=''
         if [ "$dir" = '00.bashlib' ]; then
+            cbf.showActionNotice 'lastNotice' "$dir"
             cbf.initFramework
             continue
         fi
@@ -142,27 +144,21 @@ function cbf.buildContainer()
         # get array of files in directory
         local -a files=( $( lib.getFiles "$( cbf.ACTION )/$dir" ) )
         if [ ${#files[*]} -gt 0 ] && [ "$dir" = '07.run.startup' ]; then
-            term.log "${notice} - copying files to $(cbf.CRT_BASE)\n" 'task'
+            cbf.showActionNotice 'lastNotice' "$dir"
+            term.log "  - copying files to $(cbf.CRT_BASE)\n" 'task'
             for file in "${files[@]}"; do
                 crf.copyFileToRuntime 'STARTUP' "$file"
             done
             files=()
         fi
+        
         files+=( $( lib.getFiles "$( cbf.TEMPLATES )/$dir" ) )
-
         [ ${#files[*]} -gt 0 ] || continue
+        cbf.showActionNotice 'lastNotice' "$dir"
 
 
         # decode action
         local action="${steps[$dir]}"
-        # get .info file, & read for 'notice'
-        local info="$( cbf.ACTION )/$dir/.info"
-        [ -e "$info" ] || info="$( cbf.TEMPLATES )/${dir}/.info"
-        local notice="$(< "$info" )"
-
-
-        # show notice if there are files to process
-        term.log "${notice}\n" 'task'
 
         # perform required actions
         if [[ "$timezone" = null && "$dir" = '02.packages' ]]; then
@@ -340,5 +336,24 @@ function cbf.runScripts()
     fi
 }
 export -f cbf.runScripts
+
+#############################################################################
+function cbf.showActionNotice()
+{
+    local -r last=${1:?"Input parameter 'last' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r dir=${2:?"Input parameter 'dir' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    [ "$dir" ] || return
+    [ "$dir != "${!last}" ] || return
+    eval "$last"="'$dir'"
+    
+    # get .info file, & read for 'notice'
+    local info="$( cbf.ACTION )/${dir}/.info"
+    [ -e "$info" ] || info="$( cbf.TEMPLATES )/${dir}/.info"
+    local notice="$(< "$info" )"
+    # show notice if there are files to process
+    [ -z "$notice"] || term.log "${notice}\n" 'task'
+}
+export -f cbf.showActionNotice
 
 #############################################################################
