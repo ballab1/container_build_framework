@@ -57,8 +57,8 @@ function loadLibrary()
     local -r color=${2:-0}
     local -r name="$(basename "$src")"
 
-    [ $(( __libCount2++ )) -eq 0 ] && printf "    %s (\e[35m%s\e[0m:\e[36m%s\e[0m):  " 'loading libraries' 'CRF' 'pwd'
-    printf "\e[%sm%s\e[0m " "$color" "$name"
+    [ $(( __libCount2++ )) -eq 0 ] && printf "    %s (\x1b[35m%s\x1b[0m:\x1b[36m%s\x1b[0m):  " 'loading libraries' 'CRF' 'pwd'
+    printf "\x1b[%sm%s\x1b[0m " "$color" "$name"
     source "$src"
 }
 
@@ -103,8 +103,8 @@ function sourcingMessage()
         color=36   # cyan
     fi
 
-    [ $(( __envCount++ )) -eq 0 ] && printf "    sourcing (\e[35m%s\e[0m:\e[95m%s\e[0m:\e[94m%s\e[0m:\e[36m%s\e[0m):  " 'CRF' 'tmp' 'pwd' 'other'
-    printf "\e[%sm%s\e[0m " "$color" "$name"
+    [ $(( __envCount++ )) -eq 0 ] && printf "    sourcing (\x1b[35m%s\x1b[0m:\x1b[95m%s\x1b[0m:\x1b[94m%s\x1b[0m:\x1b[36m%s\x1b[0m):  " 'CRF' 'tmp' 'pwd' 'other'
+    printf "\x1b[%sm%s\x1b[0m " "$color" "$name"
 }
 
 #############################################################################

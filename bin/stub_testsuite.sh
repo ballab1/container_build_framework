@@ -121,7 +121,7 @@ function stub_testsuite.die()
     local status=$?
     [[ $status -ne 0 ]] || status=255
 
-    printf "\n\e[31mFATAL ERROR: %s\e[0m\n" "$*" >&2
+    printf "\n\x1b[31mFATAL ERROR: %s\x1b[0m\n" "$*" >&2
     exit $status
 }
 
@@ -272,7 +272,7 @@ cat << EOF >> "$test_file"
 
 # setup MOCK logger
 setup() {
-    [ "\$${namespace}_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running setup'
+    [ "\$${namespace}_DEBUG" = 0 ] || printf "\x1b[94m%s\x1b[0m\n\n" 'Running setup'
     export LOG=__${namespace}.mock_logger
     fake 'term.log' '__${namespace}.mock_logger "\$FAKE_PARAMS"'
     ${namespace}_LOG_file=\$(__${namespace}.mktemp)
@@ -337,7 +337,7 @@ cat << EOF >> "$test_file"
 
 # flush the mock logger
 teardown() {
-    [ "\$${namespace}_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running teardown'
+    [ "\$${namespace}_DEBUG" = 0 ] || printf "\x1b[94m%s\x1b[0m\n\n" 'Running teardown'
     [ ! -e "\$${namespace}_LOG_file" ] || rm "\$${namespace}_LOG_file"
     [ \$(ls -A1 "\$${namespace}_UT_TEST_DIR" | wc -l) -eq 0 ] || rm -rf "\$${namespace}_UT_TEST_DIR"/*
 }

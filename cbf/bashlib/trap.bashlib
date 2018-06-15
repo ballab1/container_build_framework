@@ -68,7 +68,7 @@ export -f trap.die
 #----------------------------------------------------------------------------
 function trap.log()
 {
-    printf "\e[31m%s\e[0m\n" "$1" >&2
+    printf "\x1b[31m%s\x1b[0m\n" "$1" >&2
 }
 export -f trap.log
 

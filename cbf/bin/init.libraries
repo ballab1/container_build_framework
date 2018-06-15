@@ -7,8 +7,8 @@ function loadLibrary()
     local -r color=${2:-0}
     local -r name="$(basename "$src")"
 
-    [ $(( __libCount++ )) -eq 0 ] && printf "    %s (\e[32m%s\e[0m:\e[35m%s\e[0m:\e[36m%s\e[0m):  " 'loading libraries' 'CBF' 'CRF' 'action_folder'
-    printf "\e[%sm%s\e[0m " "$color" "$name"
+    [ $(( __libCount++ )) -eq 0 ] && printf "    %s (\x1b[32m%s\x1b[0m:\x1b[35m%s\x1b[0m:\x1b[36m%s\x1b[0m):  " 'loading libraries' 'CBF' 'CRF' 'action_folder'
+    printf "\x1b[%sm%s\x1b[0m " "$color" "$name"
     source "$src"
 }
 

@@ -273,8 +273,8 @@ function sourcingMessage()
     local -r src=\$1
     local -r name="\$(basename "\$src")"
     local \dir="\$(dirname "\$src")"
-    [ \$(( __envCount++ )) -eq 0 ] && printf "    sourcing (\e[35m%s\e[0m):  " 'CRF' 
-    printf "\e[%dm%s\e[0m " 90 "\$name"
+    [ \$(( __envCount++ )) -eq 0 ] && printf "    sourcing (\x1b[35m%s\x1b[0m):  " 'CRF' 
+    printf "\x1b[%dm%s\x1b[0m " 90 "\$name"
 }
 
 

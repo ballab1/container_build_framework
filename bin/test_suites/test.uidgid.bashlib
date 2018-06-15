@@ -239,7 +239,7 @@ teardown_suite() {
 
 # setup MOCK logger
 setup() {
-    [ "$test_uidgid_bashlib_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running setup'
+    [ "$test_uidgid_bashlib_DEBUG" = 0 ] || printf "\x1b[94m%s\x1b[0m\n\n" 'Running setup'
     export LOG=__test_uidgid_bashlib.mock_logger
     test_uidgid_bashlib_LOG_file=$(__test_uidgid_bashlib.mktemp)
     fake 'term.log' '__test_uidgid_bashlib.mock_logger "$FAKE_PARAMS"'
@@ -248,7 +248,7 @@ setup() {
 
 # flush the mock logger
 teardown() {
-    [ "$test_uidgid_bashlib_DEBUG" = 0 ] || printf "\e[94m%s\e[0m\n\n" 'Running teardown'
+    [ "$test_uidgid_bashlib_DEBUG" = 0 ] || printf "\x1b[94m%s\x1b[0m\n\n" 'Running teardown'
     [ ! -e "$test_uidgid_bashlib_LOG_file" ] || rm "$test_uidgid_bashlib_LOG_file"
 
     [ ! -e "${CBF_LOCATION}/bashlibs.loaded" ] || rm "${CBF_LOCATION}/bashlibs.loaded"
