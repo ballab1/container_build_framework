@@ -115,7 +115,7 @@ function cbf.buildContainer()
                      ['03.users_groups']='uidgid.runScripts'
                      ['04.downloads']='download.runScripts'
                      ['05.applications']='cbf.runScripts'
-                     ['06.build.customizations']='cbf.runScripts'
+                     ['06.post_build_mods']='cbf.runScripts'
                      ['07.run.startup']='cbf.runScripts'
                      ['08.cleanup']='cbf.runScripts'
                    )

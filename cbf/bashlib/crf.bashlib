@@ -206,8 +206,8 @@ function crf.logEnvironment()
         [ "${ln:0:6}" = 'export' ] && printf "    %s\n" "$(eval echo ${ln:7})"
     done
     printf "\n"
-    printf "    Current user info: %s\n"  "$(getent 'passwd' "$UID" | true)"
-    printf "    Target  user info: %s\n\n"  "$(getent 'passwd' "$USER" | true)"
+    printf "    Current user info: %s\n"  "$(getent 'passwd' "$UID")"
+    printf "    Target  user info: %s\n\n"  "$(getent 'passwd' "$USER")"
 }
 export -f crf.logEnvironment
 
