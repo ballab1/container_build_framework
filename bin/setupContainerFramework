@@ -9,37 +9,36 @@ function setupCBF.createStructure()
 {
     local action_folders=${1:?"must pass parameter 'action_folders' to 'function ${FUNCNAME[0]}()'"}
     local templates_folder=${2:?"must pass parameter 'templates_folder' to 'function ${FUNCNAME[0]}()'"}
+    local isNew=${3:-}
 
     # create actions folder [ is a sibling of 'container_build_framework' directory]
-    [ -d "$action_folders" ] || mkdir -p "$action_folders"
-    cd "$action_folders"
+    if [ -d "$action_folders" ]; then
+        cd "$action_folders"
 
-    # rename all folders from prior versions of CBF
-    setupCBF.renameActionFolder "00.setup" "01.setup"
-    setupCBF.renameActionFolder "01.packages" "02.packages"
-    setupCBF.renameActionFolder "02.users_groups" "03.users_groups"
-    setupCBF.renameActionFolder "03.downloads" "04.downloads"
-    setupCBF.renameActionFolder "04.applications" "05.applications"
-    setupCBF.renameActionFolder "05.build.customizations" "06.build.customizations"
-    setupCBF.renameActionFolder "05.customizations" "06.build.customizations"
-    setupCBF.renameActionFolder "06.run.startup" "07.run.startup"
-    setupCBF.renameActionFolder "06.permissions" "07.run.startup"
-    setupCBF.renameActionFolder "07.cleanup" "08.cleanup"
-
+        # rename all folders from prior versions of CBF
+        setupCBF.renameActionFolder "00.setup" "01.setup"
+        setupCBF.renameActionFolder "01.packages" "02.packages"
+        setupCBF.renameActionFolder "02.users_groups" "03.users_groups"
+        setupCBF.renameActionFolder "03.downloads" "04.downloads"
+        setupCBF.renameActionFolder "04.applications" "05.applications"
+        setupCBF.renameActionFolder "05.build.customizations" "06.build.customizations"
+        setupCBF.renameActionFolder "05.customizations" "06.build.customizations"
+        setupCBF.renameActionFolder "06.run.startup" "07.run.startup"
+        setupCBF.renameActionFolder "06.permissions" "07.run.startup"
+        setupCBF.renameActionFolder "07.cleanup" "08.cleanup"
+    fi
 
     # ensure we have empty folders for this CBF
-    for dir in $(find "$templates_folder" -mindepth 1 -maxdepth 1 -type d); do
-        local subdir="$(basename "$dir")"
-        [ -d "$subdir" ] && continue
-        echo "  creating action folder:  $subdir"
-        mkdir -p "$subdir"
-    done
-
-    # remove any old CBF folders that exist (for testing or old CBF)
-    for dir in $(find .. -type d -name 'container_build_framework*');  do
-        echo "  removing $dir" 
-        rm -rf "$dir"
-    done
+    if [ "$isNew" ]; then
+        [ -d "$action_folders" ] || mkdir -p "$action_folders"
+        cd "$action_folders"
+        for dir in $(find "$templates_folder" -mindepth 1 -maxdepth 1 -type d); do
+            local subdir="$(basename "$dir")"
+            [ -d "$subdir" ] && continue
+            echo "  creating action folder:  $subdir"
+            mkdir -p "$subdir"
+        done
+    fi
 }
 
 ######################################################################
@@ -126,12 +125,22 @@ function setupCBF.setupProjectFiles()
         fi
     done
 
-    local -r action_folders="${top}/build/action_folders"
     # remove symlinks
-    find "$top" -mindepth 1 -type l -delete
+    find "$top" -mindepth 2 -type l -delete
+    
 
-    # setup out structure
-    setupCBF.createStructure "$action_folders" "$( cbf.CBFBASE )/action.templates"
+    # remove any old CBF folders that exist (for testing or old CBF)
+    for dir in $(find "${top}/build" -type d -name 'container_build_framework*');  do
+        echo "  removing $dir" 
+        rm -rf "$dir"
+    done
+
+
+    # setup our structure
+    local -r action_folders="${top}/build/action_folders"
+    local isNew
+    [ -e "${top}/.git" ] || isNew='true'
+    setupCBF.createStructure "$action_folders" "$( cbf.CBFBASE )/action.templates" "${isNew:-}"
 }
 
 ######################################################################
