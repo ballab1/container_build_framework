@@ -45,17 +45,22 @@ function setupCBF.createStructure()
 function setupCBF.main()
 {
     # load our libraries
-    local -r projectDir="$( pwd )"
-    local temporaryDir=''
+    local -r project_dir="$( pwd )"
+    local temporary_dir=''
+
+    if [ -e "${project_dir}/.cbfBlacklist" ]; then
+        echo "Detected '${project_dir}/.cbfBlacklist'  ..skipping this project."
+        exit 0
+    fi
 
     local cbf_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
     if [ ! -d "${cbf_dir}/cbf" ]; then
-        temporaryDir="$(mktemp -d)"
+        temporary_dir="$(mktemp -d)"
         echo 'Downloading CBF from github'
         local cbf_version="${CBF_VERSION:-dev}"
         # since no CBF directory located, attempt to download CBF based on specified verion
         local -r CBF_URL="https://github.com/ballab1/container_build_framework/archive/${cbf_version}.tar.gz"
-        (wget --no-check-certificate --quiet --output-document=- "$CBF_URL" | tar -xz) || die "$(basename "$projectDir") not setup: Failed to download $CBF_URL"
+        (wget --no-check-certificate --quiet --output-document=- "$CBF_URL" | tar -xz) || die "$(basename "$project_dir") not setup: Failed to download $CBF_URL"
         cbf_dir="$( ls -d container_build_framework-* 2>/dev/null )"
     fi
 
@@ -67,9 +72,9 @@ function setupCBF.main()
     # now init stuff so we can use lib functionality
     source "${CBF_LOCATION}/cbf/bin/init.libraries"
     
-    setupCBF.setupProjectFiles "$projectDir"
+    setupCBF.setupProjectFiles "$project_dir"
 
-    [ -z "$temporaryDir" ] || rm -rf "$temporaryDir"
+    [ -z "$temporary_dir" ] || rm -rf "$temporary_dir"
 }
 
 ######################################################################
