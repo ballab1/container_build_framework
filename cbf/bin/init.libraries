@@ -94,7 +94,6 @@ cbf.__init "$CBF_LOCATION" "$CRF_LOCATION"
 
 
 [ -e "$libTracker" ] && rm "$libTracker"
-unset libTracker
 unset __libCount
 
 # verify init was successful
