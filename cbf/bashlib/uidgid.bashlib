@@ -5,18 +5,6 @@
 #
 #############################################################################
 
-function uidgid.check()
-{
-    local -a files=( "$@" )
-    [ ${#files[*]} -gt 0 ] || return
-    for file in "${files[@]}" ; do
-        crf.copyFileToRuntime 'ENV' "$file"
-        (eval uidgid.createUserAndGroup "$file") || term.log "..*** issue while executing $( basename "$file" ) ***\n" 'yellow'
-    done
-}
-export -f uidgid.check
-
-#############################################################################
 function uidgid.createUserAndGroup()
 {
     local -r file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -93,6 +81,19 @@ function uidgid.createUserAndGroup()
     fi
 }
 export -f -f uidgid.createUserAndGroup
+
+#############################################################################
+
+function uidgid.runScripts()
+{
+    local -a files=( "$@" )
+    [ ${#files[*]} -gt 0 ] || return
+    for file in "${files[@]}" ; do
+        crf.copyFileToRuntime 'ENV' "$file"
+        (eval uidgid.createUserAndGroup "$file") || term.log "..*** issue while executing $( basename "$file" ) ***\n" 'yellow'
+    done
+}
+export -f uidgid.runScripts
 
 #############################################################################
 function uidgid.verify()

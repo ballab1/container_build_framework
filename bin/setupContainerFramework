@@ -16,7 +16,8 @@ function setupCBF.createStructure()
         cd "$action_folders"
 
         # rename all folders from prior versions of CBF
-        setupCBF.renameActionFolder "00.setup" "01.setup"
+        setupCBF.renameActionFolder "00.setup" "01.rt_environment"
+        setupCBF.renameActionFolder "01.setup" "01.rt_environment"
         setupCBF.renameActionFolder "01.packages" "02.packages"
         setupCBF.renameActionFolder "02.users_groups" "03.users_groups"
         setupCBF.renameActionFolder "03.downloads" "04.downloads"
