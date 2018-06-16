@@ -10,8 +10,6 @@ function setupCBF.createStructure()
     local actionFolders=${1:?"must pass parameter 'actionFolders' to 'function ${FUNCNAME[0]}()'"}
     local templatesFolder=${2:?"must pass parameter 'templatesFolder' to 'function ${FUNCNAME[0]}()'"}
 
-    [ "$(ls container_build_framework* 2>/dev/null)" ] && rm -rf container_build_framework*
-
     # create actions folder [ is a sibling of 'container_build_framework' directory]
     [ -d "$actionFolders" ] || mkdir -p "$actionFolders"
 
@@ -68,19 +66,23 @@ function setupCBF.createStructure()
 function setupCBF.main()
 {
     # load our libraries
-    local -r temporaryDir="$(mktemp -d)"
     local -r projectDir="$( pwd )"
+    local temporaryDir=''
 
-
-    local cbf_version="${CBF_VERSION:-dev}"
-    # since no CBF directory located, attempt to download CBF based on specified verion
-    local CBF_URL="https://github.com/ballab1/container_build_framework/archive/${cbf_version}.tar.gz"
-    wget --no-check-certificate --quiet --output-document=- "$CBF_URL" | tar -xzC "$temporaryDir"
-    [ $? -eq 0 ] || trap.die "$(basename "$projectDir") not setup: Failed to download $CBF_URL"
+    local cbf_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+    if [ ! -d "${cbf_dir}/cbf" ]; then
+        temporaryDir="$(mktemp -d)"
+        echo 'Downloading CBF from github'
+        local cbf_version="${CBF_VERSION:-dev}"
+        # since no CBF directory located, attempt to download CBF based on specified verion
+        local -r CBF_URL="https://github.com/ballab1/container_build_framework/archive/${cbf_version}.tar.gz"
+        (wget --no-check-certificate --quiet --output-document=- "$CBF_URL" | tar -xz) || die "$(basename "$projectDir") not setup: Failed to download $CBF_URL"
+        cbf_dir="$( ls -d container_build_framework-* 2>/dev/null )"
+    fi
 
     # point CBF & CRF to locations in tmp workspace.  Will load libs from there
-    export CBF_LOCATION="$( ls -d "$temporaryDir/container_build_framework-"* )"            # set CBF_LOCATION for testing
-    export CRF_LOCATION="$CBF_LOCATION/crf"  # set CRF_LOCATION for testing
+    export CBF_LOCATION="$( ls -d "$cbf_dir" )"      # set CBF_LOCATION for testing
+    export CRF_LOCATION="$CBF_LOCATION/cbf"          # set CRF_LOCATION for testing
     export CONTAINER_NAME=NewContainer
 
     # now init stuff so we can use lib functionality
@@ -88,7 +90,7 @@ function setupCBF.main()
     
     setupCBF.setupProjectFiles "$projectDir"
 
-    rm -rf "$temporaryDir"
+    [ -z "$temporaryDir" ] || rm -rf "$temporaryDir"
 }
 
 ######################################################################
@@ -117,10 +119,8 @@ function setupCBF.setupProjectFiles()
         if [ ! -e "$file" ]; then
             sed "s|newcontainer|${projectName}|gi" "$abs_file" > "$file"
             echo "  created: ${file}"
-#        elif [ "$file" = build/build.sh ]; then
-        else
+        elif [ "$file" = build/build.sh ]; then
             (printf "%s %s\n" "$(sha256sum "$file" | awk '{print $1}')" "$abs_file" | sha256sum -c --status) && continue
-            [ "$file" -nt "$abs_file" ] && continue
             echo "  updating: ${file}   previous file renamed to ${file}.bak"
             [ -f "$file" ] && mv "$file" "${file}.bak"
             cp "$abs_file" "$file"
