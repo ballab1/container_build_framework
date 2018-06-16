@@ -178,7 +178,7 @@ function lib.lookupId()
     local -r database=${2:?"Input parameter 'database' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r default=${3:-}
 
-    local id=$(getent "$database" "$entry" 2>/dev/null)
+    local id=$(getent "$database" "$entry" 2>/dev/null) || true
     [ $? -eq 0 ] || id=''
     [[ "$id" =~ 'Try '* ]] && id=''
     [ -z "$id" ] || id=$(echo "$id" | cut -d: -f3)
