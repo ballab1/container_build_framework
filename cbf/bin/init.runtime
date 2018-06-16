@@ -152,21 +152,32 @@ if [ "${#_files[@]}" -gt 0 ]; then
     done
 fi
 [ $__envCount -gt 0 ] && printf "\n"
-
 [ ! -e /tmp/dump_env ] || declare -p
+
 
 # init the framework
 crf.__init "$CRF_LOCATION"
 
 
-[ -e "$envTracker" ] && rm "$envTracker"
-unset envTracker
-[ -e "$cbfLibTracker" ] && rm "$cbfLibTracker"
-unset cbfLibTracker
-[ -e "$crfLibTracker" ] && rm "$crfLibTracker"
-unset crfLibTracker
-[ -e "$scanTracker" ] && rm "$scanTracker"
-unset scanTracker
+# clean up
+if [ "${envTracker:-}" ]; then
+    [ -e "$envTracker" ] && rm "$envTracker"
+    unset envTracker
+fi
+if [ "${cbfLibTracker:-}" ]; then
+    [ -e "$cbfLibTracker" ] && rm "$cbfLibTracker"
+    unset cbfLibTracker
+fi
+if [ "${crfLibTracker:-}" ]; then
+    [ -e "$crfLibTracker" ] && rm "$crfLibTracker"
+    unset crfLibTracker
+fi
+if [ "${scanTracker:-}" ]; then
+    [ -e "$scanTracker" ] && rm "$scanTracker"
+    unset scanTracker
+fi
 
 unset __envCount
 unset __libCount2
+unset _files
+unset _src
