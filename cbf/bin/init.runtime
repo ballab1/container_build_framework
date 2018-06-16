@@ -162,19 +162,15 @@ crf.__init "$CRF_LOCATION"
 # clean up
 if [ "${envTracker:-}" ]; then
     [ -e "$envTracker" ] && rm "$envTracker"
-    unset envTracker
 fi
 if [ "${cbfLibTracker:-}" ]; then
     [ -e "$cbfLibTracker" ] && rm "$cbfLibTracker"
-    unset cbfLibTracker
 fi
 if [ "${crfLibTracker:-}" ]; then
     [ -e "$crfLibTracker" ] && rm "$crfLibTracker"
-    unset crfLibTracker
 fi
 if [ "${scanTracker:-}" ]; then
     [ -e "$scanTracker" ] && rm "$scanTracker"
-    unset scanTracker
 fi
 
 unset __envCount
