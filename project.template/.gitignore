@@ -17,3 +17,4 @@ build/container_build_framework*
 .directory
 .Trash-*
 vols/*
+vols-rw/*
