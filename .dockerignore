@@ -3,6 +3,7 @@
 .gitattributes
 .gitignore
 .lfsconfig
+.cbfBlacklist
 
 #build files
 docker-compose.yml
