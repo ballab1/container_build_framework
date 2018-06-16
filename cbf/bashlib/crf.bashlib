@@ -202,12 +202,12 @@ function crf.logEnvironment()
     local env_file="$(crf.RT_ENVIRON)"
     [ -e "$env_file" ] || trap.die "No CRF environment definition file: $env_file"
     printf "\nrt.environment:\n"
-    for ln in $(cat "$rt_environment" | sort); do
+    for ln in $(cat "$env_file" | sort); do
         [ "${ln:0:6}" = 'export' ] && printf "    %s\n" "$(eval echo ${ln:7})"
     done
     printf "\n"
-    printf "    Current user info: %s\n"  "$(getent 'passwd' "$UID")"
-    printf "    Target  user info: %s\n\n"  "$(getent 'passwd' "$USER")"
+    printf "    Current user info: %s\n"  "$(getent 'passwd' "$UID" | true)"
+    printf "    Target  user info: %s\n\n"  "$(getent 'passwd' "$USER" | true)"
 }
 export -f crf.logEnvironment
 
@@ -274,8 +274,8 @@ function sourcingMessage()
     local -r src=\$1
     local -r name="\$(basename "\$src")"
     local \dir="\$(dirname "\$src")"
-    [ \$(( __env_count++ )) -eq 0 ] && printf "    sourcing (\x1b[35m%s\x1b[0m):  " 'CRF' 
-    printf "\x1b[%dm%s\x1b[0m " 90 "\$name"
+    [ \$(( __env_count++ )) -eq 0 ] && printf "    sourcing (%s):  " "$(term.log 'CRF' 'magenta')" 
+    printf "\x1b[%dm%s\x1b[0m " 35 "\$name"
 }
 
 
