@@ -74,6 +74,12 @@ function setupCBF.main()
     
     setupCBF.setupProjectFiles "$project_dir"
 
+    # clean up
+    [ "${libTracker:-}" ] && [ -e "$libTracker" ] && rm "$libTracker"
+    [ "${envTracker:-}" ] && [ -e "$envTracker" ] && rm "$envTracker"
+    [ "${cbfLibTracker:-}" ] && [ -e "$cbfLibTracker" ] && rm "$cbfLibTracker"
+    [ "${crfLibTracker:-}" ] && [ -e "$crfLibTracker" ] && rm "$crfLibTracker"
+    [ "${scanTracker:-}" ] && [ -e "$scanTracker" ] && rm "$scanTracker"
     [ -z "$temporary_dir" ] || rm -rf "$temporary_dir"
 }
 

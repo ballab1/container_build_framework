@@ -57,7 +57,7 @@ function loadLibrary()
     local -r color=${2:-0}
     local -r name="$(basename "$src")"
 
-    [ $(( __libCount2++ )) -eq 0 ] && printf "    %s (\x1b[35m%s\x1b[0m:\x1b[36m%s\x1b[0m):  " 'loading libraries' 'CRF' 'pwd'
+    [ $(( __libCount2++ )) -eq 0 ] && printf "    loading libraries (\x1b[35m%s\x1b[0m:\x1b[36m%s\x1b[0m):  " 'CRF' 'pwd'
     printf "\x1b[%sm%s\x1b[0m " "$color" "$name"
     source "$src"
 }
@@ -98,12 +98,12 @@ function sourcingMessage()
     elif [ "$dir" = "${CBF_LOCATION}${CRF_LOCATION}" ]; then
         color=95   # lt_magenta
     elif [ "$dir" = "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )" ]; then
-        color=94   # lt_blue
-    else
         color=36   # cyan
+    else
+        color=94   # lt_blue
     fi
 
-    [ $(( __envCount++ )) -eq 0 ] && printf "    sourcing (\x1b[35m%s\x1b[0m:\x1b[95m%s\x1b[0m:\x1b[94m%s\x1b[0m:\x1b[36m%s\x1b[0m):  " 'CRF' 'tmp' 'pwd' 'other'
+    [ $(( __envCount++ )) -eq 0 ] && printf "    sourcing (\x1b[35m%s\x1b[0m:\x1b[95m%s\x1b[0m:\x1b[94m%s\x1b[0m:\x1b[36m%s\x1b[0m):  " 'CRF' 'tmp' 'other' 'pwd'
     printf "\x1b[%sm%s\x1b[0m " "$color" "$name"
 }
 
@@ -114,7 +114,7 @@ function sourcingMessage()
 
 # init our cache files
 [ "${envTracker:-}" ] || declare -rx envTracker="${CBF_LOCATION}/environment.loaded"
-[ "${cbfLibTracker:-}" ] || declare -rx cbfLibTracker="${CBF_LOCATION}/bashlibs.loaded"
+[ "${cbfLibTracker:-}" ] || declare -rx cbfLibTracker="${CBF_LOCATION}/cbf.bashlibs.loaded"
 [ "${crfLibTracker:-}" ] || declare -rx crfLibTracker="${CBF_LOCATION}/crf.bashlibs.loaded"
 [ "${scanTracker:-}" ] || declare -rx scanTracker="${CBF_LOCATION}/scanned.paths"
 if [ -e "$cbfLibTracker" ]; then
@@ -158,20 +158,6 @@ fi
 # init the framework
 crf.__init "$CRF_LOCATION"
 
-
-# clean up
-if [ "${envTracker:-}" ]; then
-    [ -e "$envTracker" ] && rm "$envTracker"
-fi
-if [ "${cbfLibTracker:-}" ]; then
-    [ -e "$cbfLibTracker" ] && rm "$cbfLibTracker"
-fi
-if [ "${crfLibTracker:-}" ]; then
-    [ -e "$crfLibTracker" ] && rm "$crfLibTracker"
-fi
-if [ "${scanTracker:-}" ]; then
-    [ -e "$scanTracker" ] && rm "$scanTracker"
-fi
 
 unset __envCount
 unset __libCount2
