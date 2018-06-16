@@ -7,7 +7,7 @@
 
 function package.checkIfInstalled()
 {
-    local -ar pkgs=( "$@" )
+    local -ar pkgs=( $@ )
 
     local installed=$(lib.intersect "${pkgs[*]}" "$( package.packageList )")
     [ -z "$installed" ] || trap.die "attempting to reinstall following packages: '$installed'"

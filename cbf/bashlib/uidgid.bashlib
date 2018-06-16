@@ -109,7 +109,7 @@ function uidgid.verify()
         source "$file"
         uids+=( "$( lib.indirectReference 'uid' "$name" )" )
     done
-    [ ${#files[*]} -eq $(printf "%s\n" "${uids[@]}" | sort -u | wc -l) ] || trap.die "\n"
+    [ ${#files[*]} -eq $(printf "%s\n" "${uids[@]}" | sort -u | wc -l) ] || trap.die "Failed to process all user&group definitions\n"
 }
 export -f uidgid.verify
 

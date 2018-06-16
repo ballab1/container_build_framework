@@ -8,8 +8,8 @@
 # trap initialization
 function trap.__init()
 {
-    declare -ix dying=0
-    declare -ix pipe_error=0
+    declare -ix trap.dying=0
+    declare -ix trap.pipe_error=0
 
     # setting errtrace allows our ERR trap handler to be propagated to functions, expansions and subshells
     set -o errtrace
@@ -92,4 +92,4 @@ function trap.stacktrace()
 }
 export -f trap.stacktrace
 
-[[ -z ${dying:-} ]] || trap.__init
+[[ -z ${trap.dying:-} ]] || trap.__init

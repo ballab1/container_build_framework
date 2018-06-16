@@ -9,7 +9,7 @@
 export CBF_PROPERTIES_FILE
 
 function cbf.__init()
-{
+{    
     # this function is usually called from bin/init.libraries
     local -r cbf_base=${1:?"Input parameter 'lib_base' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r crf_base=${2:?"Input parameter 'crf_base' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -182,7 +182,7 @@ function cbf.initFramework()
 {
     # ensure runtime folders exist
     mkdir -p "$( cbf.CRT_BASE )"
-    cd "$( cbf.CRF_BASE )"
+    cd "$( cbf.CRF_BASE )" || return
 
     # ensure crf directories exist
     [ -e "$( cbf.CRT_BASE )/bashlib" ] || mkdir -p "$( cbf.CRT_BASE )/bashlib"
@@ -201,7 +201,7 @@ function cbf.initFramework()
         local _name="$( basename "$file" )"
         if [ -e "$( cbf.CRT_BASE )/$file" ]; then
             [ "$_name" != 'rt.environment' ] || continue
-            $( ! cmp -s "$file" "$( cbf.CRT_BASE )/$file" ) || continue
+            ( ! cmp -s "$file" "$( cbf.CRT_BASE )/$file" ) || continue
             action='updating'
         fi
         echo "    ${action} $( cbf.CRT_BASE )/$file"
@@ -245,7 +245,7 @@ function cbf.initFramework()
     # setup some variables based on runtime properties in the Dockerfile
     local props="$(cbf.BASE)/container.properties)"
     if [ -e "$props" ]; then
-        local -i val
+        local val
         while IFS='=' read -r key val; do
             case "$key" in
                 entrypoint) local entrypoint="$val";;
@@ -259,7 +259,7 @@ function cbf.initFramework()
 
     # create an archive of parts of CBF that exists in /tmp to permit otehr dependent containers to inherit the CBF
     if [ -f "$( cbf.CRF_BIN )/files.txt" ]; then
-        cd "$( cbf.CBFBASE )"
+        cd "$( cbf.CBFBASE )" || return
         tar -czf "$(cbf.CRT_BASE)/cbf.tar.gz" -T "$( cbf.CRF_BIN )/files.txt"
     fi
 }
@@ -331,7 +331,7 @@ function cbf.runScripts()
         (( isdone++ )) || :
     done
     if [ $todo -ne $isdone ]; then
-        echo "count before: $todo.  count after: $isdone.  hash: ${ahash[@]}"
+        echo "count before: $todo.  count after: $isdone.  hash: ${ahash[*]}"
         trap.die "failed to execute all scripts"
     fi
 }
@@ -344,15 +344,16 @@ function cbf.showActionNotice()
     local -r dir=${2:?"Input parameter 'dir' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     [ "$dir" ] || return
-    [ "$dir != "${!last}" ] || return
-    eval "$last"="'$dir'"
+    [ "$dir" != "${!last}" ] || return
+    eval "$last"="'${dir}'"
     
     # get .info file, & read for 'notice'
     local info="$( cbf.ACTION )/${dir}/.info"
     [ -e "$info" ] || info="$( cbf.TEMPLATES )/${dir}/.info"
+
     local notice="$(< "$info" )"
     # show notice if there are files to process
-    [ -z "$notice"] || term.log "${notice}\n" 'task'
+    [ -z "$notice" ] || term.log "${notice}\n" 'task'
 }
 export -f cbf.showActionNotice
 

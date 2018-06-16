@@ -218,8 +218,8 @@ function crf.prepareEnvironment()
 
         # execute scritps in sorted order
         local -a failedToRun=()
-        for _name in $( printf "%s\n" ${!files[@]} | sort ); do
-            crf.runScript "${files[$_name]}" || failedToRun+=( "${files[$_name]}" )
+        for _name in $( printf "%s\n" "${files[@]}" | sort ); do
+            crf.runScript "$_name" || failedToRun+=( "$_name" )
         done
         if [ ${#failedToRun[*]} -gt 0 ]; then
             term.log "Failed to run: ${#failedToRun[*]} out of ${#files[*]} startup scripts..\n" 'lt_gray'
