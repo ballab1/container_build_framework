@@ -178,7 +178,7 @@ test.term.decode_NOARGS() {
 #-----------------------------------------------------------------------------------------
 # verify LOG works with correctly formatted banners
 test.term.header() {
-    local expected="|blue|\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n||lt_blue|Build step: whiteStarting CONTAINER BUILD\n||blue|+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n|"
+    local expected="|blue|\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n||lt_blue|Building||Container:|whiteStarting||CONTAINER|BUILD\n||blue|+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n|"
     fake 'term.decode' 'echo $1'
     local test_LOG=$( __test_term_bashlib.mktemp )
     fake 'term.log' 'printf "|%s|%s|" $2 $1 >> "$test_LOG"'
@@ -271,7 +271,7 @@ setup() {
     [ "$test_term_bashlib_DEBUG" = 0 ] || printf "\x1b[94m%s\x1b[0m\n\n" 'Running setup'
     export LOG=__test_term_bashlib.mock_logger
     test_term_bashlib_LOG_file=$(__test_term_bashlib.mktemp)
-    fake 'term.log' '__test_term_bashlib.mock_logger "$FAKE_PARAMS"'
+#    fake 'term.log' '__test_term_bashlib.mock_logger "$FAKE_PARAMS"'
     touch "$test_term_bashlib_LOG_file"
 }
 

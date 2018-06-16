@@ -40,28 +40,25 @@
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
 test.cbf.ACTION() {
-    local expected=0
-    local actual=0
-#    assert_equals "$expected" "$actual"
-    fail 'test not implemented'
+    local expected="${test_cbf_bashlib_UT_TEST_DIR}/action_folders"
+    local actual="$(cbf.ACTION)"
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
 test.cbf.BASE() {
-    local expected=0
-    local actual=0
-#    assert_equals "$expected" "$actual"
-    fail 'test not implemented'
+    local expected="${test_cbf_bashlib_UT_TEST_DIR}"
+    local actual="$(cbf.BASE)"
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
 test.cbf.BIN() {
-    local expected=0
-    local actual=0
-#    assert_equals "$expected" "$actual"
-    fail 'test not implemented'
+    local expected="${test_cbf_bashlib_UT_TEST_DIR}/bin"
+    local actual="$(cbf.BIN)"
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------

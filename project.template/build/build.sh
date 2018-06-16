@@ -19,7 +19,7 @@ cd /tmp
 cbf_dir=/tmp/container_build_framework
 
 if [ ! -d "$cbf_dir" ] && [ "${CBF_VERSION}" ]; then
-    echo 'Downloading CBF from github'
+    echo "Downloading CBF:$CBF_VERSION from github"
     # since no CBF directory located, attempt to download CBF based on specified verion
     CBF_URL="https://github.com/ballab1/container_build_framework/archive/${CBF_VERSION}.tar.gz"
     (wget --no-check-certificate --quiet --output-document=- "$CBF_URL" | tar -xz) || die 'Failed to download CBF'
