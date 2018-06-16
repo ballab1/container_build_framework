@@ -3,7 +3,6 @@
 *.iml
 *.tgz
 *.zip
-build/container_build_framework*
 **/*.bak
 *.log
 
@@ -18,3 +17,8 @@ build/container_build_framework*
 .Trash-*
 vols/*
 vols-rw/*
+build/container_build_framework*
+cbf/CRF.properties
+CBF.properties
+scanned.paths
+*.loaded

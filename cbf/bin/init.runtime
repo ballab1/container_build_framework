@@ -159,5 +159,14 @@ fi
 crf.__init "$CRF_LOCATION"
 
 
+[ -e "$envTracker" ] && rm "$envTracker"
+unset envTracker
+[ -e "$cbfLibTracker" ] && rm "$cbfLibTracker"
+unset cbfLibTracker
+[ -e "$crfLibTracker" ] && rm "$crfLibTracker"
+unset crfLibTracker
+[ -e "$scanTracker" ] && rm "$scanTracker"
+unset scanTracker
+
 unset __envCount
 unset __libCount2

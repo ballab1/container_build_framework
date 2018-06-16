@@ -8,6 +8,10 @@
 docker-compose.yml
 bin/*
 vols*/*
+cbf/CRF.properties
+CBF.properties
+scanned.paths
+*.loaded
 
 # Information files
 LICENSE

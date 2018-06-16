@@ -89,13 +89,13 @@ function crf.alreadyFixed()
 
     [ -z "$user" ] && trap.die "Must specify a user when checking the 'fixUpCache'"
 
-    local cacheFile=/tmp/fixUpCache
-    touch "$cacheFile"
+    local cache_file=/tmp/fixUpCache
+    touch "$cache_file"
 
     local -r uid="$(lib.getUID "$user")"
     [ -z "$uid" ] && trap.die "Unable to find specified user '$user' on system, when checking the 'fixUpCache'"
     
-    local -r previous="$(lib.getProperty "$dir" "$cacheFile")"
+    local -r previous="$(lib.getProperty "$dir" "$cache_file")"
     if [ "$previous" ]; then
         if [ "$previous" = "$uid" ]; then
             term.log "    ${dir} already fixed up. Skipping request\n"
@@ -106,7 +106,7 @@ function crf.alreadyFixed()
     fi
     
     # user not found. Add to cache
-    lib.updatePropertyFile "$dir" "$uid" "$cacheFile"
+    lib.updatePropertyFile "$dir" "$uid" "$cache_file"
     return 1
 }
 export -f crf.alreadyFixed
@@ -116,7 +116,7 @@ function crf.copyFileToRuntime()
 {
     local -r loc="${1^^:?"Input parameter 'loc' must be passed to 'function ${FUNCNAME[0]}()'"}"
     local -r file="${2:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}"
-    local rtSha
+    local rt_sha
 
     case "$loc" in
         BIN)         : ;;
@@ -126,28 +126,29 @@ function crf.copyFileToRuntime()
         *)  trap.die "Invalid runtime location '$loc' specified";;
     esac
 
-    local -r rtFile="$( "crf.$loc" )/$( basename "$file" )"
-    [ -e "$rtFile" ] && rtSha="$(sha256sum "$rtFile" | awk '{ print $1}')"
+    local -r rt_file="$( "crf.$loc" )/$( basename "$file" )"
+    [ -e "$rt_file" ] && rt_sha="$(sha256sum "$rt_file" | awk '{ print $1}')"
 
 
     # use input file if it exists, otherwise determine if file exists in coresponding '/usr/local/crf' folder
-    local srcFile="$file"
-    [ -e "$srcFile" ] || srcFile="$( cbf.BASE )/usr/local/crf/$( basename "$( "crf.$loc" )" )/$( basename "$file" )"
+    local src_file="$file"
+    [ -e "$src_file" ] || src_file="$( cbf.BASE )/usr/local/crf/$( basename "$( "crf.$loc" )" )/$( basename "$file" )"
 
 
     # copy file to crf folder for use by runtime
-    if [ -e "$srcFile" ]; then
-        if [ "${rtSha:-}" ]; then
+    if [ -e "$src_file" ]; then
+        if [ "${rt_sha:-}" ]; then
             # about to overrite an existing file, just return if it si same as current
-            [ "$(sha256sum "$srcFile" | awk '{ print $1}')" == "$rtSha" ] && return
-            trap.die "Attempt to overwrite file '$rtFile' will likely result in unintented consequences"
+            [ "$(sha256sum "$src_file" | awk '{ print $1}')" == "$rt_sha" ] && return
+            ( ! cmp -s "$src_file" "$rt_file" ) || continue
+            trap.die "Attempt to overwrite file '$rt_file' will likely result in unintented consequences"
         fi
 
-        echo "    copying $srcFile to $rtFile"
+        echo "    copying $src_file to $rt_file"
         # copy file
-        cp "$srcFile" "$rtFile"
+        cp "$src_file" "$rt_file"
     else
-        term.log "Attempt to copy non-existent file '$(basename "$srcFile")' to ${rtFile}\n" 'warning'
+        term.log "Attempt to copy non-existent file '$(basename "$src_file")' to ${rt_file}\n" 'warning'
     fi
 }
 export -f crf.copyFileToRuntime
@@ -198,8 +199,8 @@ export -f crf.fixupDirectory
 function crf.logEnvironment()
 {
     printf "%s starting.\n" "${CONTAINER_NAME:-}"
-    local envFile="$(crf.RT_ENVIRON)"
-    [ -e "$envFile" ] || trap.die "No CRF environment definition file: $envFile"
+    local env_file="$(crf.RT_ENVIRON)"
+    [ -e "$env_file" ] || trap.die "No CRF environment definition file: $env_file"
     printf "\nrt.environment:\n"
     for ln in $(cat "$rt_environment" | sort); do
         [ "${ln:0:6}" = 'export' ] && printf "    %s\n" "$(eval echo ${ln:7})"
@@ -217,12 +218,12 @@ function crf.prepareEnvironment()
     if [ ${#files[*]} -gt 0 ]; then
 
         # execute scritps in sorted order
-        local -a failedToRun=()
+        local -a failed_to_run=()
         for _name in $( printf "%s\n" "${files[@]}" | sort ); do
-            crf.runScript "$_name" || failedToRun+=( "$_name" )
+            crf.runScript "$_name" || failed_to_run+=( "$_name" )
         done
-        if [ ${#failedToRun[*]} -gt 0 ]; then
-            term.log "Failed to run: ${#failedToRun[*]} out of ${#files[*]} startup scripts..\n" 'lt_gray'
+        if [ ${#failed_to_run[*]} -gt 0 ]; then
+            term.log "Failed to run: ${#failed_to_run[*]} out of ${#files[*]} startup scripts..\n" 'lt_gray'
             [ "$DEBUG_TRACE" = 0 ] || term.log "  files:\n$(printf "    %s\n"  "${files[@]}")\n" 'lt_gray'
 #            trap.die "failed to execute all scripts"
         fi
@@ -243,10 +244,10 @@ export -f crf.propertiesFile
 function crf.removeFromRuntimeEnvironment()
 {
     local -r key="${1:?"Input parameter 'entry' must be passed to 'function ${FUNCNAME[0]}()'"}"
-    local -r envFile="$( crf.RT_ENVIRON )"
+    local -r env_file="$( crf.RT_ENVIRON )"
 
-    if [ -e "$envFile" ] && grep -qE "^.*\s+${key}=" "$envFile" ; then
-        sed -i "s|^.* ${key}=.*$||" "$envFile"
+    if [ -e "$env_file" ] && grep -qE "^.*\s+${key}=" "$env_file" ; then
+        sed -i "s|^.* ${key}=.*$||" "$env_file"
     fi
 }
 export -f crf.removeFromRuntimeEnvironment
@@ -255,11 +256,11 @@ export -f crf.removeFromRuntimeEnvironment
 function crf.runScript()
 {
     local file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local tmpScript="/tmp/crfScript.$( basename "$file" )"
+    local tmp_script="/tmp/crfScript.$( basename "$file" )"
 
     term.log "..executing ${file}\n" 'info'
 
-cat << EOF > "$tmpScript"
+cat << EOF > "$tmp_script"
 #!/bin/bash
 
 # Use the Unofficial Bash Strict Mode
@@ -273,35 +274,35 @@ function sourcingMessage()
     local -r src=\$1
     local -r name="\$(basename "\$src")"
     local \dir="\$(dirname "\$src")"
-    [ \$(( __envCount++ )) -eq 0 ] && printf "    sourcing (\x1b[35m%s\x1b[0m):  " 'CRF' 
+    [ \$(( __env_count++ )) -eq 0 ] && printf "    sourcing (\x1b[35m%s\x1b[0m):  " 'CRF' 
     printf "\x1b[%dm%s\x1b[0m " 90 "\$name"
 }
 
 
 # load the associative array defitions
-declare -i __envCount=0
+declare -i __env_count=0
 declare -ra _files=( \$(lib.getFiles "\$(crf.ENV)") )
 for _src in "$(printf "%s\n" "\${_files[@]}" | sort)"; do
     sourcingMessage "\${_src}" 
     source "\$_src"
 done
-[ \$__envCount -gt 0 ] && echo ''
+[ \$__env_count -gt 0 ] && echo ''
 
 cd "$WORKDIR"
 source "$file"
 EOF
 
     chmod 755 "$file"
-    chmod 755 "$tmpScript"
+    chmod 755 "$tmp_script"
     local -i status
-    ( command "$tmpScript" ) && status=$? || status=$?
+    ( command "$tmp_script" ) && status=$? || status=$?
     if [ $status -ne 0 ]; then
         term.log "-------------------------------------------------------------\n"
         cat "$file"
         term.log "\n-------------------------------------------------------------\n"
         term.log ">>>>> issue while executing $( basename "$file" ) <<<<<\n" 'warn'
     fi
-    rm  "$tmpScript"
+    rm  "$tmp_script"
     return $status
 }
 export -f crf.runScript
@@ -311,10 +312,10 @@ function crf.runtimeProperty()
 {
     local key="${1:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}"
 
-    local envFile="$(crf.RT_ENVIRON)"
-    [ -e "$envFile" ] || return
+    local env_file="$(crf.RT_ENVIRON)"
+    [ -e "$env_file" ] || return
 
-    lib.getProperty "$(crf.RT_ENVIRON_PREFIX)${key}" "$envFile"
+    lib.getProperty "$(crf.RT_ENVIRON_PREFIX)${key}" "$env_file"
 }
 export -f crf.runtimeProperty
 
@@ -322,15 +323,15 @@ export -f crf.runtimeProperty
 function crf.updateRuntimeEnvironment()
 {
     local -a in_array=( "$@" )
-    local -r envFile="$( crf.RT_ENVIRON )"
+    local -r env_file="$( crf.RT_ENVIRON )"
 
-    [ -e "$envFile" ] || return
+    [ -e "$env_file" ] || return
     for line in "${in_array[@]}"; do
         local key="${line%%=*}"
-        if grep -qE "^.*\s+${key}=" "$envFile" ; then
-            sed -i "s|^.* ${key}=.*$|$(crf.RT_ENVIRON_PREFIX)$line|" "$envFile"
+        if grep -qE "^.*\s+${key}=" "$env_file" ; then
+            sed -i "s|^.* ${key}=.*$|$(crf.RT_ENVIRON_PREFIX)$line|" "$env_file"
         else
-            echo "$(crf.RT_ENVIRON_PREFIX)$line" >> "$envFile"
+            echo "$(crf.RT_ENVIRON_PREFIX)$line" >> "$env_file"
         fi
     done
 }

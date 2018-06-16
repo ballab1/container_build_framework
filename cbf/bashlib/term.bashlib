@@ -80,19 +80,19 @@ function term.propertiesDir()
 {
     local -r file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
 
-    for dir in "${TERM_DIR:-}" "$(crf.LIB)" "$(cbf.CRF_BASE)" "$(cbf.CRT_BASE)" "/usr/local/crf" "."; do
-        [ -z "$dir" ] && continue
+    for _props_dir in "${TERM_DIR:-}" "$(crf.LIB)" "$(cbf.CRF_BASE)" "$(cbf.CRT_BASE)" "/usr/local/crf" "."; do
+        [ -z "$_props_dir" ] && continue
         
-        if [ -f "${dir}/bashlib/properties/$file" ]; then
-            echo "${dir}/bashlib/properties/$file"
+        if [ -f "${_props_dir}/bashlib/properties/$file" ]; then
+            echo "${_props_dir}/bashlib/properties/$file"
             return
         fi
-        if [ -f "${dir}/properties/$file" ]; then
-            echo "${dir}/properties/$file"
+        if [ -f "${_props_dir}/properties/$file" ]; then
+            echo "${_props_dir}/properties/$file"
             return
         fi
-        if [ -f "${dir}/$file" ]; then
-            echo "${dir}/$file"
+        if [ -f "${_props_dir}/$file" ]; then
+            echo "${_props_dir}/$file"
             return
         fi
     done
