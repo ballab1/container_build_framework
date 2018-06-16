@@ -92,4 +92,4 @@ function trap.stacktrace()
 }
 export -f trap.stacktrace
 
-[[ -z ${trap.dying:-} ]] || trap.__init
+[[ -z "${trap.dying:-}" ]] || trap.__init
