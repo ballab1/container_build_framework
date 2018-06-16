@@ -95,6 +95,8 @@ function setupCBF.setupProjectFiles()
     projectName=${projectName,,}
     
     local -r templates_folder="$( cbf.CBFBASE )/project.template"
+    local isNew
+    [ -e "${top}/.git" ] || isNew='true'
 
 #    [ -e Dockerfile ] || setupCBF.verifyDependentContainerExists
 
@@ -138,8 +140,6 @@ function setupCBF.setupProjectFiles()
 
     # setup our structure
     local -r action_folders="${top}/build/action_folders"
-    local isNew
-    [ -e "${top}/.git" ] || isNew='true'
     setupCBF.createStructure "$action_folders" "$( cbf.CBFBASE )/action.templates" "${isNew:-}"
 }
 
