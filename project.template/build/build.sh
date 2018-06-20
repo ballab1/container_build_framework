@@ -5,6 +5,14 @@ function die() {
     exit 1
 }
 
+echo '= Environment ======================================='
+env | sort
+echo '= Commandline Params ================================'
+printf "%s\n" "$@"
+echo '= Variables used ===================================='
+echo "CBF_VERSION: .${CBF_VERSION}."
+echo '====================================================='
+
 # ensure we have bash support
 if  [ -z "$(which bash)" ]; then
     if [ -e /etc/os-release ] && [ "$(grep -c 'ID=alpine' /etc/os-release 2>/dev/null)" -ne 0 ]; then
