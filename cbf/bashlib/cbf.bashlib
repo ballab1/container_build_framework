@@ -11,7 +11,7 @@ export CBF_PROPERTIES_FILE
 function cbf.__init()
 {    
     # this function is usually called from bin/init.libraries
-    local -r cbf_base=${1:?"Input parameter 'lib_base' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r cbf_base=${1:?"Input parameter 'cbf_base' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r crf_base=${2:?"Input parameter 'crf_base' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     CBF_PROPERTIES_FILE="${cbf_base}/CBF.properties"
@@ -20,7 +20,7 @@ function cbf.__init()
 
         cat << EOF > "$CBF_PROPERTIES_FILE"
 CBFBASE=$cbf_base
-BIN=${cbf_base}/bin
+BIN=${cbf_base}/cbf/bin
 LIB=${cbf_base}/cbf/bashlib
 TEMPLATES=${cbf_base}/action.templates
 BASE=$_base
