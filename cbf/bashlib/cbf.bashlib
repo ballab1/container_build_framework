@@ -142,7 +142,7 @@ function cbf.buildContainer()
         fi
 
         # get array of files in directory
-        local -a files=( $( lib.getFiles "$( cbf.ACTION )/$dir" ) 'lib.isActionFile')
+        local -a files=( $( lib.getFiles "$( cbf.ACTION )/$dir" 'lib.isActionFile' ) )
         if [ ${#files[*]} -gt 0 ] && [ "$dir" = '07.run.startup' ]; then
             cbf.showActionNotice 'last_notice' "$dir"
             term.log "  - copying files to $(cbf.CRT_BASE)\n" 'task'
@@ -152,7 +152,7 @@ function cbf.buildContainer()
             files=()
         fi
         
-        files+=( $( lib.getFiles "$( cbf.TEMPLATES )/$dir"  'lib.isActionFile') )
+        files+=( $( lib.getFiles "$( cbf.TEMPLATES )/$dir" 'lib.isActionFile') )
         [ ${#files[*]} -gt 0 ] || continue
         cbf.showActionNotice 'last_notice' "$dir"
 
