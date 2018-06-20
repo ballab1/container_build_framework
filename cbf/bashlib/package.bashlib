@@ -89,8 +89,7 @@ function package.runScripts()
     local -a files=( "$@" )
 
     for file in "${files[@]}"; do
-        local _extension="${file##*.}"
-        [ "$_extension" != "$( lib.OSid )" ] || ( package.install "$file" )
+        ( package.install "$file" )
     done
 }
 export -f package.runScripts

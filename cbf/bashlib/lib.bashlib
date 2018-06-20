@@ -38,11 +38,14 @@ export -f lib.file_env
 function lib.getFiles()
 {
     local -r dir=${1:?"Input parameter 'dir' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local OIFS=$IFS
+    local -r filter=${2:-}
 
-    IFS=$'\r\n'
-    [ ! -d "$dir" ] || find "$dir"  -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort
-    IFS=$OIFS
+    if [ -d "$dir" ]; then
+        for file in $(find "$dir" -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort); do
+            [ "$filter" ] && "$filter" "$file" && echo "$file"
+            [ "$filter" ] || echo "$file"
+        done
+    fi
 }
 export -f lib.getFiles
 
@@ -170,6 +173,24 @@ function lib.intersect()
     [ ${#common[*]} -eq 0 ] || echo "${common[*]}"
 }
 export -f lib.intersect
+
+#############################################################################
+function lib.isActionFile()
+{
+    local -r file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    local os_id="$( lib.OSid )"
+    local _extension="${file##*.}"
+    case "${_extension,,}" in
+        alpine)        [ "$os_id" = "$_extension" ];;
+        centos)        [ "$os_id" = "$_extension" ];;
+        fedora)        [ "$os_id" = "$_extension" ];;
+        ubuntu)        [ "$os_id" = "$_extension" ];;
+        windows)       [ "$os_id" = "$_extension" ];;
+        *)                                     true;;
+    esac
+}
+export -f lib.isActionFile
 
 #############################################################################
 function lib.lookupId()

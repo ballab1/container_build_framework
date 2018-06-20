@@ -119,6 +119,25 @@ test.lib.getFiles_INVALID() {
 }
 
 #-----------------------------------------------------------------------------------------
+# verify that we do not return input list if we remove a file
+test.lib.getFiles_filtered() {
+    not_b() {
+        test $(basename $1) != 'b'
+    }
+    export -f not_b
+    local -r tmp=$(__test_lib_bashlib.mktemp -d)
+    mkdir -p "$tmp"
+    local -a files=( a b c d )
+    local -a expected=()
+    for file in "${files[@]}"; do
+        touch "${tmp}/$file"
+        [ $file != b ] && expected+=( "${tmp}/$file" )
+    done
+    local -a actual=( $( lib.getFiles "$tmp" 'not_b' ) )
+    assert_equals "${expected[*]}" "${actual[*]}"
+}
+
+#-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
 test.lib.getProperty_USER() {
     local expected='root'
@@ -740,6 +759,77 @@ test.lib.getUserInfo_X() {
     local -r actual="$(lib.getUserInfo 'root' 'extended')"
     assert_equals "$expected" "$actual"
 }
+
+#-----------------------------------------------------------------------------------------
+# verify property file contains correct value after update
+test.lib.isActionFile_ALPINE() {
+    fake 'lib.OSid' 'echo "alpine"'
+
+    local actual=''
+    local -a file_names=( 01.test.alpine 01.test.centos 01.test.fedora 01.test.ubuntu 01.test.windows 01.test.sh 01.test )
+    for f in "${file_names[@]}"; do
+        lib.isActionFile "$f" && actual="${actual} $f"
+    done
+    local expected=' 01.test.alpine 01.test.sh 01.test'
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify property file contains correct value after update
+test.lib.isActionFile_CENTOS() {
+    fake 'lib.OSid' 'echo "centos"'
+
+    local actual=''
+    local -a file_names=( 01.test.alpine 01.test.centos 01.test.fedora 01.test.ubuntu 01.test.windows 01.test.sh 01.test )
+    for f in "${file_names[@]}"; do
+        lib.isActionFile "$f" && actual="${actual} $f"
+    done
+    local expected=' 01.test.centos 01.test.sh 01.test'
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify property file contains correct value after update
+test.lib.isActionFile_FEDORA() {
+    fake 'lib.OSid' 'echo "fedora"'
+
+    local actual=''
+    local -a file_names=( 01.test.alpine 01.test.centos 01.test.fedora 01.test.ubuntu 01.test.windows 01.test.sh 01.test )
+    for f in "${file_names[@]}"; do
+        lib.isActionFile "$f" && actual="${actual} $f"
+    done
+    local expected=' 01.test.fedora 01.test.sh 01.test'
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify property file contains correct value after update
+test.lib.isActionFile_UBUNTU() {
+    fake 'lib.OSid' 'echo "ubuntu"'
+
+    local actual=''
+    local -a file_names=( 01.test.alpine 01.test.centos 01.test.fedora 01.test.ubuntu 01.test.windows 01.test.sh 01.test )
+    for f in "${file_names[@]}"; do
+        lib.isActionFile "$f" && actual="${actual} $f"
+    done
+    local expected=' 01.test.ubuntu 01.test.sh 01.test'
+    assert_equals "$expected" "$actual"
+}
+
+#-----------------------------------------------------------------------------------------
+# verify property file contains correct value after update
+test.lib.isActionFile_WINDOWS() {
+    fake 'lib.OSid' 'echo "windows"'
+
+    local actual=''
+    local -a file_names=( 01.test.alpine 01.test.centos 01.test.fedora 01.test.ubuntu 01.test.windows 01.test.sh 01.test )
+    for f in "${file_names[@]}"; do
+        lib.isActionFile "$f" && actual="${actual} $f"
+    done
+    local expected=' 01.test.windows 01.test.sh 01.test'
+    assert_equals "$expected" "$actual"
+}
+
 
 ##########################################################################################
 #
