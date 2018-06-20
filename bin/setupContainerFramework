@@ -17,7 +17,7 @@ function setupCBF.createStructure()
                 
         # remove any old framework directories
         [ -d container_build_framework ] && (git rm -f container_build_framework || true)
-        for dir in (ls -1 container_build_framework*); do
+        for dir in $(ls -1 container_build_framework* 2>/dev/null); do
             rm -rf "$dir"
         done
 
