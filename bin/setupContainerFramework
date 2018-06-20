@@ -14,6 +14,12 @@ function setupCBF.createStructure()
     # create actions folder [ is a sibling of 'container_build_framework' directory]
     if [ -d "$action_folders" ]; then
         cd "$action_folders"
+                
+        # remove any old framework directories
+        [ -d container_build_framework ] && (git rm -f container_build_framework || true)
+        for dir in (ls -1 container_build_framework*); do
+            rm -rf "$dir"
+        done
 
         # rename all folders from prior versions of CBF
         setupCBF.renameActionFolder "00.setup" "01.rt_environment"
