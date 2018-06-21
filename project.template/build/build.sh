@@ -6,12 +6,12 @@ function die() {
 }
 
 echo '= Environment ======================================='
-env | sort
+printf "    %s\n" $(env | sort)
 echo '= Commandline Params ================================'
-printf "%s\n" "$@"
+printf "    %s\n" "$@"
 echo '= Variables used ===================================='
-echo "CBF_VERSION: .${CBF_VERSION}."
-echo '====================================================='
+echo "    CBF_VERSION: .${CBF_VERSION}."
+echo '=====================================================' 
 
 # ensure we have bash support
 if  [ -z "$(which bash)" ]; then

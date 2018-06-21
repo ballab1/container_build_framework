@@ -1,12 +1,12 @@
-version: '3.5'
+version: '3.3'
 
 services:
     newContainer:
         build:
             args:
-                CBF_VERSION: ${CBF_VERSION:-dev}
+                CBF_VERSION: "${CBF_VERSION}"
                 CONTAINER_NAME: newContainer
-                CONTAINER_VERSION: 1.0.0
+                CONTAINER_VERSION: 3.0.0
                 FROM_BASE: alpine:3.7
             cache_from:
                 - alpine:3.7
