@@ -56,8 +56,8 @@ function setupCBF.main()
     local -r project_dir="$( pwd )"
     local temporary_dir=''
 
-    if [ -e "${project_dir}/.cbfBlacklist" ]; then
-        echo "Detected '${project_dir}/.cbfBlacklist'  ..skipping this project."
+    if [ ! -e "${project_dir}/.cbfProject" ]; then
+        term.log "No '${project_dir}/.cbfProject file detected'  ..skipping this project." 'warning'
         exit 0
     fi
 
