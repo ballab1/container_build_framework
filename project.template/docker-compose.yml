@@ -6,7 +6,7 @@ services:
             args:
                 CBF_VERSION: "${CBF_VERSION}"
                 CONTAINER_NAME: newContainer
-                CONTAINER_VERSION: 3.0.0
+                CONTAINER_VERSION: ${CONTAINER_VERSION:-3.0.0}
                 FROM_BASE: alpine:3.7
             cache_from:
                 - alpine:3.7
