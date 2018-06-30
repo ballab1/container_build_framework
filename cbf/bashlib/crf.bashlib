@@ -177,21 +177,28 @@ function crf.fixupDirectory()
 
     [ -z "$user" ] && trap.die "Must specify a user when fixing up a directory"
 
-    if [ "$dir" != '/' ]; then
-        (crf.alreadyFixed "$dir" "$user") && return 0    # check/update cache of what has been 'fixed up'
-        term.log "    Fixing up directory: ${dir}  for user: $(lib.getUserInfo "$user" 'extended')\n"
-        [ -d "$dir" ] || mkdir -p "$dir"
-        find "$dir" -type d ! -perm 777 -exec chmod 777 '{}' \; | :
-        find "$dir" -type f ! -perm 666 -exec chmod a+rw '{}' \; | :
-        # set owner to uid & login group for uid
-        if [ "$user" != root ] && [ "$user" != 0 ]; then
-            find "$dir" ! -user "$user" -exec chown "${user}:$(lib.getGroupOfUser "$user")" '{}' \; | :
-        fi
-        return 0
+    if [ ! "$dir" != '/' ]; then
+        term.log "Attempt to fix up '${dir}' is not permitted.\n" 'warn'
+        return 1
     fi
 
-    term.log "Attempt to fix up '${dir}' is not permitted.\n" 'warn'
-    return 1
+    # check/update cache of what has been 'fixed up'
+    (crf.alreadyFixed "$dir" "$user") && return 0 
+    
+    # set access on specificed directory
+    term.log "    Fixing up directory: ${dir}  for user: $(lib.getUserInfo "$user" 'extended')\n"
+    [ -d "$dir" ] || mkdir -p "$dir"
+    find "$dir" -type d ! -perm 777 -exec chmod 777 '{}' \; | :
+    find "$dir" -type f ! -perm 666 -exec chmod a+rw '{}' \; | :
+    
+    # set owner to uid & login group for uid
+    if [ "$user" != root ] && [ "$user" != 0 ]; then
+        (getent passwd $user" > /dev/null 2>&1) || useradd --no-create-home "$user"
+        local group="$(lib.getGroupOfUser "$user")"
+        (getent group $group" > /dev/null 2>&1) || groupadd "$group"
+        find "$dir" ! -user "$user" -exec chown "${user}:$group" '{}' \; | :
+    fi
+    return 0
 }
 export -f crf.fixupDirectory
 
@@ -323,9 +330,11 @@ export -f crf.runtimeProperty
 function crf.updateRuntimeEnvironment()
 {
     local -a in_array=( "$@" )
+    
     local -r env_file="$( crf.RT_ENVIRON )"
-
     [ -e "$env_file" ] || return
+    
+    
     for line in "${in_array[@]}"; do
         local key="${line%%=*}"
         if grep -qE "^.*\s+${key}=" "$env_file" ; then
