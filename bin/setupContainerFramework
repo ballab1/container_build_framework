@@ -56,8 +56,8 @@ function setupCBF.main()
     local -r project_dir="$( pwd )"
     local temporary_dir=''
 
-    if [ ! -e "${project_dir}/.cbfProject" ]; then
-        term.log "No '${project_dir}/.cbfProject file detected'  ..skipping this project." 'warning'
+    if [ -d "${project_dir}/build" ] && [ ! -e "${project_dir}/.cbfProject" ]; then
+        echo -en "\n\e[93mNo '.cbfProject' file detected in '${project_dir}'  ..skipping this project.\e[0m\n"
         exit 0
     fi
 
@@ -67,9 +67,11 @@ function setupCBF.main()
         echo 'Downloading CBF from github'
         local cbf_version="${CBF_VERSION:-dev}"
         # since no CBF directory located, attempt to download CBF based on specified verion
+        local tar_gz="${temporary_dir}/cbf.tzr.gz"
         local -r CBF_URL="https://github.com/ballab1/container_build_framework/archive/${cbf_version}.tar.gz"
-        (wget --no-check-certificate --quiet --output-document=- "$CBF_URL" | tar -xz) || die "$(basename "$project_dir") not setup: Failed to download $CBF_URL"
-        cbf_dir="$( ls -d container_build_framework-* 2>/dev/null )"
+        wget --no-check-certificate --quiet --output-document="${tar_gz}" "$CBF_URL" || die "$(basename "$project_dir") not setup: Failed to download $CBF_URL"
+        tar -xzC "$temporary_dir" -f "${tar_gz}" || die "$(basename "$project_dir") not setup: Failed to download $CBF_URL"
+        cbf_dir="$( ls -d "${temporary_dir}/container_build_framework"* 2>/dev/null )"
     fi
 
     # point CBF & CRF to locations in tmp workspace.  Will load libs from there
