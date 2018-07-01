@@ -294,7 +294,8 @@ EOF
     local -i status
     ( command "$tmpScript" ) && status=$? || status=$?
     if [ $status -ne 0 ] ; then
-        term.log ">>>>> issue while executing $( basename "$file" ) <<<<<\n" 'warn'
+        local name="$( basename "$( dirname "$file")" )/$( basename "$file" )"
+        term.log ">>>>> issue while executing ${name} <<<<<\n" 'warn'
         trap.die "unable to execute $file"
     fi
     set +o xtrace
