@@ -50,10 +50,10 @@ export -f www.GID
 ```
 
 
-### Install add to runtime environment
+### Add variables to runtime environment
 **Folder:** _01.rt\_environment_
 
-This folder contains scripts which contain commands to update the list of run time environment variables. These files are regular scripts, however, by convention, updating the list of environment variables at this stage of the framework, also makes them available to all of the other scripts during the build. The function **crf.updateRuntimeEnvironment** updates the /usr/local/crf/bin/rt.environment file which contains the list of run time environment variables.
+This folder contains scripts which contain commands to update the list of runtime environment variables. These files are regular scripts, however, by convention, updating the list of environment variables at this stage of the framework, also makes them available to all of the other scripts during the build. The function **crf.updateRuntimeEnvironment** updates the /usr/local/crf/bin/rt.environment file which contains the list of run time environment variables.
 
 The following shows an example of the type of file expected in the  _01.rt\_environment_ folder:
 ```bash
