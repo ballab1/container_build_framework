@@ -12,7 +12,7 @@ If you are starting a new container project, create a folder with the name of th
 mkdir newProject
 cd newProject
 git init
-curl https://raw.githubusercontent.com/ballab1/container_build_framework/master/bin/setupContainerFramework -- | sh
+curl -s https://raw.githubusercontent.com/ballab1/container_build_framework/master/bin/setupContainerFramework | bash
 ```
 
 Once installed in a GIT project, configure the project defaults by running
@@ -30,20 +30,22 @@ The project `Dockerfile` copies the action folders and the framework folder into
 
 Folder | Action
 --- | ---
-01.packages |  Install needed OS Support
-02.users_groups | Verify users and groups exist
-03.downloads | Download & verify external packages
-04.applications | Install applications
-05.customizations | Add customizations and configuration
-06.permissions | Make sure that ownership & permissions are correct
-07.cleanup | Clean up
+00.bashlib |  Install any bash libraries needed at build time or runtime
+01.rt_environment |  Add variables for runtime environment
+02.packages |  Install needed OS Support
+03.users_groups | Verify users and groups exist
+04.downloads | Download & verify external packages
+05.applications | Install applications
+06.customizations | Add customizations and configuration
+07.run.startup | scripts that will be executed at runtime (these get copied to /usr/local/crf/startup)
+08.cleanup | Clean up
 
 
 The `build` folder also contains zero or more **custom folders**. These folders are copied to the root of the of the file system of the container.
 This allows creation of files and subfolders which will be as-is inside your container. No errors occur when any of these folders do not exist.
 
 ### Action Folders
-The **/tmp/build.sh** script, called from the *DockerFile*, loads the framework library scripts, and then iterates in order, across the coresponding directories in the `action_folders` folder.
+The **/tmp/build.sh** script, called from the *DockerFile*, loads the framework library scripts, and then iterates in order, across the corresponding directories in the `action_folders` folder.
 
 The `action_folders` folder contains the instructions for the framework. The contents of this folder are processed in sorted order.
 If a folder contains any files, they are processed, otherwise it is skipped. Similarly, if a folder does not exist in the `action_folders' directory, it is skipped.
@@ -55,7 +57,7 @@ The framework invokes each action script in its own bash shell to prevent undesi
 
 
 ### Custom Folders
-These folders may contain any content which is copied to the coresponding folder in the root forlder of the container being built.
+These folders may contain any content which is copied to the corresponding folder in the root forlder of the container being built.
 Custom folders are not mandatory. The following custom folders are supported:
 bin etc home lib lib64 media mnt opt root sbin usr var www
 

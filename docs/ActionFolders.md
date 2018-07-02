@@ -29,10 +29,9 @@ Scripts from *07.run.startup* are not executed, but copied to the /usr/local/crf
 This folder contains bashlib libraries for use by the framework at both buildtime and runtime. These library files should contain only bash function definitions. They should not contain any inline scripts.
 
 The following shows an example of a bashlib file which may be placed the _00.bashlib_ folder:
-```
+```bash
 #!/bin/bash
 #############################################################################
-
 function www.UID()
 {
     local -r user_name="${1:-www-data}"
@@ -40,7 +39,6 @@ function www.UID()
     lib.lookupId "$user_name" 'passwd' "$default_uid"
 }
 export -f www.UID
-
 #############################################################################
 function www.GID()
 {
@@ -58,7 +56,7 @@ export -f www.GID
 This folder contains scripts which contain commands to update the list of run time environment variables. These files are regular scripts, however, by convention, updating the list of environment variables at this stage of the framework, also makes them available to all of the other scripts during the build. The function **crf.updateRuntimeEnvironment** updates the /usr/local/crf/bin/rt.environment file which contains the list of run time environment variables.
 
 The following shows an example of the type of file expected in the  _01.rt\_environment_ folder:
-```
+```bash
 #!/bin/bash
 declare -ar env_php=(
     'PHP=php7'
@@ -106,7 +104,7 @@ The `shell` and `home` are optional, while **mandatory fields** are:
 
 
 The *01.hubot* file, shows an example of the type of file expected in the _02.users_groups_ folder:
-```
+```bash
 declare -A nginx=(
     ['user']=${NGINX_USER:-nginx}
     ['uid']=${NGINX_UID:-$(nginx.UID)}
@@ -130,7 +128,7 @@ The **mandatory fields** are
 Every other declaration is optional.
 
 The *01.PHPADMIN* file, shows an example of the type of file expected in the _03.downloads_ folder:
-```
+```bash
 declare -A NGINX=(
     ['version']=${NGINX_VERSION:-1.15.0}
     ['dir']="/tmp/nginx-${NGINX['version']}"
