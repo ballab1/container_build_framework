@@ -11,8 +11,8 @@ function uidgid.createUserAndGroup()
     local -r uid=${2:?"Input parameter 'uid' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r group=${3:?"Input parameter 'group' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r gid=${4:?"Input parameter 'gid' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local -r homedir=${5:?"Input parameter 'homedir' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local -r shell=${6:?"Input parameter 'shell' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r homedir=${5:-}
+    local -r shell=${6:-}
 
     if [ -z "$user" ] || [ -z "$uid" ] || [ -z "$group" ] || [ -z "$gid" ]; then
         trap.die "Invalid user/group specified in '${file}'; user:[${user}], uid:[${uid}], group:[$group], gid:[${gid}]"
