@@ -136,20 +136,20 @@ function crf.copyFileToRuntime()
 
 
     # copy file to crf folder for use by runtime
-    if [ -e "$src_file" ]; then
-        if [ "${rt_sha:-}" ]; then
-            # about to overrite an existing file, just return if it si same as current
-            [ "$(sha256sum "$src_file" | awk '{ print $1}')" == "$rt_sha" ] && return
-            ( ! cmp -s "$src_file" "$rt_file" ) || continue
-            trap.die "Attempt to overwrite file '$rt_file' will likely result in unintented consequences"
-        fi
-
-        echo "    copying $src_file to $rt_file"
-        # copy file
-        cp "$src_file" "$rt_file"
-    else
+    if [ ! -e "$src_file" ]; then
         term.log "Attempt to copy non-existent file '$(basename "$src_file")' to ${rt_file}\n" 'warning'
+        return
     fi
+
+    if [ "${rt_sha:-}" ]; then
+        # about to overrite an existing file, just return if it is same as current
+        [ "$(sha256sum "$src_file" | awk '{ print $1}')" == "$rt_sha" ] && return
+        trap.die "Attempt to overwrite file '$rt_file' will likely result in unintented consequences"
+    fi
+
+    # copy file
+    echo "    copying $src_file to $rt_file"
+    cp "$src_file" "$rt_file"
 }
 export -f crf.copyFileToRuntime
 
@@ -190,14 +190,13 @@ function crf.fixupDirectory()
     [ -d "$dir" ] || mkdir -p "$dir"
     find "$dir" -type d ! -perm 777 -exec chmod 777 '{}' \; | :
     find "$dir" -type f ! -perm 666 -exec chmod a+rw '{}' \; | :
-    
+
     # set owner to uid & login group for uid
     if [ "$user" != root ] && [ "$user" != 0 ]; then
-        (getent passwd $user" > /dev/null 2>&1) || useradd --no-create-home "$user"
-        local group="$(lib.getGroupOfUser "$user")"
-        (getent group $group" > /dev/null 2>&1) || groupadd "$group"
+        local group="$( uidgid.verifyUserExists "$user" )"
         find "$dir" ! -user "$user" -exec chown "${user}:$group" '{}' \; | :
     fi
+
     return 0
 }
 export -f crf.fixupDirectory
@@ -221,7 +220,8 @@ export -f crf.logEnvironment
 #############################################################################
 function crf.prepareEnvironment()
 {
-    local -a files=( $( lib.getFiles "$( crf.STARTUP )" ) )
+    local -a files
+    mapfile -t files < <( lib.getFiles "$( crf.STARTUP )" )
     if [ ${#files[*]} -gt 0 ]; then
 
         # execute scritps in sorted order

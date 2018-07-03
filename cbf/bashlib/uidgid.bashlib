@@ -7,34 +7,21 @@
 
 function uidgid.createUserAndGroup()
 {
-    local -r file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
-
-    [ -f "$file" ] || trap.die 'must specify a valid file'
-
-    term.log "..executing ${file}\n" 'info'
-
-    source "$(crf.BIN)/init.runtime"
-    source "$file"
-
-    #strip path & prefix from file to get name
-    local name="$( basename "$file" )"
-    name="${name//[0-9]/}"
-    name="${name#.}"
-
-    local user="$( lib.indirectReference 'user' "$name" )"
-    local uid="$( lib.indirectReference 'uid' "$name" )"
-    local group="$( lib.indirectReference 'group' "$name" )"
-    local gid="$( lib.indirectReference 'gid' "$name" )"
-    local homedir="$( lib.indirectReference 'home' "$name" )"
-    local shell="$( lib.indirectReference 'shell' "$name" )"
+    local -r user=${1:?"Input parameter 'user' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r uid=${2:?"Input parameter 'uid' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r group=${3:?"Input parameter 'group' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r gid=${4:?"Input parameter 'gid' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r homedir=${5:?"Input parameter 'homedir' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r shell=${6:?"Input parameter 'shell' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     if [ -z "$user" ] || [ -z "$uid" ] || [ -z "$group" ] || [ -z "$gid" ]; then
         trap.die "Invalid user/group specified in '${file}'; user:[${user}], uid:[${uid}], group:[$group], gid:[${gid}]"
     fi
 
-    local wanted="$( printf '%s:%s' "$group" "$gid" )"
-    local nameMatch="$( lib.getGroupInfo "$group" 'extended' )"
-    local idMatch="$( lib.getGroupInfo "$gid" 'extended' )"
+    local wanted nameMatch idMatch
+    wanted="$( printf '%s:%s' "$group" "$gid" )"
+    nameMatch="$( lib.getGroupInfo "$group" 'extended' )"
+    idMatch="$( lib.getGroupInfo "$gid" 'extended' )"
     term.log "    INFO: group/gid (${wanted}):  is currently (${nameMatch})/(${idMatch})\n"
 
     if [ "$wanted" != "$nameMatch" ] || [ "$wanted" != "$idMatch" ]; then
@@ -90,15 +77,42 @@ function uidgid.runScripts()
     [ ${#files[*]} -gt 0 ] || return
     for file in "${files[@]}" ; do
         crf.copyFileToRuntime 'ENV' "$file"
-        (eval uidgid.createUserAndGroup "$file") || term.log "..*** issue while executing $( basename "$file" ) ***\n" 'yellow'
+        (eval uidgid.userAndGroupFromFile "$file") || term.log "..*** issue while executing $( basename "$file" ) ***\n" 'yellow'
     done
 }
 export -f uidgid.runScripts
 
 #############################################################################
+function uidgid.userAndGroupFromFile()
+{
+    local -r file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    [ -f "$file" ] || trap.die 'must specify a valid file'
+
+    term.log "..executing ${file}\n" 'info'
+
+    source "$(crf.BIN)/init.runtime"
+    source "$file"
+
+    #strip path & prefix from file to get name
+    local name="$( basename "$file" )"
+    name="${name//[0-9]/}"
+    name="${name#.}"
+
+    uidgid.createUserAndGroup "$( lib.indirectReference 'user' "$name" )" \
+                              "$( lib.indirectReference 'uid' "$name" )" \
+                              "$( lib.indirectReference 'group' "$name" )" \
+                              "$( lib.indirectReference 'gid' "$name" )" \
+                              "$( lib.indirectReference 'home' "$name" )" \
+                              "$( lib.indirectReference 'shell' "$name" )"
+}
+export -f -f uidgid.userAndGroupFromFile
+
+#############################################################################
 function uidgid.verify()
 {
-    local -a files=( $(find "$(crf.ENV)" -type f ! -name '.*') )
+    local -a files
+    mapfile -t files < <(find "$(crf.ENV)" -type f ! -name '.*')
 
     [ ${#files[*]} -gt 0 ] || return
     local -a uids=()
@@ -114,3 +128,13 @@ function uidgid.verify()
 }
 export -f uidgid.verify
 
+#############################################################################
+function uidgid.verifyUserExists()
+{
+    local -r user=${1:?"Input parameter 'user' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    if ! getent 'passwd' "$user" | cut -d: -f4 ; then
+        trap.die "Invalid user: ${user} specified"
+    fi
+}
+export -f uidgid.verifyUserExists

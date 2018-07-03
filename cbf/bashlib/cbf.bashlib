@@ -142,7 +142,8 @@ function cbf.buildContainer()
         fi
 
         # get array of files in directory
-        local -a files=( $( lib.getFiles "$( cbf.ACTION )/$dir" 'lib.isActionFile' ) )
+        local -a files
+        mapfile -t files < <( lib.getFiles "$( cbf.ACTION )/$dir" 'lib.isActionFile' )
         if [ ${#files[*]} -gt 0 ] && [ "$dir" = '07.run.startup' ]; then
             cbf.showActionNotice 'last_notice' "$dir"
             term.log "  - copying files to $(cbf.CRT_BASE)\n" 'task'
@@ -195,7 +196,8 @@ function cbf.initFramework()
 
 
     # copy runtime framework (only copy updates)
-    local -a files=( $(find . -type f ! -name '.*' | awk '{print substr($0,3)}' ) )    # awk strips './' from path
+    local -a files
+    mapfile -t files < <(find . -type f ! -name '.*' | awk '{print substr($0,3)}' )    # awk strips './' from path
     for file in "${files[@]}"; do
         local action='creating'
         local _name="$( basename "$file" )"
@@ -214,7 +216,7 @@ function cbf.initFramework()
 
 
     # copy any custom bashlibs to crf
-    files=( $(lib.getFiles "$(cbf.ACTION)/00.bashlib") )
+    mapfile -t files < <(lib.getFiles "$(cbf.ACTION)/00.bashlib")
     if [ ${#files[*]} -gt 0 ]; then
         for file in "${files[@]}"; do
             crf.copyFileToRuntime 'LIB' "$file"
@@ -328,7 +330,7 @@ function cbf.runScripts()
     local -i isdone=0
     for _name in $( printf "%s\n" "${!ahash[@]}" | sort ); do
         local file="${ahash[$_name]}"
-        ( cbf.makeScript "$file" )
+        cbf.makeScript "$file"
         (( isdone++ )) || :
     done
     if [ $todo -ne $isdone ]; then

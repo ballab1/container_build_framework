@@ -31,9 +31,7 @@ function download.getFile()
     local -i attempt
     for attempt in {1..3}; do
         [ ! -e "${params['file']}" ] || rm "${params['file']}"
-#        wget --no-check-certificate --quiet --output-document "${params['file']}" "${params['url']}"
-        wget --no-check-certificate --no-verbose --output-document "${params['file']}" "${params['url']}"
-        [ $? -eq 0 ] || continue
+        wget --no-check-certificate --no-verbose --output-document "${params['file']}" "${params['url']}"  || continue
         local result=$(echo "${params['sha256']}  ${params['file']}" | sha256sum -cw 2>&1)
         term.log "    ${result}\n" 'info'
         if [[ "$result" == *'FAILED'* ]]; then

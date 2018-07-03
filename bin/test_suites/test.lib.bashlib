@@ -690,7 +690,7 @@ test.lib.getGroupInfo_X() {
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-test.lib.getGroupOfUser() {
+test.lib.getGroupNameOfUser() {
     fake_getent() {
         echo "getent: $*" >> "$test_lib_bashlib_LOG_file"
         if [ "$1" = 'passwd' ]; then
@@ -702,7 +702,7 @@ test.lib.getGroupOfUser() {
     fake 'getent' 'fake_getent "$@"'
     
     local -r expected='bob2'
-    local -r actual="$(lib.getGroupOfUser)"
+    local -r actual="$(lib.getGroupNameOfUser)"
     assert_equals "$expected" "$actual"
 }
 
