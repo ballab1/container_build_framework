@@ -45,7 +45,7 @@ function loadEnvars()
     local -a files=()
 
     if [ "$path" ] && [  -d "${path}/environment" ]; then
-        files=( $(find "${path}/environment" -maxdepth 1 -mindepth 1 -type f ! -name '.*'  -print) )
+        mapfiles -t files < <(find "${path}/environment" -maxdepth 1 -mindepth 1 -type f ! -name '.*'  -print)
     fi
     [ "${#files[@]}" -eq 0 ] || printf "%s\n" "${files[@]}"
 }
@@ -71,7 +71,8 @@ function loadLibs()
     [ "$path" ] || return 0
     pathNotScanned "$path" || return 0
     [ -d "${path}/bashlib" ] || return 0
-    local -ar files=( $(find "${path}/bashlib" -maxdepth 1 -mindepth 1 -type f ! -name '.*'  -print) )
+    local -ar files
+    mapfiles -t files < <(find "${path}/bashlib" -maxdepth 1 -mindepth 1 -type f ! -name '.*'  -print)
     [ ${#files[@]} -gt 0 ] || return 0
 
     local src

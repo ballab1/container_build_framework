@@ -220,6 +220,7 @@ export -f crf.logEnvironment
 #############################################################################
 function crf.prepareEnvironment()
 {
+    uidgid.verifyUserExists "$USER"
     local -a files
     mapfile -t files < <( lib.getFiles "$( crf.STARTUP )" )
     if [ ${#files[*]} -gt 0 ]; then
