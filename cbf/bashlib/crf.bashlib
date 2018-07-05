@@ -213,6 +213,7 @@ function crf.logEnvironment()
     done
     printf "\n"
     printf "    Current user info: %s\n"  "$(getent 'passwd' "$UID")"
+    uidgid.verifyUserExists "$USER"
     printf "    Target  user info: %s\n\n"  "$(getent 'passwd' "$USER")"
 }
 export -f crf.logEnvironment
@@ -220,7 +221,6 @@ export -f crf.logEnvironment
 #############################################################################
 function crf.prepareEnvironment()
 {
-    uidgid.verifyUserExists "$USER"
     local -a files
     mapfile -t files < <( lib.getFiles "$( crf.STARTUP )" )
     if [ ${#files[*]} -gt 0 ]; then
