@@ -17,7 +17,7 @@ fi
 declare -r SUDOERS=/etc/sudoers.d
 if [ -d "$SUDOERS" ]; then
     declare -a files
-    mapfiles -t files < <( lib.getFiles "$SUDOERS" )
+    mapfile -t files < <( lib.getFiles "$SUDOERS" )
 
     if [ "${#files[*]}" -gt 0 ]; then
         for file in "${files[@]}" ; do

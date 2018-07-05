@@ -20,7 +20,7 @@ function loadLibs()
 
     [ "$path" ] || return 0
     [ -d "$path" ] || return 0
-    local -ar files
+    local -a files
     mapfile -t files < <(find "$path" -maxdepth 1 -mindepth 1 -name '*.bashlib')
     [ ${#files[@]} -gt 0 ] || return 0
 
