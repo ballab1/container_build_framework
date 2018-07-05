@@ -5,18 +5,12 @@
 #
 #############################################################################
 
-function uidgid.createUserAndGroup()
+function uidgid.createGroup()
 {
-    local -r user=${1:?"Input parameter 'user' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local -r uid=${2:?"Input parameter 'uid' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local -r group=${3:?"Input parameter 'group' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local -r gid=${4:?"Input parameter 'gid' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local -r homedir=${5:-}
-    local -r shell=${6:-}
+    local -r group=${1:?"Input parameter 'group' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r gid=${2:?"Input parameter 'gid' must be passed to 'function ${FUNCNAME[0]}()'"}
 
-    if [ -z "$user" ] || [ -z "$uid" ] || [ -z "$group" ] || [ -z "$gid" ]; then
-        trap.die "Invalid user/group specified in '${file}'; user:[${user}], uid:[${uid}], group:[$group], gid:[${gid}]"
-    fi
+    [ "$group" ] && [ "$gid" ]  ||  trap.die "Invalid group specified; group:[$group], gid:[${gid}]"
 
     local wanted nameMatch idMatch
     wanted="$( printf '%s:%s' "$group" "$gid" )"
@@ -38,7 +32,20 @@ function uidgid.createUserAndGroup()
             groupadd --gid "$gid" "$group"
         fi
     fi
+}
+export -f -f uidgid.createGroup
 
+#############################################################################
+function uidgid.createUser()
+{
+    local -r user=${1:?"Input parameter 'user' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r uid=${2:?"Input parameter 'uid' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r homedir=${3:-}
+    local -r shell=${4:-}
+
+    [ "$user" ] && [ -z "$uid" ]  ||  trap.die "Invalid user specified: user:[${user}], uid:[${uid}]"
+
+    local wanted nameMatch idMatch
 
     wanted="$( printf '%s:%s' "$user" "$uid" )"
     nameMatch="$( lib.getUserInfo "$user" 'extended' )"
@@ -67,10 +74,9 @@ function uidgid.createUserAndGroup()
         fi
     fi
 }
-export -f -f uidgid.createUserAndGroup
+export -f -f uidgid.createUser
 
 #############################################################################
-
 function uidgid.runScripts()
 {
     local -a files=( "$@" )
@@ -99,12 +105,21 @@ function uidgid.userAndGroupFromFile()
     name="${name//[0-9]/}"
     name="${name#.}"
 
-    uidgid.createUserAndGroup "$( lib.indirectReference 'user' "$name" )" \
-                              "$( lib.indirectReference 'uid' "$name" )" \
-                              "$( lib.indirectReference 'group' "$name" )" \
-                              "$( lib.indirectReference 'gid' "$name" )" \
-                              "$( lib.indirectReference 'home' "$name" )" \
-                              "$( lib.indirectReference 'shell' "$name" )"
+    # extract data from file
+    local user="$( lib.indirectReference 'user' "$name" )"
+    local uid="$( lib.indirectReference 'uid' "$name" )"
+    local group="$( lib.indirectReference 'group' "$name" )" 
+    local gid="$( lib.indirectReference 'gid' "$name" )"
+    local home="$( lib.indirectReference 'home' "$name" )"
+    local shell="$( lib.indirectReference 'shell' "$name" )"
+    
+    if [ -z "$user" ] || [ -z "$uid" ] || [ -z "$group" ] || [ -z "$gid" ]; then
+        trap.die "Invalid user/group specified in '${file}'; user:[${user}], uid:[${uid}], group:[$group], gid:[${gid}]"
+    fi
+
+    # setup user & group
+    uidgid.createGroup "$group" "$gid"
+    uidgid.createUser "$user" "$uid" "$home" "$shell"
 }
 export -f -f uidgid.userAndGroupFromFile
 
