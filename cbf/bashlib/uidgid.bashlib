@@ -43,7 +43,7 @@ function uidgid.createUser()
     local -r homedir=${3:-}
     local -r shell=${4:-}
 
-    [ "$user" ] && [ -z "$uid" ]  ||  trap.die "Invalid user specified: user:[${user}], uid:[${uid}]"
+    [ "$user" ] && [ "$uid" ]  ||  trap.die "Invalid user specified: user:[${user}], uid:[${uid}]"
 
     local wanted nameMatch idMatch
 
