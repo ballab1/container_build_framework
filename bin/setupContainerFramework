@@ -50,16 +50,33 @@ function setupCBF.createStructure()
 }
 
 ######################################################################
+function setupCBF.isValidProject()
+{
+    # check if an existing project
+    [ -f "${project_dir}/.cbfProject" ] &&  return 0
+
+    # check if a new project
+    [ ! -d "${project_dir}/build" ] && [ ! -f '.git' ] &&  return 0
+
+    # check if this is an old project
+    [ -f Dockerfile ] && grep -E '^ARG CONTAINER_VERSION=' 'Dockerfile' > /dev/null &&  return 0
+
+
+    echo -en "\n\e[93mProject not valid  ..skipping '${project_dir}'.\e[0m\n"
+    return 1
+}
+
+######################################################################
 function setupCBF.main()
 {
     # load our libraries
     local -r project_dir="$( pwd )"
     local temporary_dir=''
 
-    if [ -d "${project_dir}/build" ] && [ ! -e "${project_dir}/.cbfProject" ]; then
-        echo -en "\n\e[93mNo '.cbfProject' file detected in '${project_dir}'  ..skipping this project.\e[0m\n"
-        exit 0
-    fi
+
+    # skip unless this is a valid project
+    setupCBF.isValidProject || exit 0
+
 
     local cbf_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
     if [ ! -d "${cbf_dir}/cbf" ]; then
@@ -90,6 +107,13 @@ function setupCBF.main()
     [ "${cbfLibTracker:-}" ] && [ -e "$cbfLibTracker" ] && rm "$cbfLibTracker"
     [ "${crfLibTracker:-}" ] && [ -e "$crfLibTracker" ] && rm "$crfLibTracker"
     [ "${scanTracker:-}" ] && [ -e "$scanTracker" ] && rm "$scanTracker"
+
+    local propFile
+    propFile="$(cbf.propertiesFile)"
+    [ "${propFile:-}" ] && [ -e "$propFile" ] && rm "$propFile"
+    propFile="$(crf.propertiesFile)"
+    [ "${propFile:-}" ] && [ -e "$propFile" ] && rm "$propFile"
+
     [ -z "$temporary_dir" ] || rm -rf "$temporary_dir"
 }
 
@@ -120,7 +144,8 @@ function setupCBF.setupProjectFiles()
     [ -e "${top}/.git" ] || isNew='true'
 
     if [ -e Dockerfile ] && grep -E '^COPY build /tmp/$' Dockerfile > /dev/null ; then
-        sed -Ei -e 's|^COPY build /tmp/$|^COPY build Dockerfile /tmp/$|' Dockerfile
+        echo "  updating 'Dockerfile'"
+        sed -Ei -e 's|^COPY build /tmp/$|COPY build Dockerfile /tmp/|' Dockerfile
     fi
 
     # ensure our folder structure exists

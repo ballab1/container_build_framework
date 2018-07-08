@@ -11,7 +11,7 @@ LABEL org_name=$CONTAINER_NAME \
 # Specify CBF version to use with our configuration and customizations
 ARG CBF_VERSION="${CBF_VERSION}"
 # include our project files
-COPY build /tmp/
+COPY build Dockerfile /tmp/
 # set to non zero for the framework to show verbose action scripts
 #    (0:default, 1:trace & do not cleanup; 2:continue after errors)
 ENV DEBUG_TRACE=0

@@ -248,16 +248,16 @@ function cbf.initFramework()
 
 
     # setup some variables based on runtime properties in the Dockerfile
-    local props="$(cbf.BASE)/container.properties)"
+    local props="$(cbf.BASE)/Dockerfile)"
     if [ -e "$props" ]; then
         local val
         while IFS='=' read -r key val; do
             case "$key" in
-                entrypoint) local entrypoint="$val";;
-                command)    local cmd="$val";;
-                volumes)    local volumes="$val";;
-                user)       local user="$val";;
-                workdir)    local workdir="$val";;
+                ENTRYPOINT) local entrypoint="$val";;
+                CMD)        local cmd="$val";;
+                VOLUMES)    local volumes="$val";;
+                USER)       local user="$val";;
+                WORKDIR)    local workdir="$val";;
             esac
         done < "$props"
     fi
