@@ -181,7 +181,7 @@ export -f cbf.buildContainer
 #############################################################################
 function cbf.initFramework()
 {
-    local basis="$(unset CONTAINER_NAME; crf.runtimeProperty 'CONTAINER_NAME' | true)"
+    local basis="$(unset CONTAINER_NAME; crf.runtimeProperty 'CONTAINER_NAME' || :)"
     [ "${basis:-}" ] && (term.log '    Buidling '; term.log "$CONTAINER_NAME" 'white'; term.log ' on top of '; term.log "${basis}\n" 'white')
 
     # ensure runtime folders exist
