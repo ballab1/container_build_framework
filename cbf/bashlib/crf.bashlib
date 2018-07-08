@@ -194,7 +194,11 @@ function crf.fixupDirectory()
     # set owner to uid & login group for uid
     if [ "$user" != root ] && [ "$user" != 0 ]; then
         local group="$( uidgid.verifyUserExists "$user" )"
-        find "$dir" ! -user "$user" -exec chown "${user}:$group" '{}' \; | :
+        if [ "${group:-}" ]; then
+            find "$dir" ! -user "$user" -exec chown "${user}:$group" '{}' \; | :
+        else
+            find "$dir" ! -user "$user" -exec chown "$user" '{}' \; | :
+        fi
     fi
 
     return 0
