@@ -23,6 +23,6 @@ function die() {
 source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/init.libraries"
 
 # build our container
-timer.measureCmd "$NAME" 'cbf.buildContainer' "$NAME" "$TZ"
+timer.measureCmd "$NAME" 'cbf.buildContainer' "$NAME" "$DEBUG_TRACE" "$TZ"
 echo ''
 echo ''
