@@ -119,7 +119,9 @@ function setupCBF.setupProjectFiles()
     local isNew
     [ -e "${top}/.git" ] || isNew='true'
 
-#    [ -e Dockerfile ] || setupCBF.verifyDependentContainerExists
+    if [ -e Dockerfile ] && grep -E '^COPY build /tmp/$' Dockerfile > /dev/null ; then
+        sed -Ei -e 's|^COPY build /tmp/$|^COPY build Dockerfile /tmp/$|' Dockerfile
+    fi
 
     # ensure our folder structure exists
     for abs_dir in $(find "$templates_folder" -mindepth 1 -type d); do
