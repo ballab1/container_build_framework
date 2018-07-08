@@ -325,7 +325,7 @@ function crf.runtimeProperty()
     local key="${1:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}"
 
     local env_file="$(crf.RT_ENVIRON)"
-    [ -e "$env_file" ] || return
+    [ ! -e "$env_file" ] && return
 
     lib.getProperty "$(crf.RT_ENVIRON_PREFIX)${key}" "$env_file"
 }
@@ -337,8 +337,8 @@ function crf.updateRuntimeEnvironment()
     local -a in_array=( "$@" )
     
     local -r env_file="$( crf.RT_ENVIRON )"
-    [ -e "$env_file" ] || return
-    
+    [ ! -e "$env_file" ] && return
+
     
     for line in "${in_array[@]}"; do
         local key="${line%%=*}"
