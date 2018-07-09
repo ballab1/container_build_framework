@@ -7,9 +7,9 @@ services:
                 CBF_VERSION: "${CBF_VERSION}"
                 CONTAINER_NAME: newContainer
                 CONTAINER_VERSION: ${CONTAINER_VERSION:-3.0.0}
-                FROM_BASE: alpine:3.7
+                FROM_BASE: alpine:3.8
             cache_from:
-                - alpine:3.7
+                - alpine:3.8
 #                - base_container:${CONTAINER_TAG:-latest}
             context: .
             dockerfile: Dockerfile
