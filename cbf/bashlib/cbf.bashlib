@@ -188,6 +188,9 @@ function cbf.initFramework()
     mkdir -p "$( cbf.CRT_BASE )"
     cd "$( cbf.CRF_BASE )" || return
 
+    # check Dockerfile to determine what is needed
+    cbf.parseDockerfile
+
     # ensure crf directories exist
     [ -e "$( cbf.CRT_BASE )/bashlib" ] || mkdir -p "$( cbf.CRT_BASE )/bashlib"
     [ -e "$( cbf.CRT_BASE )/bin" ] || mkdir -p "$( cbf.CRT_BASE )/bin"
@@ -246,22 +249,6 @@ function cbf.initFramework()
     fi
 
 
-
-    # setup some variables based on runtime properties in the Dockerfile
-    local props="$(cbf.BASE)/Dockerfile)"
-    if [ -e "$props" ]; then
-        local val
-        while IFS='=' read -r key val; do
-            case "$key" in
-                ENTRYPOINT) local entrypoint="$val";;
-                CMD)        local cmd="$val";;
-                VOLUMES)    local volumes="$val";;
-                USER)       local user="$val";;
-                WORKDIR)    local workdir="$val";;
-            esac
-        done < "$props"
-    fi
-
     # create an archive of parts of CBF that exists in /tmp to permit otehr dependent containers to inherit the CBF
     if [ -f "$( cbf.CRF_BIN )/files.txt" ]; then
         cd "$( cbf.CBFBASE )" || return
@@ -306,6 +293,26 @@ EOF
     set +o xtrace
 }
 export -f cbf.makeScript
+
+#############################################################################
+function cbf.parseDockerfile()
+{
+    # setup some variables based on runtime properties in the Dockerfile
+    local props="$(cbf.BASE)/Dockerfile)"
+    if [ -e "$props" ]; then
+        local val
+        while IFS='=' read -r key val; do
+            case "$key" in
+                ENTRYPOINT) local entrypoint="$val";;
+                CMD)        local cmd="$val";;
+                VOLUMES)    local volumes="$val";;
+                USER)       local user="$val";;
+                WORKDIR)    local workdir="$val";;
+            esac
+        done < "$props"
+    fi
+}
+export -f cbf.parseDockerfile
 
 #############################################################################
 function cbf.propertiesFile()
