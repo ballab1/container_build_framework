@@ -7,7 +7,7 @@ set -o pipefail
 IFS=$'\n\t'
 
 declare NAME=${1:?'Input parameter "NAME" must be defined'}
-declare TZ="${2:-null}"
+declare TZ="${2:-}"
 : ${DEBUG_TRACE:=0}
 
 function die() {
