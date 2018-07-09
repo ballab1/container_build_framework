@@ -7,8 +7,8 @@ set -o pipefail
 IFS=$'\n\t'
 
 declare NAME=${1:?'Input parameter "NAME" must be defined'}
-declare TZ="${2:-}"
-: ${DEBUG_TRACE:=0}
+declare -x DEBUG_TRACE=${2:-0}
+declare -x TZ="${3:-}"
 
 function die() {
     echo "$1"
