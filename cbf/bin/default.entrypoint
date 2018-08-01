@@ -28,7 +28,7 @@ if [[ "$1" = "$CONTAINER_NAME" ]]; then
     elif [ "$( which sudo )" ]; then
         sudo -E "$0" "$config_entry"
     else
-        term.log ">>>>>>>> Current user 'uid:$(id -u)' does not have super powers. Unable to prepare environment" 'magenta'
+        term.log ">>>>>>>> Current user 'uid:$(id -u)' does not have super powers. Unable to prepare environment\n" 'magenta'
     fi
 
     declare -r tools=/usr/local/bin
@@ -47,7 +47,7 @@ elif [ $# -gt 0 ]; then
     # this codepath is invoked when a user invokes the container using 'docker run'
     crf.logEnvironment
     term.log '>>>>>>>> entering ' 'green'
-    term.log 'custom' 'yellow'
+    term.log "custom\n" 'yellow'
     exec $@
 fi
 term.log '<<<<<<<< returning from ' 'green'
