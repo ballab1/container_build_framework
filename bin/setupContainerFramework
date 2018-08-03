@@ -85,11 +85,13 @@ function setupCBF.main()
         temporary_dir="$(mktemp -d)"
         echo 'Downloading CBF from github'
         local cbf_version="${CBF_VERSION:-dev}"
+
         # since no CBF directory located, attempt to download CBF based on specified verion
-        local tar_gz="${temporary_dir}/cbf.tzr.gz"
-        local -r CBF_URL="https://github.com/ballab1/container_build_framework/archive/${cbf_version}.tar.gz"
-        wget --no-check-certificate --quiet --output-document="${tar_gz}" "$CBF_URL" || die "$(basename "$project_dir") not setup: Failed to download $CBF_URL"
-        tar -xzC "$temporary_dir" -f "${tar_gz}" || die "$(basename "$project_dir") not setup: Failed to download $CBF_URL"
+        local -r cbf_tgz="${temporary_dir}/cbf.tar.gz"
+        local -r cbf_url="https://github.com/ballab1/container_build_framework/archive/${cbf_version}.tar.gz"
+        wget --no-check-certificate --quiet --output-document="$cbf_tgz" "$cbf_url" || die "Failed to download $cbf_url"
+
+        tar -xzC "$temporary_dir" -f "$cbf_tgz" || die "$(basename "$project_dir") not setup: Failed to download $cbf_url"
         cbf_dir="$( ls -d "${temporary_dir}/container_build_framework"* 2>/dev/null )"
     fi
 
