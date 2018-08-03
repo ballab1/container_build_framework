@@ -22,8 +22,9 @@ function setupCBF.createStructure()
         done
 
         # rename all folders from prior versions of CBF
-        setupCBF.renameActionFolder "00.setup" "01.rt_environment"
-        setupCBF.renameActionFolder "01.setup" "01.rt_environment"
+        setupCBF.renameActionFolder "00.setup" "01.environment"
+        setupCBF.renameActionFolder "01.setup" "01.environment"
+        setupCBF.renameActionFolder "01.rt_environment" "01.environment"
         setupCBF.renameActionFolder "01.packages" "02.packages"
         setupCBF.renameActionFolder "02.users_groups" "03.users_groups"
         setupCBF.renameActionFolder "03.downloads" "04.downloads"
@@ -61,8 +62,8 @@ function setupCBF.isValidProject()
     # check if this is an old project
     [ -f Dockerfile ] && grep -E '^ARG CONTAINER_VERSION=' 'Dockerfile' > /dev/null &&  return 0
 
-
-    echo -en "\n\e[93mProject not valid  ..skipping '${project_dir}'.\e[0m\n"
+    echo
+    echo -e "\e[93mProject not valid  ..skipping '${project_dir}'\e[0m"
     return 1
 }
 
@@ -168,7 +169,10 @@ function setupCBF.setupProjectFiles()
         elif [ "$(grep -c "$file" <<< "$updatableFiles" 2>/dev/null)" -gt 0 ]; then
             # check if contents of files are the same
             (printf "%s %s\n" "$(sha256sum "$file" | awk '{print $1}')" "$abs_file" | sha256sum -c --status) && continue
-#            [ "$file" -nt "$abs_file" ] && continue
+            if [ "$file" -nt "$abs_file" ]; then
+                echo -e " \e[93m newer file: ${file} - not updated\e[0m"
+                continue
+            fi
 
             echo "  updating: ${file}   previous file renamed to ${file}.bak"
             [ -f "$file" ] && mv "$file" "${file}.bak"

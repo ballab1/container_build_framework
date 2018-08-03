@@ -110,7 +110,7 @@ function cbf.buildContainer()
 
     # list of 'notice, directory, action' to perform
     local -A steps=( ['00.bashlib']='cbf.initFramework'
-                     ['01.rt_environment']='cbf.runScripts'
+                     ['01.environment']='cbf.runScripts'
                      ['02.packages']='package.runScripts'
                      ['03.users_groups']='uidgid.runScripts'
                      ['04.downloads']='download.runScripts'
