@@ -5,6 +5,13 @@ set -o nounset
 set -o errexit
 
 ######################################################################
+function setupCBF.die()
+{
+    echo "***ERROR: $1" >&2
+    exit 1
+}
+
+######################################################################
 function setupCBF.createStructure()
 {
     local action_folders=${1:?"must pass parameter 'action_folders' to 'function ${FUNCNAME[0]}()'"}
@@ -60,7 +67,7 @@ function setupCBF.isValidProject()
     [ ! -d "${project_dir}/build" ] && [ ! -f '.git' ] &&  return 0
 
     # check if this is an old project
-    [ -f Dockerfile ] && grep -E '^ARG CONTAINER_VERSION=' 'Dockerfile' > /dev/null &&  return 0
+    [ -f Dockerfile ] && grep -E '^ARG CBF_VERSION=' 'Dockerfile' > /dev/null &&  return 0
 
     echo
     echo -e "\e[93mProject not valid  ..skipping '${project_dir}'\e[0m"
@@ -89,9 +96,9 @@ function setupCBF.main()
         # since no CBF directory located, attempt to download CBF based on specified verion
         local -r cbf_tgz="${temporary_dir}/cbf.tar.gz"
         local -r cbf_url="https://github.com/ballab1/container_build_framework/archive/${cbf_version}.tar.gz"
-        wget --no-check-certificate --quiet --output-document="$cbf_tgz" "$cbf_url" || die "Failed to download $cbf_url"
+        wget --no-check-certificate --quiet --output-document="$cbf_tgz" "$cbf_url" || setupCBF.die "Failed to download $cbf_url"
 
-        tar -xzC "$temporary_dir" -f "$cbf_tgz" || die "$(basename "$project_dir") not setup: Failed to download $cbf_url"
+        tar -xzC "$temporary_dir" -f "$cbf_tgz" || setupCBF.die "$(basename "$project_dir") not setup: Failed to download $cbf_url"
         cbf_dir="$( ls -d "${temporary_dir}/container_build_framework"* 2>/dev/null )"
     fi
 

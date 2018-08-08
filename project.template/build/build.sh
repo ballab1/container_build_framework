@@ -44,7 +44,7 @@ else
     tar -xzf "$CBF_TGZ" -C "$cbf_dir" || die "Failed to unpack $CBF_TGZ"
 fi
 
-# vereify CBF directory exists
+# verify CBF directory exists
 [ "$cbf_dir" ] && [ -d "$cbf_dir" ] ||  die 'No framework directory located'
 
 

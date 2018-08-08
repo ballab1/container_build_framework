@@ -7,6 +7,7 @@ services:
                 CBF_VERSION: "${CBF_VERSION}"
                 CONTAINER_NAME: newContainer
                 FROM_BASE: ${DOCKER_REGISTRY:-}alpine:3.8
+#                FROM_BASE: ${DOCKER_REGISTRY:-}base_container:${BASE_TAG:-latest}
             cache_from:
                 - ${DOCKER_REGISTRY:-}alpine:3.8
 #                - ${DOCKER_REGISTRY:-}base_container:${BASE_TAG:-latest}
@@ -20,7 +21,6 @@ services:
                 container.git.url: $CONTAINER_GIT_URL
                 container.origin: $CONTAINER_ORIGIN
                 container.original.name: newContainer
-                container.version: ${CONTAINER_VERSION:-3.0.0}
         container_name: newContainer
         environment:
             DEBUG_TRACE: ${DEBUG_TRACE:-0}
