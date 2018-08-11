@@ -29,7 +29,7 @@ function term.decode()
     local -r bg=${2:-}
 
     if [ -z "$bg" ]; then
-        case "${fg,,}" in
+        case "$fg" in
              task)     term.codes 'FOREGROUND' 'lt_cyan';;
              info)     term.codes 'FOREGROUND' 'lt_green';;
      warn|warning)     term.codes 'FOREGROUND' 'lt_yellow';;
