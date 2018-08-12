@@ -26,15 +26,15 @@ cbf_dir=/tmp/container_build_framework
 
 # check if we need to download CBF
 if [ ! -d "$cbf_dir" ] && [ "$CBF_VERSION" ]; then
-    echo "Downloading CBF:$CBF_VERSION from github"
+    CBF_URL="https://github.com/ballab1/container_build_framework/archive/${CBF_VERSION}.tar.gz"
+    echo "Downloading CBF:$CBF_VERSION from $CBF_URL"
     # since no CBF directory located, attempt to download CBF based on specified verion
     CBF_TGZ=/tmp/cbf.tar.gz
-    CBF_URL="https://github.com/ballab1/container_build_framework/archive/${CBF_VERSION}.tar.gz"
     wget --no-check-certificate --quiet --output-document="$CBF_TGZ" "$CBF_URL" || die "Failed to download $CBF_URL"
     
     echo 'Unpacking downloaded copy of CBF'
     tar -xzf "$CBF_TGZ" || die "Failed to unpack $CBF_TGZ"
-    cbf_dir="$( ls -d container_build_framework-* 2>/dev/null )"
+    cbf_dir="$( ls -d container_build_framework* 2>/dev/null )"
 
 else
     # setup pointer to archive from prior build

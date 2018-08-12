@@ -4,7 +4,7 @@ FROM $FROM_BASE
 # name and version of this docker image
 ARG CONTAINER_NAME=NewContainer
 # Specify CBF version to use with our configuration and customizations
-ARG CBF_VERSION="${CBF_VERSION}"
+ARG CBF_VERSION
 
 # include our project files
 COPY build Dockerfile /tmp/

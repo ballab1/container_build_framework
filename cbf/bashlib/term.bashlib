@@ -32,7 +32,7 @@ function term.decode()
         case "$fg" in
              task)     term.codes 'FOREGROUND' 'lt_cyan';;
              info)     term.codes 'FOREGROUND' 'lt_green';;
-             warn)     term.codes 'FOREGROUND' 'lt_yellow';;
+     warn|warning)     term.codes 'FOREGROUND' 'lt_yellow';;
             error)     term.codes 'FOREGROUND' 'red';;
             reset)     term.codes 'ATTR_RESET' 'all';;
                 *)     term.codes 'FOREGROUND' ${fg};;
