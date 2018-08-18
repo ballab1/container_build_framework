@@ -58,7 +58,7 @@ function lib.getGroupInfo()
     if [ -z "$extended" ]; then
         (getent 'group' "$group" | cut -d: -f1) || true
     else
-        (getent 'group' "$group" | awk -F ':' '{ printf "%s:%s",$1,$3 }') || true
+        (getent 'group' "$group" | awk -F ':' '{ printf "%s(%s)",$1,$3 }') || true
     fi
 }
 export -f lib.getGroupInfo
@@ -120,7 +120,7 @@ function lib.getUserInfo()
     if [ -z "$extended" ]; then
         (getent 'passwd' "$user" | cut -d: -f1) || true
     else
-        (getent 'passwd' "$user" | awk -F ':' '{ printf "%s:%s",$1,$3 }') || true
+        (getent 'passwd' "$user" | awk -F ':' '{ printf "%s(%s)",$1,$3 }') || true
     fi
 }
 export -f lib.getUserInfo
