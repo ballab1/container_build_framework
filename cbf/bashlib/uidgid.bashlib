@@ -148,7 +148,7 @@ function uidgid.verifyUserExists()
 {
     local -r user=${1:?"Input parameter 'user' must be passed to 'function ${FUNCNAME[0]}()'"}
 
-    getent 'passwd' "$user" >/dev/null 2>&1 && return
-    useradd -N "$user" || trap.die "Invalid user: ${user} specified"
+    [ "$(lib.lookupId "$user" 'passwd')" ] || useradd -N "$user"
+    lib.getGroupNameOfUser "$user"
 }
 export -f uidgid.verifyUserExists

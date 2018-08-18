@@ -106,7 +106,9 @@ function crf.alreadyFixed()
     fi
     
     # user not found. Add to cache
-    lib.updatePropertyFile "$dir" "$uid" "$cache_file"
+    term.log "    adding dir: ${dir}, uid: $uid to cache_file: ${cache_file}\n" 'lt_gray'
+
+    lib.updatePropertyFile "$dir" "$uid" "$cache_file" 'must_exist'
     return 1
 }
 export -f crf.alreadyFixed
@@ -148,7 +150,7 @@ function crf.copyFileToRuntime()
     fi
 
     # copy file
-    echo "    copying $src_file to $rt_file"
+    term.log "    copying $src_file to $rt_file\n" 'lt_gray'
     cp "$src_file" "$rt_file"
 }
 export -f crf.copyFileToRuntime
@@ -187,20 +189,25 @@ function crf.fixupDirectory()
     
     # set access on specificed directory
     term.log "    Fixing up directory: ${dir}  for user: $(lib.getUserInfo "$user" 'extended')\n"
+
     [ -d "$dir" ] || mkdir -p "$dir"
-    find "$dir" -type d ! -perm 777 ! -name '.*' -exec chmod 777 '{}' \; | :
-    find "$dir" -type f ! -perm 666 ! -name '.*' -exec chmod a+rw '{}' \; | :
+    find "$dir" -type d ! -perm 777 ! -name '.*' -exec chmod 777 '{}' \; || :  # (use || :) to inhibit error
+    find "$dir" -type f ! -perm 666 ! -name '.*' -exec chmod a+rw '{}' \; || :
+
+    [ "$user" = root ] && return 0
+    [ "$user" = 0 ] && return 0
 
     # set owner to uid & login group for uid
-    if [ "$user" != root ] && [ "$user" != 0 ]; then
-        local group="$( uidgid.verifyUserExists "$user" )"
-        if [ "${group:-}" ]; then
-            find "$dir" ! -user "$user" ! -name '.*' -exec chown "${user}:$group" '{}' \; | :
-        else
-            find "$dir" ! -user "$user" ! -name '.*' -exec chown "$user" '{}' \; | :
-        fi
+    local group="$( uidgid.verifyUserExists "$user" )"
+    if [ "${group:-}" ]; then
+        term.log "     - changing ownership for directory: ${dir}  to ${user}:${group}\n" 'lt_gray'
+        find "$dir" ! -user "$user" ! -name '.*' -exec chown "${user}:$group" '{}' \; || :
+    else
+        term.log "     - changing ownership for directory: ${dir}  to ${user}\n" 'lt_gray'
+        find "$dir" ! -user "$user" ! -name '.*' -exec chown "$user" '{}' \; || :
     fi
 
+#    term.log "    crf.fixupDirectory returning\n" 'lt_gray'
     return 0
 }
 export -f crf.fixupDirectory
