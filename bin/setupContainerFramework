@@ -90,6 +90,9 @@ function setupCBF.main()
     [ "${BASH_SOURCE[0]:-}" ] && cbf_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
     if [ -z "${cbf_dir:-}" ] || [ ! -d "${cbf_dir}/cbf" ]; then
         temporary_dir="$(mktemp -d)"
+        rmTmpDir() { rm -rf "$temporary_dir" }
+        trap rmTmpDir EXIT
+
         echo 'Downloading CBF from github'
         local cbf_version="${CBF_VERSION:-dev}"
 
@@ -124,8 +127,6 @@ function setupCBF.main()
     [ "${propFile:-}" ] && [ -e "$propFile" ] && rm "$propFile"
     propFile="$(crf.propertiesFile)"
     [ "${propFile:-}" ] && [ -e "$propFile" ] && rm "$propFile"
-
-    [ -z "$temporary_dir" ] || rm -rf "$temporary_dir"
 }
 
 ######################################################################
