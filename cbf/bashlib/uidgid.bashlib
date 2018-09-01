@@ -108,11 +108,11 @@ function uidgid.userAndGroupFromFile()
     # extract data from file
     local user="$( lib.indirectReference 'user' "$name" )"
     local uid="$( lib.indirectReference 'uid' "$name" )"
-    local group="$( lib.indirectReference 'group' "$name" )" 
+    local group="$( lib.indirectReference 'group' "$name" )"
     local gid="$( lib.indirectReference 'gid' "$name" )"
     local home="$( lib.indirectReference 'home' "$name" )"
     local shell="$( lib.indirectReference 'shell' "$name" )"
-    
+
     if [ -z "$user" ] || [ -z "$uid" ] || [ -z "$group" ] || [ -z "$gid" ]; then
         trap.die "Invalid user/group specified in '${file}'; user:[${user}], uid:[${uid}], group:[$group], gid:[${gid}]"
     fi
@@ -139,7 +139,7 @@ function uidgid.verify()
         source "$file"
         uids+=( "$( lib.indirectReference 'uid' "$name" )" )
     done
-    [ ${#files[*]} -eq $(printf "%s\n" "${uids[@]}" | sort -u | wc -l) ] || trap.die "Failed to process all user&group definitions\n"
+    [ ${#files[*]} -eq $(printf '%s\n' "${uids[@]}" | sort -u | wc -l) ] || trap.die "Failed to process all user&group definitions\n"
 }
 export -f uidgid.verify
 

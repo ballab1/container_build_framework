@@ -178,7 +178,7 @@ function setupCBF.setupProjectFiles()
             echo "  created: ${file}"
         elif [ "$(grep -c "$file" <<< "$updatableFiles" 2>/dev/null)" -gt 0 ]; then
             # check if contents of files are the same
-            (printf "%s %s\n" "$(sha256sum "$file" | awk '{print $1}')" "$abs_file" | sha256sum -c --status) && continue
+            (printf '%s %s\n' "$(sha256sum "$file" | awk '{print $1}')" "$abs_file" | sha256sum -c --status) && continue
             if [ "$file" -nt "$abs_file" ]; then
                 echo -e " \e[93m newer file: ${file} - not updated\e[0m"
                 continue

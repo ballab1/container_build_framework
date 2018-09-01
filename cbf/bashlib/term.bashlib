@@ -19,7 +19,7 @@ function term.codes()
     local -r name=${2:?"Input parameter 'code' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     local -r code=$(lib.getProperty "$name" "$(term.propertiesDir "term_${mode^^}.properties")")
-    [ $? -ne 0 ] || [ -z "$code" ] || printf "\x1b[%dm" "$code"
+    [ $? -ne 0 ] || [ -z "$code" ] || printf '\x1b[%dm' "$code"
 }
 export -f term.codes
 
@@ -42,7 +42,7 @@ function term.decode()
     else
         local -r bg_code=$(lib.getProperty "$bg" "$(term.propertiesDir "term_BACKGROUND.properties")")
         local -r fg_code=$(lib.getProperty "$fg" "$(term.propertiesDir "term_FOREGROUND.properties")")
-        [ -z "$bg_code" ] || [ -z "$fg_code" ] || printf "\x1b[%d;%dm" "$fg_code" "$bg_code"
+        [ -z "$bg_code" ] || [ -z "$fg_code" ] || printf '\x1b[%d;%dm' "$fg_code" "$bg_code"
     fi
 }
 export -f term.decode

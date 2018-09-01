@@ -37,3 +37,7 @@ services:
 #        restart: unless-stopped
         volumes:
             - ./vols/log:/var/log
+
+#secrets:
+#   general:
+#     file: ~/.secrets/docker.inf

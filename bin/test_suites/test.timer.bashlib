@@ -73,14 +73,14 @@ test.timer.logElapsed() {
 # provide brief explanation of what test does
 test.timer.measureCmd_NONAME() {
     export -f timer.measureCmd
-    assert_status_code 1 'timer.measureCmd' 
+    assert_status_code 1 'timer.measureCmd'
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no cmd provided
 test.timer.measureCmd_NOCMD() {
     export -f timer.measureCmd
-    assert_status_code 1 'timer.measureCmd sleep' 
+    assert_status_code 1 'timer.measureCmd sleep'
 }
 
 #-----------------------------------------------------------------------------------------
@@ -141,7 +141,7 @@ teardown_suite() {
 
 # setup MOCK logger
 setup() {
-    [ "$test_timer_bashlib_DEBUG" = 0 ] || printf "\x1b[94m%s\x1b[0m\n\n" 'Running setup'
+    [ "$test_timer_bashlib_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running setup'
     export LOG=__test_timer_bashlib.mock_logger
     test_timer_bashlib_LOG_file=$(__test_timer_bashlib.mktemp)
     fake 'term.log' '__test_timer_bashlib.mock_logger "$FAKE_PARAMS"'
@@ -150,7 +150,7 @@ setup() {
 
 # flush the mock logger
 teardown() {
-    [ "$test_timer_bashlib_DEBUG" = 0 ] || printf "\x1b[94m%s\x1b[0m\n\n" 'Running teardown'
+    [ "$test_timer_bashlib_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running teardown'
     [ ! -e "$test_timer_bashlib_LOG_file" ] || rm "$test_timer_bashlib_LOG_file"
 
     [ ! -e "${CBF_LOCATION}/bashlibs.loaded" ] || rm "${CBF_LOCATION}/bashlibs.loaded"
@@ -171,7 +171,7 @@ export -f __test_timer_bashlib.mktemp
 
 # MOCK logger implementation
 __test_timer_bashlib.mock_logger() {
-    printf "%s\n" "$*" >> "$test_timer_bashlib_LOG_file"
+    printf '%s\n' "$*" >> "$test_timer_bashlib_LOG_file"
 }
 export -f __test_timer_bashlib.mock_logger
 

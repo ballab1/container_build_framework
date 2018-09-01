@@ -177,7 +177,7 @@ teardown_suite() {
 
 # setup MOCK logger
 setup() {
-    [ "$test_stub_testsuite_sh_DEBUG" = 0 ] || printf "\x1b[94m%s\x1b[0m\n\n" 'Running setup'
+    [ "$test_stub_testsuite_sh_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running setup'
     export LOG=__test_stub_testsuite_sh.mock_logger
     test_stub_testsuite_sh_LOG_file=$(__test_stub_testsuite_sh.mktemp)
     fake 'term.log' '__test_stub_testsuite_sh.mock_logger "$FAKE_PARAMS"'
@@ -186,7 +186,7 @@ setup() {
 
 # flush the mock logger
 teardown() {
-    [ "$test_stub_testsuite_sh_DEBUG" = 0 ] || printf "\x1b[94m%s\x1b[0m\n\n" 'Running teardown'
+    [ "$test_stub_testsuite_sh_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running teardown'
     [ ! -e "$test_stub_testsuite_sh_LOG_file" ] || rm "$test_stub_testsuite_sh_LOG_file"
 
     [ ! -e "${CBF_LOCATION}/bashlibs.loaded" ] || rm "${CBF_LOCATION}/bashlibs.loaded"
@@ -207,7 +207,7 @@ export -f __test_stub_testsuite_sh.mktemp
 
 # MOCK logger implementation
 __test_stub_testsuite_sh.mock_logger() {
-    printf "%s\n" "$*" >> "$test_stub_testsuite_sh_LOG_file"
+    printf '%s\n' "$*" >> "$test_stub_testsuite_sh_LOG_file"
 }
 export -f __test_stub_testsuite_sh.mock_logger
 

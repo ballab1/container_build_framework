@@ -71,7 +71,7 @@ export -f trap.die
 #----------------------------------------------------------------------------
 function trap.log()
 {
-    printf "\x1b[31m%s\x1b[0m\n" "$1" >&2
+    printf '\x1b[31m%s\x1b[0m\n' "$1" >&2
 }
 export -f trap.log
 
@@ -88,7 +88,7 @@ function trap.stacktrace()
     if [ ${#FUNCNAME[@]} -gt 2 ]; then
         trap.log "Stack trace:"
         for ((i=1;i<${#FUNCNAME[@]}-1;i++)); do
-            trap.log "$(printf ">>>    %02d: %s %s  <<<" "$i" "${BASH_SOURCE[$i+1]}:${BASH_LINENO[$i]}" "${FUNCNAME[$i]}" )"
+            trap.log "$(printf '>>>    %02d: %s %s  <<<' "$i" "${BASH_SOURCE[$i+1]}:${BASH_LINENO[$i]}" "${FUNCNAME[$i]}" )"
         done
     fi
     eval "$__trap_options"

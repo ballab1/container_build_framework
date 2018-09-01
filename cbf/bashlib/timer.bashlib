@@ -24,7 +24,7 @@ function timer.logElapsed()
     local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -ir elapsed=${2:?"Input parameter 'elapsed' must be passed to 'function ${FUNCNAME[0]}()'"}
 
-    printf "Time elapsed (%s): %s" "$name" "$(timer.fmtElapsed $elapsed)"
+    printf 'Time elapsed (%s): %s' "$name" "$(timer.fmtElapsed $elapsed)"
 }
 export -f timer.logElapsed
 
@@ -50,7 +50,7 @@ function timer.measureCmd()
     local -i elapsed_tm=$((finish_tm - start_tm))
     local fmt_tm=$( timer.fmtElapsed $elapsed_tm )
 
-    printf "Time elapsed (%s): %s" "$name" "$fmt_tm"
+    printf 'Time elapsed (%s): %s' "$name" "$fmt_tm"
 }
 export -f timer.measureCmd
 
