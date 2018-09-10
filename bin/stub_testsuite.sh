@@ -30,7 +30,7 @@ function stub_testsuite.createFile()
     local -r file_under_test=${1:?"Input parameter 'file_under_test' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r test_file=${2:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
 
-    printf "\nGenerating test suite file: %s\n" "$test_file"
+    printf '\nGenerating test suite file: %s\n' "$test_file"
     [ -e "$test_file" ] && mv "$test_file" "${test_file}.sav"
 
     local namespace="$( stub_testsuite.nameSpace "$test_file" )"
@@ -83,10 +83,10 @@ function stub_testsuite.custom_support()
     local -r test_file=${1:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
     local namespace="$( stub_testsuite.nameSpace "$test_file" )"
 
-    printf "  adding: custom support\n"
-    printf "    __${namespace}.mktemp\n"
-    printf "    __${namespace}.mock_logger\n"
-    printf "    exports\n"
+    echo '  adding: custom support'
+    echo "    __${namespace}.mktemp"
+    echo "    __${namespace}.mock_logger"
+    echo '    exports'
 cat << EOF >> "$test_file"
 
 ##########################################################################################
@@ -103,7 +103,7 @@ export -f __${namespace}.mktemp
 
 # MOCK logger implementation
 __${namespace}.mock_logger() {
-    printf "%s\n" "\$@" >> "\$${namespace}_LOG_file"
+    printf '%s\n' "\$@" >> "\$${namespace}_LOG_file"
 }
 export -f __${namespace}.mock_logger
 
@@ -121,7 +121,7 @@ function stub_testsuite.die()
     local status=$?
     [[ $status -ne 0 ]] || status=255
 
-    printf "\n\x1b[31mFATAL ERROR: %s\x1b[0m\n" "$*" >&2
+    printf '\n\x1b[31mFATAL ERROR: %s\x1b[0m\n' "$*" >&2
     exit $status
 }
 
@@ -145,7 +145,7 @@ function stub_testsuite.generateTestFile()
     stub_testsuite.teardown "$test_file"
     stub_testsuite.custom_support "$test_file"
 
-    printf "\n%d tests generated\n" ${test_count}
+    printf '\n%d tests generated\n' ${test_count}
 }
 
 #----------------------------------------------------------------------------
@@ -181,7 +181,7 @@ function stub_testsuite.main()
     # fully qualified name of file_under_test
     local -r file_under_test="$( cd "$( dirname "$fut" )" && pwd )/$( basename "$fut" )"
 
-    printf "\nFile under test:            %s\n" "$file_under_test"
+    printf '\nFile under test:            %s\n' "$file_under_test"
 
     # test file in test directory. name:  remove extension and prefix with 'test.'
     local -r test_file="${test_dir}/test.$( basename "$fut" )"
@@ -219,13 +219,13 @@ function stub_testsuite.scanTestFile()
     local -r file_under_test=${1:?"Input parameter 'file_under_test' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r test_file=${2:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
 
-    printf "\nTest suite being checked:   %s" "$test_file"
+    printf '\nTest suite being checked:   %s' "$test_file"
 
     local -ar functions=( $(stub_testsuite.getFunctionNames "$file_under_test") )
     local -a tests=( $(stub_testsuite.getTestNames "$test_file") )
 
-    printf "\n  %d functions detected" "${#functions[@]}"
-    printf ",  %d tests detected" "${#tests[@]}"
+    printf '\n  %d functions detected' "${#functions[@]}"
+    printf ',  %d tests detected' "${#tests[@]}"
 
 
     local -a unused=()
@@ -236,14 +236,14 @@ function stub_testsuite.scanTestFile()
         for test_name in "${tests[@]}"; do
             [[ "$test_name" =~ ^$function_name ]] && (( count++ ))
         done
-        printf "\n    %s:  %d" "$function_name" "$count"
+        printf '\n    %s:  %d' "$function_name" "$count"
         let used_count=( used_count + count )
         [ "$count" -eq 0 ] && unused+=( "$function_name" )
     done
-    printf "\n\n  %d out of %d tests used" "$used_count" "${#tests[@]}"
+    printf '\n\n  %d out of %d tests used' "$used_count" "${#tests[@]}"
     if [ "${#unused[@]}" -gt 0 ]; then
-        printf "\n  The following functions have no tests: "
-        printf "%s " "${unused[@]}"
+        printf '\n  The following functions have no tests: '
+        printf '%s ' "${unused[@]}"
     fi
 
     unused=()
@@ -255,10 +255,10 @@ function stub_testsuite.scanTestFile()
         [ "$count" -eq 0 ] && unused+=( "$test_name" )
     done
     if [ "${#unused[@]}" -gt 0 ]; then
-        printf "\n  The following tests are unused:        "
-        printf "test.%s " "${unused[@]}"
+        printf '\n  The following tests are unused:        '
+        printf 'test.%s ' "${unused[@]}"
     fi
-    printf "\n"
+    echo
 }
 
 #----------------------------------------------------------------------------
@@ -267,12 +267,12 @@ function stub_testsuite.setup()
     local -r test_file=${1:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
     local namespace="$( stub_testsuite.nameSpace "$test_file" )"
 
-    printf "  adding: setup\n"
+    echo '  adding: setup'
 cat << EOF >> "$test_file"
 
 # setup MOCK logger
 setup() {
-    [ "\$${namespace}_DEBUG" = 0 ] || printf "\x1b[94m%s\x1b[0m\n\n" 'Running setup'
+    [ "\$${namespace}_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running setup'
     export LOG=__${namespace}.mock_logger
     fake 'term.log' '__${namespace}.mock_logger "\$FAKE_PARAMS"'
     ${namespace}_LOG_file=\$(__${namespace}.mktemp)
@@ -287,7 +287,7 @@ function stub_testsuite.setup_suite()
     local -r test_file=${1:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
     local namespace="$( stub_testsuite.nameSpace "$test_file" )"
 
-    printf "  adding: setup_suite\n"
+    echo '  adding: setup_suite'
 cat << EOF >> "$test_file"
 
 ##########################################################################################
@@ -332,12 +332,12 @@ function stub_testsuite.teardown()
     local -r test_file=${1:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
     local namespace="$( stub_testsuite.nameSpace "$test_file" )"
 
-    printf "  adding: teardown\n"
+    echo '  adding: teardown'
 cat << EOF >> "$test_file"
 
 # flush the mock logger
 teardown() {
-    [ "\$${namespace}_DEBUG" = 0 ] || printf "\x1b[94m%s\x1b[0m\n\n" 'Running teardown'
+    [ "\$${namespace}_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running teardown'
     [ ! -e "\$${namespace}_LOG_file" ] || rm "\$${namespace}_LOG_file"
     [ \$(ls -A1 "\$${namespace}_UT_TEST_DIR" | wc -l) -eq 0 ] || rm -rf "\$${namespace}_UT_TEST_DIR"/*
 }
@@ -350,7 +350,7 @@ function stub_testsuite.teardown_suite()
     local -r test_file=${1:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
     local namespace="$( stub_testsuite.nameSpace "$test_file" )"
 
-    printf "  adding: teardownsuite\n"
+    echo '  adding: teardownsuite'
 cat << EOF >> "$test_file"
 
 # remove anything generated by test suite
@@ -375,7 +375,7 @@ function stub_testsuite.test_stub()
     local -r test_file=${1:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r function_name=${2:?"Input parameter 'function_name' must be passed to 'function ${FUNCNAME[0]}()'"}
 
-    printf "    adding test stub for: %s\n" "$function_name"
+    printf '    adding test stub for: %s\n' "$function_name"
 cat << EOF >> "$test_file"
 
 ${SPLITTER}

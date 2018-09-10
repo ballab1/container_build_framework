@@ -7,8 +7,8 @@ set -o nounset
 set -o pipefail
 IFS=$'\n\t'
 
-[ "${1:-}" = *-setup ] || printf "\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n"
-printf "\nargs: %s\n\n"  "$*"
+[ "${1:-}" = *-setup ] || echo -e '\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
+printf '\nargs: %s\n\n'  "$*"
 
 source /usr/local/crf/bin/init.runtime
 

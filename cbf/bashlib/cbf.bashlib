@@ -9,7 +9,7 @@
 export CBF_PROPERTIES_FILE
 
 function cbf.__init()
-{    
+{
     # this function is usually called from bin/init.libraries
     local -r cbf_base=${1:?"Input parameter 'cbf_base' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r crf_base=${2:?"Input parameter 'crf_base' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -131,7 +131,7 @@ function cbf.buildContainer()
     fi
 
     # iterate through list
-    for dir in $( printf "%s\n" "${!steps[@]}" | sort ); do
+    for dir in $( printf '%s\n' "${!steps[@]}" | sort ); do
         [ "$dir" != '08.cleanup' ] || [ "$DEBUG_TRACE" = 0 ] || continue
 
         local last_notice=''
@@ -152,7 +152,7 @@ function cbf.buildContainer()
             done
             files=()
         fi
-        
+
         files+=( $( lib.getFiles "$( cbf.TEMPLATES )/$dir" 'lib.isActionFile') )
         [ ${#files[*]} -gt 0 ] || continue
         cbf.showActionNotice 'last_notice' "$dir"
@@ -169,7 +169,7 @@ function cbf.buildContainer()
         # perform desired action
         if [ "$DEBUG_TRACE" != 0 ]; then
             echo "$action: (unsorted)"
-            printf "    %s\n" "${files[@]}"
+            printf '    %s\n' "${files[@]}"
         fi
 
         "$action" "${files[@]}"
@@ -233,7 +233,7 @@ function cbf.initFramework()
     # create docker-entrypoint.sh from copy default entrypoint script if none exists to invoke the CRF
     if [ ! -e "$(cbf.BASE)/override.entrypoint" ]; then
         # this may get refactored into processing of 'container.properties'
-        if [ !	 -e /usr/local/bin/docker-entrypoint.sh ]; then
+        if [ !   -e /usr/local/bin/docker-entrypoint.sh ]; then
             mkdir -p /usr/local/bin
             echo '    creating /usr/local/bin/docker-entrypoint.sh'
             cp "$(cbf.CRF_BIN)/default.entrypoint" /usr/local/bin/docker-entrypoint.sh
@@ -325,7 +325,7 @@ export -f cbf.propertiesFile
 function cbf.runScripts()
 {
     local -a files=( "$@" )
-    
+
     # create a hash to sort the files by name & remove any templates that have been overridden
     local -A ahash
     for file in "${files[@]}"; do
@@ -338,7 +338,7 @@ function cbf.runScripts()
     # execute scritps in sorted order
     local -i todo="${#ahash[@]}"
     local -i isdone=0
-    for _name in $( printf "%s\n" "${!ahash[@]}" | sort ); do
+    for _name in $( printf '%s\n' "${!ahash[@]}" | sort ); do
         local file="${ahash[$_name]}"
         cbf.makeScript "$file"
         (( isdone++ )) || :
@@ -359,7 +359,7 @@ function cbf.showActionNotice()
     [ "$dir" ] || return 0
     [ "$dir" != "${!last}" ] || return 0
     eval "$last"="'${dir}'"
-    
+
     # get .info file, & read for 'notice'
     local info="$( cbf.ACTION )/${dir}/.info"
     [ -e "$info" ] || info="$( cbf.TEMPLATES )/${dir}/.info"

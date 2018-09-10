@@ -114,7 +114,7 @@ function test.processArgs()
             fi
         done
     fi
-    printf "%s\n" "${args[@]}"
+    printf '%s\n' "${args[@]}"
 }
 
 #############################################################################

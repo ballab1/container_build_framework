@@ -158,7 +158,7 @@ EOF
 
 #    assert_status_code 255 'uidgid.userAndGroupFromFile "$fut"'
     (uidgid.userAndGroupFromFile "$fut") | :
-    
+
     local expected="term.log: ..executing ${test_uidgid_bashlib_UT_TEST_DIR}/01.WWW
 
 getent: group www-data
@@ -183,7 +183,7 @@ useradd: --no-create-home"
     local actual="$(< "$test_uidgid_bashlib_LOG_file" )"
 
 #cp "$test_uidgid_bashlib_LOG_file" /home/bobb/support/container_build_framework/bin/test_suites/actual.txt
-#printf "$expected" > /home/bobb/support/container_build_framework/bin/test_suites/expected.txt
+#printf '$expected' > /home/bobb/support/container_build_framework/bin/test_suites/expected.txt
     assert_equals "$expected" "$actual"
 }
 
@@ -246,7 +246,7 @@ teardown_suite() {
 
 # setup MOCK logger
 setup() {
-    [ "$test_uidgid_bashlib_DEBUG" = 0 ] || printf "\x1b[94m%s\x1b[0m\n\n" 'Running setup'
+    [ "$test_uidgid_bashlib_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running setup'
     export LOG=__test_uidgid_bashlib.mock_logger
     test_uidgid_bashlib_LOG_file=$(__test_uidgid_bashlib.mktemp)
     fake 'term.log' '__test_uidgid_bashlib.mock_logger "$FAKE_PARAMS"'
@@ -255,7 +255,7 @@ setup() {
 
 # flush the mock logger
 teardown() {
-    [ "$test_uidgid_bashlib_DEBUG" = 0 ] || printf "\x1b[94m%s\x1b[0m\n\n" 'Running teardown'
+    [ "$test_uidgid_bashlib_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running teardown'
     [ ! -e "$test_uidgid_bashlib_LOG_file" ] || rm "$test_uidgid_bashlib_LOG_file"
 
     [ ! -e "${CBF_LOCATION}/bashlibs.loaded" ] || rm "${CBF_LOCATION}/bashlibs.loaded"
@@ -276,7 +276,7 @@ export -f __test_uidgid_bashlib.mktemp
 
 # MOCK logger implementation
 __test_uidgid_bashlib.mock_logger() {
-    printf "%s\n" "$*" >> "$test_uidgid_bashlib_LOG_file"
+    printf '%s\n' "$*" >> "$test_uidgid_bashlib_LOG_file"
 }
 export -f __test_uidgid_bashlib.mock_logger
 

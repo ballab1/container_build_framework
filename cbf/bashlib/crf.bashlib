@@ -94,7 +94,7 @@ function crf.alreadyFixed()
 
     local -r uid="$(lib.getUID "$user")"
     [ -z "$uid" ] && trap.die "Unable to find specified user '$user' on system, when checking the 'fixUpCache'"
-    
+
     local -r previous="$(lib.getProperty "$dir" "$cache_file")"
     if [ "$previous" ]; then
         if [ "$previous" = "$uid" ]; then
@@ -104,7 +104,7 @@ function crf.alreadyFixed()
         fi
         return 0
     fi
-    
+
     # user not found. Add to cache
     term.log "    adding dir: ${dir}, uid: $uid to cache_file: ${cache_file}\n" 'lt_gray'
 
@@ -185,8 +185,8 @@ function crf.fixupDirectory()
     fi
 
     # check/update cache of what has been 'fixed up'
-    (crf.alreadyFixed "$dir" "$user") && return 0 
-    
+    (crf.alreadyFixed "$dir" "$user") && return 0
+
     # set access on specificed directory
     term.log "    Fixing up directory: ${dir}  for user: $(lib.getUserInfo "$user" 'extended')\n"
 
@@ -215,17 +215,17 @@ export -f crf.fixupDirectory
 #############################################################################
 function crf.logEnvironment()
 {
-    printf "%s starting.\n" "${CONTAINER_NAME:-}"
+    printf '%s starting.\n' "${CONTAINER_NAME:-}"
     local env_file="$(crf.RT_ENVIRON)"
     [ -e "$env_file" ] || trap.die "No CRF environment definition file: $env_file"
-    printf "\nrt.environment:\n"
+    printf '\nrt.environment:\n'
     for ln in $(cat "$env_file" | sort); do
-        [ "${ln:0:6}" = 'export' ] && printf "    %s\n" "$(eval echo ${ln:7})"
+        [ "${ln:0:6}" = 'export' ] && printf '    %s\n' "$(eval echo ${ln:7})"
     done
-    printf "\n"
-    printf "    Current user info: %s\n"  "$(getent 'passwd' "$UID")"
+    echo
+    printf '    Current user info: %s\n'  "$(getent 'passwd' "$UID")"
     uidgid.verifyUserExists "$USER"
-    printf "    Target  user info: %s\n\n"  "$(getent 'passwd' "$USER")"
+    printf '    Target  user info: %s\n\n'  "$(getent 'passwd' "$USER")"
 }
 export -f crf.logEnvironment
 
@@ -238,12 +238,12 @@ function crf.prepareEnvironment()
 
         # execute scritps in sorted order
         local -a failed_to_run=()
-        for _name in $( printf "%s\n" "${files[@]}" | sort ); do
+        for _name in $( printf '%s\n' "${files[@]}" | sort ); do
             crf.runScript "$_name" || failed_to_run+=( "$_name" )
         done
         if [ ${#failed_to_run[*]} -gt 0 ]; then
             term.log "Failed to run: ${#failed_to_run[*]} out of ${#files[*]} startup scripts..\n" 'lt_gray'
-            [ "$DEBUG_TRACE" = 0 ] || term.log "  files:\n$(printf "    %s\n"  "${files[@]}")\n" 'lt_gray'
+            [ "$DEBUG_TRACE" = 0 ] || term.log "  files:\n$(printf '    %s\n'  "${files[@]}")\n" 'lt_gray'
 #            trap.die "failed to execute all scripts"
         fi
     fi
@@ -294,16 +294,16 @@ function sourcingMessage()
     local -r src=\$1
     local -r name="\$(basename "\$src")"
     local \dir="\$(dirname "\$src")"
-    [ \$(( __env_count++ )) -eq 0 ] && printf "    sourcing (%s):  " "$(term.log 'CRF' 'magenta')" 
-    printf "\x1b[%dm%s\x1b[0m " 35 "\$name"
+    [ \$(( __env_count++ )) -eq 0 ] && printf '    sourcing (%s):  ' "$(term.log 'CRF' 'magenta')"
+    printf '\x1b[%dm%s\x1b[0m ' 35 "\$name"
 }
 
 
 # load the associative array defitions
 declare -i __env_count=0
 declare -ra _files=( \$(lib.getFiles "\$(crf.ENV)") )
-for _src in "$(printf "%s\n" "\${_files[@]}" | sort)"; do
-    sourcingMessage "\${_src}" 
+for _src in "$(printf '%s\n' "\${_files[@]}" | sort)"; do
+    sourcingMessage "\${_src}"
     source "\$_src"
 done
 [ \$__env_count -gt 0 ] && echo ''
@@ -343,11 +343,11 @@ export -f crf.runtimeProperty
 function crf.updateRuntimeEnvironment()
 {
     local -a in_array=( "$@" )
-    
+
     local -r env_file="$( crf.RT_ENVIRON )"
     [ ! -e "$env_file" ] && return
 
-    
+
     for line in "${in_array[@]}"; do
         local key="${line%%=*}"
         if grep -qE "^.*\s+${key}=" "$env_file" ; then

@@ -47,7 +47,7 @@ function loadEnvars()
     if [ "$path" ] && [  -d "${path}/environment" ]; then
         mapfile -t files < <(find "${path}/environment" -maxdepth 1 -mindepth 1 -type f ! -name '.*'  -print)
     fi
-    [ "${#files[@]}" -eq 0 ] || printf "%s\n" "${files[@]}"
+    [ "${#files[@]}" -eq 0 ] || printf '%s\n' "${files[@]}"
 }
 
 #############################################################################
@@ -57,8 +57,8 @@ function loadLibrary()
     local -r color=${2:-0}
     local -r name="$(basename "$src")"
 
-    [ $(( __libCount2++ )) -eq 0 ] && printf "    loading libraries (\x1b[35m%s\x1b[0m:\x1b[36m%s\x1b[0m):  " 'CRF' 'pwd'
-    printf "\x1b[%sm%s\x1b[0m " "$color" "$name"
+    [ $(( __libCount2++ )) -eq 0 ] && printf '    loading libraries (\x1b[35m%s\x1b[0m:\x1b[36m%s\x1b[0m):  ' 'CRF' 'pwd'
+    printf '\x1b[%sm%s\x1b[0m ' "$color" "$name"
     source "$src"
 }
 
@@ -104,8 +104,8 @@ function sourcingMessage()
         color=94   # lt_blue
     fi
 
-    [ $(( __envCount++ )) -eq 0 ] && printf "    sourcing (\x1b[35m%s\x1b[0m:\x1b[95m%s\x1b[0m:\x1b[94m%s\x1b[0m:\x1b[36m%s\x1b[0m):  " 'CRF' 'tmp' 'other' 'pwd'
-    printf "\x1b[%sm%s\x1b[0m " "$color" "$name"
+    [ $(( __envCount++ )) -eq 0 ] && printf '    sourcing (\x1b[35m%s\x1b[0m:\x1b[95m%s\x1b[0m:\x1b[94m%s\x1b[0m:\x1b[36m%s\x1b[0m):  ' 'CRF' 'tmp' 'other' 'pwd'
+    printf '\x1b[%sm%s\x1b[0m ' "$color" "$name"
 }
 
 #############################################################################
@@ -131,7 +131,7 @@ fi
 declare -i __libCount2=${__libCount:-0}
 loadLibs "$CRF_LOCATION" 35                                          # magenta
 loadLibs "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )" 36   # cyan
-[ $__libCount2 -gt 0 ] && printf "\n"
+[ $__libCount2 -gt 0 ] && echo
 
 # load our environment
 declare -i __envCount=0
@@ -152,7 +152,7 @@ if [ "${#_files[@]}" -gt 0 ]; then
         fi
     done
 fi
-[ $__envCount -gt 0 ] && printf "\n"
+[ $__envCount -gt 0 ] && echo
 [ ! -e /tmp/dump_env ] || declare -p
 
 

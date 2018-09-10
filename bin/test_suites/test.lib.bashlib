@@ -646,7 +646,7 @@ test.lib.getGID() {
         fi
     }
     fake 'getent' 'fake_getent "$@"'
-    
+
     local -r expected='1234'
     local -r actual="$(lib.getGID)"
     assert_equals "$expected" "$actual"
@@ -664,7 +664,7 @@ test.lib.getGroupInfo() {
         fi
     }
     fake 'getent' 'fake_getent "$@"'
-    
+
     local -r expected='bob2'
     local -r actual="$(lib.getGroupInfo)"
     assert_equals "$expected" "$actual"
@@ -682,7 +682,7 @@ test.lib.getGroupInfo_X() {
         fi
     }
     fake 'getent' 'fake_getent "$@"'
-    
+
     local -r expected='bob2:1234'
     local -r actual="$(lib.getGroupInfo 'root' 'extended')"
     assert_equals "$expected" "$actual"
@@ -700,7 +700,7 @@ test.lib.getGroupNameOfUser() {
         fi
     }
     fake 'getent' 'fake_getent "$@"'
-    
+
     local -r expected='bob2'
     local -r actual="$(lib.getGroupNameOfUser)"
     assert_equals "$expected" "$actual"
@@ -718,7 +718,7 @@ test.lib.getUID() {
         fi
     }
     fake 'getent' 'fake_getent "$@"'
-    
+
     local -r expected='1000'
     local -r actual="$(lib.getUID)"
     assert_equals "$expected" "$actual"
@@ -736,7 +736,7 @@ test.lib.getUserInfo() {
         fi
     }
     fake 'getent' 'fake_getent "$@"'
-    
+
     local -r expected='bobb'
     local -r actual="$(lib.getUserInfo 'bobb')"
     assert_equals "$expected" "$actual"
@@ -754,7 +754,7 @@ test.lib.getUserInfo_X() {
         fi
     }
     fake 'getent' 'fake_getent "$@"'
-    
+
     local -r expected='bobb:1000'
     local -r actual="$(lib.getUserInfo 'root' 'extended')"
     assert_equals "$expected" "$actual"
@@ -833,7 +833,7 @@ test.lib.isActionFile_WINDOWS() {
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
 test.lib.updateConfigFromENV() {
-    fake 'env' 'printf "TEST_%s=TEST_xxx\n" AA_A_A BB CC_C DD_D EE_E FF_F; printf "XXX_%s=TST_yyy\n" aa bb cc dd ee ff'
+    fake 'env' 'printf 'TEST_%s=TEST_xxx\n' AA_A_A BB CC_C DD_D EE_E FF_F; printf 'XXX_%s=TST_yyy\n' aa bb cc dd ee ff'
     local cfgFile="$(__test_lib_bashlib.mktemp)"
 
     lib.updateConfigFromENV 'TEST_' "$cfgFile"
@@ -898,7 +898,7 @@ teardown_suite() {
 
 # setup MOCK logger
 setup() {
-    [ "$test_lib_bashlib_DEBUG" = 0 ] || printf "\x1b[94m%s\x1b[0m\n\n" 'Running setup'
+    [ "$test_lib_bashlib_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running setup'
     export LOG=__test_lib_bashlib.mock_logger
     test_lib_bashlib_LOG_file=$(__test_lib_bashlib.mktemp)
     fake 'term.log' '__test_lib_bashlib.mock_logger "$FAKE_PARAMS"'
@@ -907,7 +907,7 @@ setup() {
 
 # flush the mock logger
 teardown() {
-    [ "$test_lib_bashlib_DEBUG" = 0 ] || printf "\x1b[94m%s\x1b[0m\n\n" 'Running teardown'
+    [ "$test_lib_bashlib_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running teardown'
     [ ! -e "$test_lib_bashlib_LOG_file" ] || rm "$test_lib_bashlib_LOG_file"
 
     [ ! -e "${CBF_LOCATION}/bashlibs.loaded" ] || rm "${CBF_LOCATION}/bashlibs.loaded"
@@ -928,7 +928,7 @@ export -f __test_lib_bashlib.mktemp
 
 # MOCK logger implementation
 __test_lib_bashlib.mock_logger() {
-    printf "%s\n" "$*" >> "$test_lib_bashlib_LOG_file"
+    printf '%s\n' "$*" >> "$test_lib_bashlib_LOG_file"
 }
 export -f __test_lib_bashlib.mock_logger
 

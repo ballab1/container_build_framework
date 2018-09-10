@@ -99,7 +99,7 @@ function lib.getProperty()
         [ -z "$default_val" ] || echo "$default_val"
         return
     fi
-    
+
     local -r val="$( grep -e "^${prop}\s*=" "$file" )"
 
     # only report eval'd string (after removing 'prop=' prefix) if something was found
@@ -276,9 +276,9 @@ function lib.pidAncestors()
 
     if [ "$pid" -ne 0 ]; then
         eval "local -rA pids=($pidList)"
-        printf "%s,%d" $(lib.pidAncestors "${pids[$pid]}" "$pidList") "$pid"
+        printf '%s,%d' $(lib.pidAncestors "${pids[$pid]}" "$pidList") "$pid"
     else
-        printf "%d" "$pid"
+        printf '%d' "$pid"
     fi
 }
 export -f lib.pidAncestors
