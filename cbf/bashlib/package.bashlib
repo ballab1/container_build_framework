@@ -14,7 +14,6 @@ function package.checkIfInstalled()
 
     # now verify that packages are actually valid for installation
     local -r checker=$( package.checkPackage )
-
     for pkg in "${pkgs[@]}"; do
         eval $checker "${pkg%%=*}" &>/dev/null || trap.die "Package $pkg not found"
     done
@@ -24,11 +23,11 @@ export -f package.checkIfInstalled
 #############################################################################
 function package.checkPackage()
 {
-    case "$( lib.OSid )" in
+    case "$( environ.OSid )" in
         alpine)        echo 'apk info';;
-        centos)        echo 'yum info';;
-        fedora)        echo 'dnf info';;
-        ubuntu)        echo 'apt-get info';;
+        centos)        echo 'yum search';;
+        fedora)        echo 'yum search';;
+        ubuntu)        echo "apt search";;
     esac
 }
 export -f package.checkPackage
@@ -42,14 +41,16 @@ function package.install()
 
     source "$( crf.BIN )/init.runtime"
     source "$defnFile"
-    package.checkIfInstalled "${PKGS[*]}"
+    [ "${#PKGS[*]}" -gt 0 ] || return 0
+
+    package.checkIfInstalled "${PKGS[@]}"
 
     : ${OPTS:=''}
-    case "$( lib.OSid )" in
+    case "$( environ.OSid )" in
         alpine)        apk add --no-cache ${OPTS[*]} ${PKGS[*]};;
         centos)        yum install -y RPM_EXCLUDE_VALUE ${PKGS[*]}; yum clean all;;
-        fedora)        dnf install -y ${OPTS[*]} ${PKGS[*]} && dnf clean all;;
-        ubuntu)        apt-get install -y ${OPTS[*]} ${PKGS[*]};;
+        fedora)        yum install -y ${OPTS[*]} ${PKGS[*]} && yum clean all;;
+        ubuntu)        apt-get install --yes ${OPTS[*]} ${PKGS[*]};;
     esac
 }
 export -f package.install
@@ -59,11 +60,11 @@ function package.installTimezone()
 {
     local -r tz=${1:?"Input parameter 'tz' must be passed to 'function ${FUNCNAME[0]}()'"}
 
-    case "$( lib.OSid )" in
+    case "$( environ.OSid )" in
         alpine)        apk add --no-cache tzdata;;
-        centos)        yum install -y tzdata; yum clean all;;
-        fedora)        dnf install -y tzdata && dnf clean all;;
-        ubuntu)        apt-get install -y tzdata;;
+        centos)        yum install -y tzdata;;
+        fedora)        yum install -s tzdata;;
+        ubuntu)        apt-get install --yes tzdata;;
     esac
     echo "$tz" > /etc/TZ
     cp "/usr/share/zoneinfo/$tz" /etc/timezone
@@ -74,11 +75,11 @@ export -f package.installTimezone
 #############################################################################
 function package.packageList()
 {
-    case "$( lib.OSid )" in
+    case "$( environ.OSid )" in
         alpine)        apk info;;
-        centos)        yum list | awk '{print $1 }';;
-        fedora)        dnf --help;;
-        ubuntu)        apt-get --help;;
+        centos)        yum list | sed '1,/Installed Packages/ d' | awk '{print $1}';;
+        fedora)        yum list | sed '1,/Installed Packages/ d' | awk '{print $1}';;
+        ubuntu)        dpkg --get-selections | awk '{print $1}';;
     esac
 }
 export -f package.packageList
@@ -97,11 +98,11 @@ export -f package.runScripts
 #############################################################################
 function package.updateIndexes()
 {
-    case "$( lib.OSid )" in
+    case "$( environ.OSid )" in
         alpine)        apk update;;
-        centos)        yum update -y;;
-        fedora)        dnf -y update && dnf clean all;;
-        ubuntu)        apt-get update -y;;
+        centos)        yum updateinfo -y;;
+        fedora)        yum updateinfo -y;;
+        ubuntu)        apt-get update --yes;;
     esac
 }
 export -f package.updateIndexes
