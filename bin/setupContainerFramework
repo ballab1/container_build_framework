@@ -17,7 +17,7 @@ function setupCBF.createStructure()
                 
         # remove any old framework directories
         [ -d container_build_framework ] && (git rm -f container_build_framework || true)
-        for dir in $(ls -1 container_build_framework* 2>/dev/null | true); do
+        for dir in $(ls -1 container_build_framework* 2>/dev/null || true); do
             rm -rf "$dir"
         done
 
@@ -41,12 +41,12 @@ function setupCBF.createStructure()
     if [ "$isNew" ]; then
         [ -d "$action_folders" ] || mkdir -p "$action_folders"
         cd "$action_folders"
-        for dir in $(find "$templates_folder" -mindepth 1 -maxdepth 1 -type d); do
+        while read -r dir; do
             local subdir="$(basename "$dir")"
             [ -d "$subdir" ] && continue
             echo "  creating action folder:  $subdir"
             mkdir -p "$subdir"
-        done
+        done < <(find "$templates_folder" -mindepth 1 -maxdepth 1 -type d)
     fi
 }
 
@@ -60,17 +60,22 @@ function setupCBF.die()
 ######################################################################
 function setupCBF.isValidProject()
 {
-    # check if an existing project
-    [ -f "${project_dir}/.cbfProject" ] &&  return 0
+    if [ ! -e "${project_dir}/.cbfBlacklist" ]; then
+        # check if an existing project
+        [ -f "${project_dir}/.cbfProject" ] &&  return 0
 
-    # check if a new project
-    [ ! -d "${project_dir}/build" ] && [ ! -f '.git' ] &&  return 0
+        # check if a new project
+        [ ! -d "${project_dir}/build" ] && [ ! -f '.git' ] &&  return 0
 
-    # check if this is an old project
-    [ -f Dockerfile ] && grep -E '^ARG CBF_VERSION=' 'Dockerfile' > /dev/null &&  return 0
-
+        # check if this is an old project
+        [ -f Dockerfile ] && grep -E '^ARG CBF_VERSION=' 'Dockerfile' > /dev/null &&  return 0
+    fi
+    
     echo
-    echo -e "\e[93mProject not valid  ..skipping '${project_dir}'\e[0m"
+    echo -ne '\e[93m'
+    echo -n 'Project not valid  ..skipping'
+    echo -n " '${project_dir}'"
+    echo -e '\e[0m'
     return 1
 }
 
@@ -90,8 +95,8 @@ function setupCBF.main()
     [ "${BASH_SOURCE[0]:-}" ] && cbf_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
     if [ -z "${cbf_dir:-}" ] || [ ! -d "${cbf_dir}/cbf" ]; then
         temporary_dir="$(mktemp -d)"
-        rmTmpDir() { rm -rf "$temporary_dir" }
-        trap rmTmpDir EXIT
+#        rmTmpDir() { rm -rf "$temporary_dir" }
+#        trap rmTmpDir EXIT
 
         echo 'Downloading CBF from github'
         local cbf_version="${CBF_VERSION:-dev}"
@@ -161,17 +166,17 @@ function setupCBF.setupProjectFiles()
     fi
 
     # ensure our folder structure exists
-    for abs_dir in $(find "$templates_folder" -mindepth 1 -type d); do
+    while read -r abs_dir; do
         local dir="$( lib.relativize "$abs_dir" "$templates_folder" )"
         mkdir -p "${top}/$dir"
-    done
+    done < <(find "$templates_folder" -mindepth 1 -type d)
 
     # copy any missing files from project template
     local updatableFiles="build/build.sh
                           .gitignore
                           .dockerignore
                           .gitattributes"
-    for abs_file in $(find "$templates_folder" -type f); do
+    while read -r abs_file; do
         local file="$( lib.relativize "$abs_file" "$templates_folder" )"
         if [ ! -e "$file" ]; then
             sed "s|newcontainer|${projectName}|gi" "$abs_file" > "$file"
@@ -180,7 +185,9 @@ function setupCBF.setupProjectFiles()
             # check if contents of files are the same
             (printf '%s %s\n' "$(sha256sum "$file" | awk '{print $1}')" "$abs_file" | sha256sum -c --status) && continue
             if [ "$file" -nt "$abs_file" ]; then
-                echo -e " \e[93m newer file: ${file} - not updated\e[0m"
+                echo -en ' \e[93m'
+                echo -n "newer file: ${file} - not updated"
+                echo -e '\e[0m'
                 continue
             fi
 
@@ -188,7 +195,7 @@ function setupCBF.setupProjectFiles()
             [ -f "$file" ] && mv "$file" "${file}.bak"
             cp "$abs_file" "$file"
         fi
-    done
+    done < <(find "$templates_folder" -type f)
     
     # make sure '.cbfProject' exists
     if  [ ! -e "${top}/.cbfProject" ]; then
@@ -201,10 +208,10 @@ function setupCBF.setupProjectFiles()
     
 
     # remove any old CBF folders that exist (for testing or old CBF)
-    for dir in $(find "${top}/build" -type d -name 'container_build_framework*');  do
+    while read -r dir;  do
         echo "  removing $dir" 
         rm -rf "$dir"
-    done
+    done < <(find "${top}/build" -type d -name 'container_build_framework*')
 
 
     # setup our structure
