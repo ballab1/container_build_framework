@@ -18,7 +18,7 @@
 vols/*
 vols-rw/*
 build/container_build_framework*
-cbf/CRF.properties
+**/CRF.properties
 CBF.properties
 scanned.paths
 *.loaded
