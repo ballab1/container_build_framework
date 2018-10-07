@@ -56,7 +56,6 @@ function libNotLoaded()
 :> "$libTracker"
 [ ! -e "${CBF_LOCATION}/CBF.properties" ] || rm "${CBF_LOCATION}/CBF.properties"
 [ ! -e "${CRF_LOCATION}/CRF.properties" ] || rm "${CRF_LOCATION}/CRF.properties"
-[ ${#__cache[*]} -gt 0 ] && __cache+=( "${CBF_LOCATION}/CBF.properties" "${CRF_LOCATION}/CRF.properties" )
 
 
 # load our bashlibs

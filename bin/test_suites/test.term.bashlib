@@ -93,7 +93,7 @@ test.term.codes_INVALID_BACKGROUND_CODE() {
 # verify term.code returns bad status code when no args supplied
 test.term.codes_NOARGS() {
     export -f term.codes
-    assert_status_code 1 'term.codes'
+    assert_status_code 0 'term.codes'
 }
 
 #-----------------------------------------------------------------------------------------

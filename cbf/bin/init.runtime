@@ -3,9 +3,11 @@
 #############################################################################
 function cleanUp()
 {
-    for f in "${__cache[@]}"; do
-        [ -f "$f" ] || continue
-        rm "$f"
+    [ "$#" -ne 0 ] || return 0
+    local _file
+    for _file in "$@"; do
+        [ -f "$_file" ] || continue
+        rm "$_file"
     done
 }
 
@@ -169,7 +171,8 @@ fi
 # init the framework
 crf.__init "$CRF_LOCATION"
 
-
+cleanUp "${__cache[@]}"
+unset __cache
 unset __envCount
 unset __libCount2
 unset _files

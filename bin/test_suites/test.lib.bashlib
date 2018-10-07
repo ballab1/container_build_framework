@@ -675,7 +675,7 @@ test.lib.getGroupInfo_X() {
     }
     fake 'getent' 'fake_getent "$@"'
 
-    local -r expected='bob2:1234'
+    local -r expected='bob2:(1234)'
     local -r actual="$(lib.getGroupInfo 'root' 'extended')"
     assert_equals "$expected" "$actual"
 }
