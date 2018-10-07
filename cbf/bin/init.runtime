@@ -134,7 +134,7 @@ else
 fi
 :>  "$envTracker"
 :>  "$scanTracker"
-declare -a __cache=( "$envTracker" "$cbfLibTracker" "$crfLibTracker" "$scanTracker" )
+declare -a __cache+=( "$envTracker" "$cbfLibTracker" "$crfLibTracker" "$scanTracker" )
 
 
 # load our bashlibs
@@ -169,7 +169,7 @@ fi
 # init the framework
 crf.__init "$CRF_LOCATION"
 
-
+cleanUp
 unset __envCount
 unset __libCount2
 unset _files
