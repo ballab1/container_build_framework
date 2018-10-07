@@ -28,15 +28,9 @@ case "$(osname)" in
             apk update
             apk add --no-cache bash ca-certificates openssl
         fi;;
-    centos)
+    centos|fedora)
         # ensure we have wget support
-        if [ -z "$(which wget)" ]; then
-            yum update
-            yum install -y wget ca-certificates openssl
-        fi;;
-    fedora)
-        # ensure we have wget support
-        if [ -z "$(which wget)" ]; then
+        if [ ! -e /usr/bin/wget ]; then
             yum update
             yum install -y wget ca-certificates openssl
         fi;;
@@ -62,10 +56,10 @@ elif [ "$CBF_VERSION" ]; then
     CBF_URL="https://github.com/ballab1/container_build_framework/archive/${CBF_VERSION}.tar.gz"
     echo "Downloading CBF:$CBF_VERSION from $CBF_URL"
 
-    if [ $(which wget) ]; then
+    if [ -e /usr/bin/wget ]; then
         wget --no-check-certificate --quiet --output-document="$CBF_TGZ" "$CBF_URL" || die "Failed to download $CBF_URL"
 
-    elif [ $(which curl) ]; then
+    elif [ -e /usr/bin/curl ]; then
         curl --insecure --silent --output "$CBF_TGZ" "$CBF_URL" || die "Failed to download $CBF_URL"
 
     else

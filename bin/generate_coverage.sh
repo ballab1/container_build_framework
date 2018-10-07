@@ -13,12 +13,12 @@ echo "Generating Coverage information. This will take a few seconds."
 docker run --security-opt seccomp=unconfined \
            --rm \
            -v "$base":/source \
-           afeoscyc-mw.cec.lab.emc.com/kcov:v33 \
+           ragnaroek/kcov:v33 \
            --exclude-pattern "/tmp,/source/unit-tests" \
            /source/out \
            /source/unit-tests/run_unit_tests.sh > "${base}/out/coverage.log" 2>&1
 
-# make sure we can access the files (since container runs as root)           
+# make sure we can access the files (since container runs as root)
 sudo chown -R "$UID" "${base}/out"
 
 # make result reporting context aware  (dev/JENKINS)
