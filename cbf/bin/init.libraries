@@ -56,7 +56,6 @@ function libNotLoaded()
 :> "$libTracker"
 [ ! -e "${CBF_LOCATION}/CBF.properties" ] || rm "${CBF_LOCATION}/CBF.properties"
 [ ! -e "${CRF_LOCATION}/CRF.properties" ] || rm "${CRF_LOCATION}/CRF.properties"
-declare -a __cache=( )
 
 
 # load our bashlibs
@@ -93,6 +92,7 @@ cbf.__init "$CBF_LOCATION" "$CRF_LOCATION"
 #     ENV=/usr/local/crf/environment
 #     LIB=/usr/local/crf/bashlib
 #     STARTUP=/usr/local/crf/startup
+
 
 unset __libCount
 

@@ -3,9 +3,9 @@
 #############################################################################
 function cleanUp()
 {
-    for f in "${__cache[@]}"; do
-        [ -f "$f" ] || continue
-        rm "$f"
+    for file in "$@"; do
+        [ -f "$file" ] || continue
+        rm "$file"
     done
 }
 
@@ -134,7 +134,7 @@ else
 fi
 :>  "$envTracker"
 :>  "$scanTracker"
-declare -a __cache+=( "$envTracker" "$cbfLibTracker" "$crfLibTracker" "$scanTracker" )
+declare -a __cache=( "$envTracker" "$cbfLibTracker" "$crfLibTracker" "$scanTracker" )
 
 
 # load our bashlibs
@@ -169,7 +169,8 @@ fi
 # init the framework
 crf.__init "$CRF_LOCATION"
 
-cleanUp
+cleanUp "${__cache[@]}"
+unset __cache
 unset __envCount
 unset __libCount2
 unset _files
