@@ -2,29 +2,30 @@
 
 #############################################################################
 #
-#   download.bashlib
+#   download.bashlib: handle downloads
 #
 #############################################################################
 
 function download.getFile()
 {
-    local -r file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r downloadDefnFile=${1:?"Input parameter 'downloadDefnFile' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     # load download definition
-    source "$file"
-    local name="$( basename "$file" )"
+    source "$downloadDefnFile"
+    local name="$( basename "$downloadDefnFile" )"
     term.log "Downloading from definition:  ${name}\n" 'task'
 
-    # strip path & prefix from file to get name
+    # strip path & prefix from downloadDefnFile to get name
     name="${name#[0-9][0-9].}"
+    eval name="\${name%.$(environ.OSid)}"
 
     # derefernce our params
     local -A params=( ['file']="$( lib.indirectReference 'file' "$name" )" \
                       ['url']="$( lib.indirectReference 'url' "$name" )" \
                       ['sha256']="$( lib.indirectReference 'sha256' "$name" )" \
                     )
-    [ "${params['file']}" ] && [ "${params['url']}" ] && [ "${params['sha256']}" ] || trap.die "Invalid download definition provided: ${file}"
-    [ $name = ${name^^} ] || trap.log "Convention violation: non-uppercase filename used for download definition: $(basename $file)"
+    [ "${params['file']}" ] && [ "${params['url']}" ] && [ "${params['sha256']}" ] || trap.die "Invalid download definition provided: ${downloadDefnFile}"
+    [ $name = ${name^^} ] || trap.log "Convention violation: non-uppercase filename used for download definition: $(basename $downloadDefnFile)"
 
     term.log "    ....file:  ${params['file']}\n"
     term.log "    .....url:  ${params['url']}\n"

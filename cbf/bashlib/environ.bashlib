@@ -1,5 +1,11 @@
 #!/bin/bash
 
+#############################################################################
+#
+#   environ.bashlib; basic functions to get info about environment
+#
+#############################################################################
+
 #----------------------------------------------------------------------------------------------
 function environ.cpuType()
 {
@@ -41,6 +47,13 @@ function environ.hostIp()
     nslookup "$(hostname -f)" | grep 'Address:' | awk '{if(NR==2){print $2}}'
 }
 export -f environ.hostIp
+
+#----------------------------------------------------------------------------------------------
+function environ.hostName()
+{
+    hostname -s
+}
+export -f environ.hostName
 
 #----------------------------------------------------------------------------------------------
 function environ.ipAddressAndMask()
@@ -111,9 +124,9 @@ export -f environ.operatingSystem
 function environ.OSid()
 {
     if [ -e /etc/os-release ]; then
-        grep -e '^ID=' /etc/os-release | awk -F'=' '{ print $2 }' | sed 's|"||g'
+        grep -e '^ID=' /etc/os-release | awk -F'=' '{ print $2 }' | tr -d '"'
     else
-        echo 'windows'
+        echo 'unknown'
     fi
 }
 export -f environ.OSid

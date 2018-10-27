@@ -181,7 +181,7 @@ test.term.header() {
     local expected="|blue|\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n||lt_blue|Building||Container:|whiteStarting||CONTAINER|BUILD\n||blue|+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n|"
     fake 'term.decode' 'echo $1'
     local test_LOG=$( __test_term_bashlib.mktemp )
-    fake 'term.log' 'printf '|%s|%s|' $2 $1 >> "$test_LOG"'
+    fake 'term.log' 'printf "|%s|%s|" $2 $1 >> "$test_LOG"'
     term.header 'Starting CONTAINER BUILD' 'info'
     local actual="$(< "$test_LOG" )"
     assert_equals "$expected" "$actual"

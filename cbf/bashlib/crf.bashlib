@@ -11,6 +11,11 @@ export CRF_PROPERTIES_FILE
 #############################################################################
 function crf.__init()
 {
+    if [ "$(id -u)" -ne 0 ] && [ "${CRF_PROPERTIES_FILE:-}" = '/usr/local/crf/bashlib' ]; then
+        sudo -E crf.__init "${1:?}"
+        return 0
+    fi
+
     local -r crf_base="${1:?"Input parameter 'crf' must be passed to 'function ${FUNCNAME[0]}()'"}"
     CRF_PROPERTIES_FILE="${crf_base}/CRF.properties"
 
