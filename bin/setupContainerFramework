@@ -70,7 +70,7 @@ function setupCBF.isValidProject()
         # check if this is an old project
         [ -f Dockerfile ] && grep -E '^ARG CBF_VERSION=' 'Dockerfile' > /dev/null &&  return 0
     fi
-    
+
     echo
     echo -ne '\e[93m'
     echo -n 'Project not valid  ..skipping'
@@ -95,8 +95,9 @@ function setupCBF.main()
     [ "${BASH_SOURCE[0]:-}" ] && cbf_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
     if [ -z "${cbf_dir:-}" ] || [ ! -d "${cbf_dir}/cbf" ]; then
         temporary_dir="$(mktemp -d)"
-#        rmTmpDir() { rm -rf "$temporary_dir" }
-#        trap rmTmpDir EXIT
+        rmTmpDir() {
+            rm -rf "$temporary_dir"; }
+        trap rmTmpDir EXIT
 
         echo 'Downloading CBF from github'
         local cbf_version="${CBF_VERSION:-dev}"

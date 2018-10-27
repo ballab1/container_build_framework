@@ -675,7 +675,7 @@ test.lib.getGroupInfo_X() {
     }
     fake 'getent' 'fake_getent "$@"'
 
-    local -r expected='bob2:1234'
+    local -r expected='bob2(1234)'
     local -r actual="$(lib.getGroupInfo 'root' 'extended')"
     assert_equals "$expected" "$actual"
 }
@@ -747,7 +747,7 @@ test.lib.getUserInfo_X() {
     }
     fake 'getent' 'fake_getent "$@"'
 
-    local -r expected='bobb:1000'
+    local -r expected='bobb(1000)'
     local -r actual="$(lib.getUserInfo 'root' 'extended')"
     assert_equals "$expected" "$actual"
 }
@@ -824,7 +824,7 @@ test.lib.isActionFile_WINDOWS() {
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-test.lib.updateConfigFromENV() {
+skip.test.lib.updateConfigFromENV() {
     fake 'env' 'printf 'TEST_%s=TEST_xxx\n' AA_A_A BB CC_C DD_D EE_E FF_F; printf 'XXX_%s=TST_yyy\n' aa bb cc dd ee ff'
     local cfgFile="$(__test_lib_bashlib.mktemp)"
 

@@ -14,8 +14,8 @@ function term.__init()
 #############################################################################
 function term.codes()
 {
-    [ -t 1 ] || return 0
-        local -r mode=${1:?"Input parameter 'mode' must be passed to 'function ${FUNCNAME[0]}()'"}
+#    [ -t 1 ] || return 0
+    local -r mode=${1:?"Input parameter 'mode' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r name=${2:?"Input parameter 'code' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     local -r code=$(lib.getProperty "$name" "$(term.propertiesDir "term_${mode^^}.properties")")
@@ -26,7 +26,7 @@ export -f term.codes
 #############################################################################
 function term.decode()
 {
-    [ -t 1 ] || return 0
+#    [ -t 1 ] || return 0
     local -r fg=${1:?"Input parameter 'fg' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r bg=${2:-}
 
@@ -65,7 +65,7 @@ function term.log()
     local -r msg=${1:?"Input parameter 'msg' must be passed to 'function ${FUNCNAME[0]}()'"}
     local msg_type=${2:-}
 
-    [ -t 1 ] || unset msg_type
+#    [ -t 1 ] || unset msg_type
     if [ "${msg_type:-}" ]; then
         msg_type="$( term.decode $msg_type )"
         [ -z "$msg_type" ] || echo -en "$msg_type"

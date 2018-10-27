@@ -1,36 +1,42 @@
 #!/bin/bash
 #############################################################################
 #
-#   package.bashlib
+#   package.bashlib: get OS packages
 #
 #############################################################################
 
-function package.checkIfInstalled()
+function package.checkPackages()
 {
     local -ar pkgs=( $@ )
 
-    local installed=$(lib.intersect "${pkgs[*]}" "$( package.packageList )")
-    [ -z "$installed" ] || trap.die "attempting to reinstall following packages: '$installed'"
-
-    # now verify that packages are actually valid for installation
-    local -r checker=$( package.checkPackage )
-    for pkg in "${pkgs[@]}"; do
-        eval $checker "${pkg%%=*}" &>/dev/null || trap.die "Package $pkg not found"
-    done
-}
-export -f package.checkIfInstalled
-
-#############################################################################
-function package.checkPackage()
-{
     case "$( environ.OSid )" in
-        alpine)        echo 'apk info';;
-        centos)        echo 'yum search';;
-        fedora)        echo 'yum search';;
-        ubuntu)        echo "apt search";;
+        alpine)
+            local -a duplicates=( $(lib.intersect "${pkgs[*]}" "$( apk info )") )
+            [ ${#duplicates[*]} -eq 0 ] || trap.die "attempting to reinstall following packages: '${duplicates[*]}'"
+            # now verify that packages are actually valid for installation
+            for pkg in "${pkgs[@]}"; do
+                apk info "${pkg%%=*}" &>/dev/null || trap.die "Package $pkg not found"
+            done
+            ;;
+        centos|fedora)
+            local -a duplicates=( $(for pkg in "${pkgs[@]}"; do yum -q list installed "$pkg" 2>/dev/null | awk 'NR>1 {print $1}' ||:; done) )
+            [ ${#duplicates[*]} -eq 0 ] || trap.die "attempting to reinstall following packages: '${duplicates[*]}'"
+            # now verify that packages are actually valid for installation
+            for pkg in "${pkgs[@]}"; do
+                yum search "$pkg" &>/dev/null || trap.die "Package $pkg not found"
+            done
+            ;;
+        ubuntu)
+            local -a duplicates=( $(lib.intersect "${pkgs[*]}" "$( dpkg --get-selections | awk '{print $1}' )") )
+            [ ${#duplicates[*]} -eq 0 ] || trap.die "attempting to reinstall following packages: '${duplicates[*]}'"
+            # now verify that packages are actually valid for installation
+            for pkg in "${pkgs[@]}"; do
+                apt search "$pkg" &>/dev/null || trap.die "Package $pkg not found"
+            done
+            ;;
     esac
 }
-export -f package.checkPackage
+export -f package.checkPackages
 
 #############################################################################
 function package.install()
@@ -43,14 +49,20 @@ function package.install()
     source "$defnFile"
     [ "${#PKGS[*]}" -gt 0 ] || return 0
 
-    package.checkIfInstalled "${PKGS[@]}"
+    package.checkPackages "${PKGS[@]}"
 
     : ${OPTS:=''}
     case "$( environ.OSid )" in
-        alpine)        apk add --no-cache ${OPTS[*]} ${PKGS[*]};;
-        centos)        yum install -y RPM_EXCLUDE_VALUE ${PKGS[*]}; yum clean all;;
-        fedora)        yum install -y ${OPTS[*]} ${PKGS[*]} && yum clean all;;
-        ubuntu)        apt-get install --yes ${OPTS[*]} ${PKGS[*]};;
+        alpine)
+            apk add --no-cache ${OPTS[*]} ${PKGS[*]}
+            ;;
+        centos|fedora)
+            yum install -y ${OPTS[*]} ${PKGS[*]}
+            yum clean all
+            ;;
+        ubuntu)
+            apt-get install --yes ${OPTS[*]} ${PKGS[*]}
+            ;;
     esac
 }
 export -f package.install
@@ -61,28 +73,22 @@ function package.installTimezone()
     local -r tz=${1:?"Input parameter 'tz' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     case "$( environ.OSid )" in
-        alpine)        apk add --no-cache tzdata;;
-        centos)        yum install -y tzdata;;
-        fedora)        yum install -s tzdata;;
-        ubuntu)        apt-get install --yes tzdata;;
+        alpine)
+            package.updateIndexes
+            apk add --no-cache tzdata
+            ;;
+        centos|fedora)
+            ;;
+        ubuntu)
+            package.updateIndexes
+            apt-get install --yes tzdata
+            ;;
     esac
     echo "$tz" > /etc/TZ
     cp "/usr/share/zoneinfo/$tz" /etc/timezone
     cp "/usr/share/zoneinfo/$tz" /etc/localtime
 }
 export -f package.installTimezone
-
-#############################################################################
-function package.packageList()
-{
-    case "$( environ.OSid )" in
-        alpine)        apk info;;
-        centos)        yum list | sed '1,/Installed Packages/ d' | awk '{print $1}';;
-        fedora)        yum list | sed '1,/Installed Packages/ d' | awk '{print $1}';;
-        ubuntu)        dpkg --get-selections | awk '{print $1}';;
-    esac
-}
-export -f package.packageList
 
 #############################################################################
 function package.runScripts()
@@ -99,10 +105,15 @@ export -f package.runScripts
 function package.updateIndexes()
 {
     case "$( environ.OSid )" in
-        alpine)        apk update;;
-        centos)        yum updateinfo -y;;
-        fedora)        yum updateinfo -y;;
-        ubuntu)        apt-get update --yes;;
+        alpine)
+            apk update
+            ;;
+        centos|fedora)
+            yum updateinfo -y
+            ;;
+        ubuntu)
+            apt-get update --yes
+            ;;
     esac
 }
 export -f package.updateIndexes

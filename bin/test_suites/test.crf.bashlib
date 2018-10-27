@@ -63,7 +63,7 @@ test.crf.copyFileToRuntime_BADARGS() {
 #-----------------------------------------------------------------------------------------
 # verify correct user
 test.crf.currentUser() {
-    local expected='1953'
+    local expected=$UID
     local actual="$( crf.currentUser )"
     assert_equals "$expected" "$actual"
 }
@@ -104,8 +104,8 @@ test.crf.fixupDirectory_VerifyNullUser() {
     crf.fixupDirectory "$dir"
 
     local -r expected="Fixing up directory: ${dir}\\n info
-find ${dir} -type d ! -perm 777 -exec chmod 777 {} ;
-find ${dir} -type f ! -perm 666 -exec chmod 666 {} ;
+find ${dir} -type d ! -perm 777 ! -name .* -exec chmod 777 {} ;
+find ${dir} -type f ! -perm 666 ! -name .* -exec chmod a+rw {} ;
 find ${dir} ! -user FAKE_USER -exec chown FAKE_USER: {} ;"
 
     local -r actual="$(< "$test_crf_bashlib_LOG_file" )"
