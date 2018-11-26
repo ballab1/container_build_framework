@@ -35,6 +35,7 @@ if [[ "$1" = "$CONTAINER_NAME" ]]; then
     [ -e "${tools}/run.sh" ] || trap.die "No ${tools}/run.sh detected"
     cd "$WORKDIR"
     term.log "\n${CONTAINER_NAME^^}: Finished executing startup scripts after $(timer.fmtElapsed $(( $(timer.getTimestamp)  - startTm )) )\n\n" 'info' 
+    shift
     exec "${tools}/run.sh" "$@"
 
 elif [[ "$1" = "$config_entry" && "$(id -u)" -eq 0 ]]; then
