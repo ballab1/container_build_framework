@@ -1,0 +1,166 @@
+#!/bin/bash
+
+#############################################################################
+function pathNotScanned()
+{
+    local -r path=${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    local -i status
+    (grep -sq "$path" "$scanTracker" > /dev/null 2>&1 ) && status=$? || status=$?
+    [ "$status" -ne 0 ] || return 1
+    echo "$path" >> "$scanTracker"
+    return 0
+}
+
+#############################################################################
+function libNotLoaded()
+{
+    local -r filename=${1:?"Input parameter 'filename' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r libname="$( basename "$filename" )"
+
+    local -i status
+    (grep -sq "$libname" "$crfLibTracker" > /dev/null 2>&1 ) && status=$? || status=$?
+    [ "$status" -ne 0 ] || return 1
+    echo "$libname" >> "$crfLibTracker"
+    return 0
+}
+
+#############################################################################
+function envNotLoaded()
+{
+    local -r filename=${1:?"Input parameter 'filename' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r envname="$( basename "$filename" )"
+
+    local -i status
+    (grep -sq "$envname" "$envTracker" > /dev/null 2>&1 ) && status=$? || status=$?
+    [ "$status" -ne 0 ] || return 1
+    echo "$envname" >> "$envTracker"
+    return 0
+}
+
+#############################################################################
+function loadEnvars()
+{
+    local -r path=${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -a files=()
+
+    if [ "$path" ] && [  -d "${path}/environment" ]; then
+        mapfile -t files < <(find "${path}/environment" -maxdepth 1 -mindepth 1 -type f ! -name '.*'  -print)
+    fi
+    [ "${#files[@]}" -eq 0 ] || printf "%s\n" "${files[@]}"
+}
+
+#############################################################################
+function loadLibrary()
+{
+    local -r src=${1:?"Input parameter 'src' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r color=${2:-0}
+    local -r name="$(basename "$src")"
+
+    [ $(( __libCount2++ )) -eq 0 ] && printf "    loading libraries (\x1b[35m%s\x1b[0m:\x1b[36m%s\x1b[0m):  " 'CRF' 'pwd'
+    printf "\x1b[%sm%s\x1b[0m " "$color" "$name"
+    source "$src"
+}
+
+#############################################################################
+function loadLibs()
+{
+    local -r path=${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r color=${2:-0}
+
+    [ "$path" ] || return 0
+    pathNotScanned "$path" || return 0
+    [ -d "${path}/bashlib" ] || return 0
+    local -a files
+    mapfile -t files < <(find "${path}/bashlib" -maxdepth 1 -mindepth 1 -type f ! -name '.*'  -print)
+    [ ${#files[@]} -gt 0 ] || return 0
+
+    local src
+    for src in "${files[@]}" ; do
+        if  libNotLoaded "$src" ; then
+            loadLibrary "$src" "$color"
+        fi
+    done
+}
+
+#############################################################################
+function sourcingMessage()
+{
+    local -r src=${1:?"Input parameter 'src' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r name="$(basename "$src")"
+
+    local dir="$( dirname "$src" )"
+
+    local color
+    if [ "$name" = 'rt.environment' ]; then
+        color=97   # white
+    elif [ "$dir" = "$CRF_LOCATION" ]; then
+        color=35   # magenta
+    elif [ "$dir" = "${CBF_LOCATION}${CRF_LOCATION}" ]; then
+        color=95   # lt_magenta
+    elif [ "$dir" = "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )" ]; then
+        color=36   # cyan
+    else
+        color=94   # lt_blue
+    fi
+
+    [ $(( __envCount++ )) -eq 0 ] && printf "    sourcing (\x1b[35m%s\x1b[0m:\x1b[95m%s\x1b[0m:\x1b[94m%s\x1b[0m:\x1b[36m%s\x1b[0m):  " 'CRF' 'tmp' 'other' 'pwd'
+    printf "\x1b[%sm%s\x1b[0m " "$color" "$name"
+}
+
+#############################################################################
+
+: ${CBF_LOCATION:=/tmp}
+: ${CRF_LOCATION:=/usr/local/crf}
+
+# init our cache files
+[ "${envTracker:-}" ] || declare -rx envTracker="${CBF_LOCATION}/environment.loaded"
+[ "${cbfLibTracker:-}" ] || declare -rx cbfLibTracker="${CBF_LOCATION}/cbf.bashlibs.loaded"
+[ "${crfLibTracker:-}" ] || declare -rx crfLibTracker="${CBF_LOCATION}/crf.bashlibs.loaded"
+[ "${scanTracker:-}" ] || declare -rx scanTracker="${CBF_LOCATION}/scanned.paths"
+if [ -e "$cbfLibTracker" ]; then
+    cp "$cbfLibTracker" "$crfLibTracker"
+else
+    :>  "$crfLibTracker"
+fi
+:>  "$envTracker"
+:>  "$scanTracker"
+
+
+# load our bashlibs
+declare -i __libCount2=${__libCount:-0}
+loadLibs "$CRF_LOCATION" 35                                          # magenta
+loadLibs "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )" 36   # cyan
+[ $__libCount2 -gt 0 ] && printf "\n"
+
+# load our environment
+declare -i __envCount=0
+if [ -e "${CRF_LOCATION}/bin/rt.environment" ]; then
+    sourcingMessage "${CRF_LOCATION}/bin/rt.environment"
+    source "${CRF_LOCATION}/bin/rt.environment"
+fi
+
+# load our definitions (associative arrays)
+declare -a _files=( $(loadEnvars "$CRF_LOCATION") )
+_files+=( $(loadEnvars "${CBF_LOCATION}${CRF_LOCATION}") )
+_files+=( $(loadEnvars "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )") )
+if [ "${#_files[@]}" -gt 0 ]; then
+    for _src in "${_files[@]}" ; do
+        if envNotLoaded "$_src" ; then
+            sourcingMessage "$_src"
+            source "$_src"
+        fi
+    done
+fi
+[ $__envCount -gt 0 ] && printf "\n"
+[ ! -e /tmp/dump_env ] || declare -p
+
+
+# init the framework
+crf.__init "$CRF_LOCATION"
+
+
+unset __envCount
+unset __libCount2
+unset _files
+unset _src
