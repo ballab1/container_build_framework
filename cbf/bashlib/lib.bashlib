@@ -1,0 +1,349 @@
+#!/bin/bash
+#############################################################################
+#
+#   lib.bashlib: container_build_framework
+#
+#  thanks to Stephen R. Scaffidi for relativize
+#        (https://gist.github.com/hercynium/3899407#file-relpath-bash)
+#
+#############################################################################
+
+#
+# usage: lib.file_env VAR [DEFAULT]
+#    ie: lib.file_env 'XYZ_DB_PASSWORD' 'example'
+# (will allow for "$XYZ_DB_PASSWORD_FILE" to fill in the value of
+#  "$XYZ_DB_PASSWORD" from a file, especially for Docker's secrets feature)
+#
+function lib.file_env()
+{
+    local -r var="${1:?"Input parameter 'var' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local def="${2:-}"
+
+    local fileVar="${var}_FILE"
+    if [ "${!var:-}" ] && [ "${!fileVar:-}" ]; then
+        trap.die "both $var and $fileVar are set (but are exclusive) in 'function ${FUNCNAME[0]}()'"
+    fi
+    local val="$def"
+    if [ "${!var:-}" ]; then
+        val="${!var}"
+    elif [ "${!fileVar:-}" ]; then
+        val="$(< "${!fileVar}")"
+    fi
+    export "$var"="$val"
+    unset "$fileVar"
+}
+export -f lib.file_env
+
+#############################################################################
+function lib.getFiles()
+{
+    local -r dir=${1:?"Input parameter 'dir' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r filter=${2:-}
+
+    if [ -d "$dir" ]; then
+        for file in $(find "$dir" -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort); do
+            [ "$filter" ] && "$filter" "$file" && echo "$file"
+            [ "$filter" ] || echo "$file"
+        done
+    fi
+}
+export -f lib.getFiles
+
+#############################################################################
+function lib.getGroupInfo()
+{
+    local -r group=${1:-$(lib.getGroupNameOfUser)}
+    local -r extended=${2:-}
+
+    if [ -z "$extended" ]; then
+        (getent 'group' "$group" | cut -d: -f1) || true
+    else
+        (getent 'group' "$group" | awk -F ':' '{ printf "%s(%s)",$1,$3 }') || true
+    fi
+}
+export -f lib.getGroupInfo
+
+#############################################################################
+function lib.getGroupNameOfUser()
+{
+    local -r user=${1:-$(crf.currentUser)}
+
+    local gid=''
+    if gid="$(getent 'passwd' "$user")" ; then
+        gid="$(echo "$gid" | cut -d: -f4)"
+    fi
+    if [ "$gid" ] && gid="$(getent 'group' "$gid")"; then
+        echo "$gid" | cut -d: -f1
+    fi
+}
+export -f lib.getGroupNameOfUser
+
+#############################################################################
+function lib.getGID()
+{
+    local -r group=${1:-$(lib.getGroupNameOfUser)}
+
+    lib.lookupId "$group" 'group'
+}
+export -f lib.getGID
+
+#############################################################################
+function lib.getProperty()
+{
+    local -r prop=${1:?"Input parameter 'prop' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r file=${2:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r default_val=${3:-}
+
+    # get definition from property file
+    if [ ! -e "$file" ]; then
+        [ -z "$default_val" ] || echo "$default_val"
+        return
+    fi
+
+    local -r val="$( grep -e "^${prop}\s*=" "$file" )"
+
+    # only report eval'd string (after removing 'prop=' prefix) if something was found
+    if [ $? -eq 0 ] && [ "$val" ]; then
+        eval 'echo' "${val#*=}"
+    elif [ "$default_val" ]; then
+        echo "$default_val"
+    fi
+}
+export -f lib.getProperty
+
+#############################################################################
+function lib.getUserInfo()
+{
+    local -r user=${1:-$(crf.currentUser)}
+    local -r extended=${2:-}
+
+    if [ -z "$extended" ]; then
+        (getent 'passwd' "$user" | cut -d: -f1) || true
+    else
+        (getent 'passwd' "$user" | awk -F ':' '{ printf "%s(%s)",$1,$3 }') || true
+    fi
+}
+export -f lib.getUserInfo
+
+#############################################################################
+function lib.getUID()
+{
+    local -r user=${1:-$(crf.currentUser)}
+
+    lib.lookupId "$user" 'passwd'
+}
+export -f lib.getUID
+
+#############################################################################
+function lib.indirectReference()
+{
+    local -r key=${1:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r ahash=${2:?"Input parameter 'ahash' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r default="${3:-}"
+
+    local val=$( eval "echo \${$ahash[$key]:-}" )
+    [ "$val" ] || [ -z "$default" ] || val="$default"
+    echo "$val"
+}
+
+#############################################################################
+function lib.intersect()
+{
+    local -r a1=${1:?"Input parameter 'a1' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r a2=${2:?"Input parameter 'a2' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    # find entries of a1 which are in a2
+    local -a common=()
+    for item in $a1; do
+        for ref in $a2; do
+            if [ "$item" = "$ref" ]; then
+                common+=( "$item" )
+                break
+            fi
+        done
+    done
+    [ ${#common[*]} -eq 0 ] || echo "${common[*]}"
+}
+export -f lib.intersect
+
+#############################################################################
+function lib.isActionFile()
+{
+    local -r file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    local os_id="$( environ.OSid )"
+    local _extension="${file##*.}"
+    case "${_extension,,}" in
+        alpine)        [ "$os_id" = "$_extension" ];;
+        centos)        [ "$os_id" = "$_extension" ];;
+        fedora)        [ "$os_id" = "$_extension" ];;
+        ubuntu)        [ "$os_id" = "$_extension" ];;
+        windows)       [ "$os_id" = "$_extension" ];;
+        *)                                     true;;
+    esac
+}
+export -f lib.isActionFile
+
+#############################################################################
+function lib.lookupId()
+{
+    local -r entry=${1:?"Input parameter 'entry' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r database=${2:?"Input parameter 'database' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r default=${3:-}
+
+    local id=''
+    id="$(getent "$database" "$entry" 2>/dev/null)" || id=''
+    [[ "${id:-}" =~ 'Try '* ]] && id=''
+    [ -z "${id:-}" ] || id=$(echo "$id" | cut -d: -f3)
+
+    if [ -z "${id:-}" ] && [ -n "$default" ]; then
+        id=$default
+    fi
+    echo "${id:-}"
+}
+export -f lib.lookupId
+
+############################################################################
+function lib.normalizePath()
+{
+    local path="${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}"
+
+    # Replace all '//' sequences with '/'
+    path="${path//\/\///}"
+
+    # Replace all /./ sequences with '/'
+    path="${path//\/.\///}"
+    if [ ${#path} -gt 2 ]; then
+        [ "${path:${#path}-2:2}" = '/.' ] && path="${path::-2}"
+        [ "${path::2}" = './' ] && path="${path:2}"
+    fi
+
+    # Remove dir/.. sequences.
+    while [[ "$path" =~ ([^/][^/]*/\.\./) ]]; do
+        path="${path/${BASH_REMATCH[0]}/}"
+    done
+
+    if [ "$path" = '/' ]; then
+        echo "$path"
+    else
+        echo "${path%/}"
+    fi
+}
+export -f lib.normalizePath
+
+#############################################################################
+function lib.primaryPid()
+{
+    local -r cmdName=${1:?"Input parameter 'cmdName' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    ps -o pid,ppid,comm | \
+    grep "$cmdName" | \
+    grep -v 'grep' | \
+    awk '{ pids[$1]=$2 } END { for (pid in pids) { id = pids[pid]; if (! pids[id]) { print pid } } }'
+}
+export -f lib.primaryPid
+
+#############################################################################
+function lib.pidAncestors()
+{
+    local -ri pid=${1:-$$}
+    local -r pidList="${2:-$(ps -eao pid,ppid | awk '{ if (NR > 1) { print "[" $1 "]=" $2 } }')}"
+
+    if [ "$pid" -ne 0 ]; then
+        eval "local -rA pids=($pidList)"
+        printf '%s,%d' $(lib.pidAncestors "${pids[$pid]}" "$pidList") "$pid"
+    else
+        printf '%d' "$pid"
+    fi
+}
+export -f lib.pidAncestors
+
+######################################################################
+function lib.relativize()
+{
+    local pos="${1:?"Input parameter 'pos' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local ref="${2:?"Input parameter 'ref' must be passed to 'function ${FUNCNAME[0]}()'"}"
+
+    local down=''
+
+    pos="$(lib.normalizePath "$pos")"
+    ref="$(lib.normalizePath "$ref")"
+
+    while :; do
+        [ "$ref" = '/' ] && break
+        case "$pos" in
+            $ref/*) break;;
+        esac
+        down="../$down"
+        ref=${ref%/*}
+    done
+
+    echo "$down${pos##$ref/}"
+}
+export -f lib.relativize
+
+#############################################################################
+function lib.removeProperty()
+{
+    local -r key="${1:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r config_file="${2:?"Input parameter 'config_file' must be passed to 'function ${FUNCNAME[0]}()'"}"
+
+    [ -f "$config_file" ] || trap.die 'Property file does not exist'
+    if grep -qE "^\s*${key}\s*=" "$config_file" ; then
+        sed -i "s|^$key=.*$||" "$config_file"
+    fi
+}
+export -f lib.removeProperty
+
+#############################################################################
+function lib.updateConfigFromENV()
+{
+    local -r env_prefix="${1:?"Input parameter 'env_prefix' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r config_file="${2:?"Input parameter 'config_file' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    [ -f "$config_file" ] || trap.die 'Property file does not exist'
+
+    for key in $(env | grep -E "^$env_prefix"); do
+        key="${key#$env_prefix}"
+        local val=${key##*=}
+        key=${key%%=*}
+        key=${key,,}
+        key=${key//_/.}
+        lib.updatePropertyFile "$key" "$val" "$config_file"
+    done
+}
+export -f lib.updateConfigFromENV
+
+#############################################################################
+function lib.updatePropertyFile()
+{
+    local -r key="${1:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r val="${2:?"Input parameter 'val' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r config_file="${3:?"Input parameter 'config_file' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r must_exist=${4:-}
+    [ -f "$config_file" ] || trap.die 'Property file does not exist'
+
+    if [[ "$val" ]]; then
+        if grep -qE "^\s*${key}\s*=" "$config_file" ; then
+            sed -i "s|^$key=.*$|$key=$val|" "$config_file"
+        elif [ "$must_exist" ]; then
+            echo "$key=$val" >> "$config_file"
+        fi
+    fi
+}
+export -f lib.updatePropertyFile
+
+#############################################################################
+function lib.updateProperties()
+{
+    local -r config_file="${1:?"Input parameter 'config_file' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    shift
+    local -a in_array=( "$@" )
+
+    [ -f "$config_file" ] || trap.die 'Property file does not exist'
+    if [ ${#in_array[*]} -gt 0 ]; then
+        for entry in "${in_array[@]}"; do
+            lib.updatePropertyFile "${entry%%=*}" "${entry##*=}" "$config_file"
+        done
+    fi
+}
+export -f lib.updateProperties

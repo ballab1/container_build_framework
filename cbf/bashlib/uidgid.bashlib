@@ -1,0 +1,162 @@
+#!/bin/bash
+#############################################################################
+#
+#   uidgid.bashlib
+#
+#############################################################################
+
+function uidgid.createGroup()
+{
+    local -r group=${1:?"Input parameter 'group' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r gid=${2:?"Input parameter 'gid' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    [ "$group" ] && [ "$gid" ]  ||  trap.die "Invalid group specified; group:[$group], gid:[${gid}]"
+
+    local wanted nameMatch idMatch
+    wanted="$( printf '%s(%s)' "$group" "$gid" )"
+    nameMatch="$( lib.getGroupInfo "$group" 'extended' )"
+    idMatch="$( lib.getGroupInfo "$gid" 'extended' )"
+    term.log "    INFO: group/gid (${wanted}):  is currently (${nameMatch})/(${idMatch})\n"
+
+    if [ "$wanted" != "$nameMatch" ] || [ "$wanted" != "$idMatch" ]; then
+        if [ "$idMatch" ]; then
+            local oldName=$( lib.getGroupInfo "$gid" )
+            if [ "$oldName" = "$group" ]; then
+                term.log "    no need to change group:  ${group}\n" 'info'
+            else
+                term.log "    renaming group:  ${oldName} to ${group}\n" 'info'
+                groupmod --new-name "$group" "$oldName"
+            fi
+        elif [ "$nameMatch" ]; then
+            local oldId=$( lib.getGID "$group" )
+            if [ "oldId" = "$gid" ]; then
+                term.log "    no need to change $gid:  ${$gid}\n" 'info'
+            else
+                term.log "    renaming group:  ${oldId} to ${gid}\n" 'info'
+                groupmod --gid "$gid" "$group"
+            fi
+        else
+            term.log "    create group:  ${group}\n" 'info'
+            groupadd --gid "$gid" "$group"
+        fi
+    fi
+}
+export -f -f uidgid.createGroup
+
+#############################################################################
+function uidgid.createUser()
+{
+    local -r user=${1:?"Input parameter 'user' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r uid=${2:?"Input parameter 'uid' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r homedir=${3:-}
+    local -r shell=${4:-}
+
+    [ "$user" ] && [ "$uid" ]  ||  trap.die "Invalid user specified: user:[${user}], uid:[${uid}]"
+
+    local wanted nameMatch idMatch
+
+    wanted="$( printf '%s(%s)' "$user" "$uid" )"
+    nameMatch="$( lib.getUserInfo "$user" 'extended' )"
+    idMatch="$( lib.getUserInfo "$uid" 'extended' )"
+    term.log "    INFO: user/uid (${wanted}):  is currently (${nameMatch})/(${idMatch})\n"
+
+    if [ "$wanted" != "$nameMatch" ] || [ "$wanted" != "$idMatch" ]; then
+        if [ -z "$idMatch" ] && [ "$nameMatch" ]; then
+            term.log "    update user:  ${user}\n" 'info'
+            if [ "$homedir" ]; then
+                [ -d "$homedir" ] || mkdir -p "$homedir"
+                usermod --home "$homedir" --uid "$uid" --gid "$gid" --shell "$shell" "$user"
+            else
+                usermod --uid "$uid" --gid "$gid" --shell "$shell" "$user"
+            fi
+        else
+            term.log "    create user: ${user}\n" 'info'
+            [ "$nameMatch" ] && [ "$wanted" != "$nameMatch" ] && [ "$( lib.getUserInfo "$user" )" ] && userdel "$( lib.getUserInfo "$user" )"
+            [ "$idMatch" ]   && [ "$wanted" != "$idMatch" ]   && [ "$( lib.getUserInfo "$uid" )"  ] && userdel "$( lib.getUserInfo "$uid" )"
+            if [ "$homedir" ]; then
+                [ -d "$homedir" ] || mkdir -p "$homedir"
+                useradd --home-dir "$homedir" --uid "$uid" --gid "$gid" --shell "$shell" "$user"
+            else
+                useradd --no-create-home --uid "$uid" --gid "$gid" --shell "$shell" "$user"
+            fi
+        fi
+    fi
+}
+export -f -f uidgid.createUser
+
+#############################################################################
+function uidgid.runScripts()
+{
+    local -a files=( "$@" )
+    [ ${#files[*]} -gt 0 ] || return
+    for file in "${files[@]}" ; do
+        crf.copyFileToRuntime 'ENV' "$file"
+        (eval uidgid.userAndGroupFromFile "$file") || term.log "..*** issue while executing $( basename "$file" ) ***\n" 'yellow'
+    done
+}
+export -f uidgid.runScripts
+
+#############################################################################
+function uidgid.userAndGroupFromFile()
+{
+    local -r userDefnFile=${1:?"Input parameter 'userDefnFile' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    [ -f "$userDefnFile" ] || trap.die 'must specify a valid file'
+
+    term.log "..executing ${userDefnFile}\n" 'info'
+
+    source "$(crf.BIN)/init.runtime"
+    source "$userDefnFile"
+
+    #strip path & prefix from userDefnFile to get name
+    local name="$( basename "$userDefnFile" )"
+    name="${name//[0-9]/}"
+    name="${name#.}"
+
+    # extract data from userDefnFile
+    local user="$( lib.indirectReference 'user' "$name" )"
+    local uid="$( lib.indirectReference 'uid' "$name" )"
+    local group="$( lib.indirectReference 'group' "$name" )"
+    local gid="$( lib.indirectReference 'gid' "$name" )"
+    local home="$( lib.indirectReference 'home' "$name" )"
+    local shell="$( lib.indirectReference 'shell' "$name" )"
+
+    if [ -z "$user" ] || [ -z "$uid" ] || [ -z "$group" ] || [ -z "$gid" ]; then
+        trap.die "Invalid user/group specified in '${userDefnFile}'; user:[${user}], uid:[${uid}], group:[$group], gid:[${gid}]"
+    fi
+
+    # setup user & group
+    uidgid.createGroup "$group" "$gid"
+    uidgid.createUser "$user" "$uid" "$home" "$shell"
+}
+export -f -f uidgid.userAndGroupFromFile
+
+#############################################################################
+function uidgid.verify()
+{
+    local -a files
+    mapfile -t files < <(find "$(crf.ENV)" -type f ! -name '.*')
+
+    [ ${#files[*]} -gt 0 ] || return
+    local -a uids=()
+    for file in "${files[@]}" ; do
+        local name="$( basename "$file" )"
+        name="${name//[0-9]/}"
+        name="${name#.}"
+
+        source "$file"
+        uids+=( "$( lib.indirectReference 'uid' "$name" )" )
+    done
+    [ ${#files[*]} -eq $(printf '%s\n' "${uids[@]}" | sort -u | wc -l) ] || trap.die "Failed to process all user&group definitions\n"
+}
+export -f uidgid.verify
+
+#############################################################################
+function uidgid.verifyUserExists()
+{
+    local -r user=${1:?"Input parameter 'user' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    [ "$(lib.lookupId "$user" 'passwd')" ] || useradd -N "$user"
+    lib.getGroupNameOfUser "$user"
+}
+export -f uidgid.verifyUserExists

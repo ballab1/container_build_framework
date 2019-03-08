@@ -1,0 +1,72 @@
+#!/bin/bash
+declare startTm=$(date +%s) 
+
+# Use the Unofficial Bash Strict Mode
+set -o errexit
+set -o nounset
+set -o pipefail
+IFS=$'\n\t'
+
+[ "${1:-}" = *-setup ] || [ ${DEBUG:-} ] && echo -e '\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
+[ ${DEBUG:-} ] && printf '\nargs: %s\n\n'  "$*"
+
+# save our context incase our any of scripts need it
+printf "%s\n" "$@" > /tmp/args.txt
+printf "%s\n" "$(env | sort)" > /tmp/env.txt
+
+source /usr/local/crf/bin/init.runtime
+
+declare -r config_entry="${CONTAINER_NAME}-setup"
+
+
+#  startup container
+if [[ "${1:-}" = "$CONTAINER_NAME" ]]; then
+    term.log '>>>>>>>> entering ' 'green'
+    term.log "$(IFS=' '; echo $*)\n" 'yellow'
+
+    # run the startup scripts defined in the framework
+    if [ "$(id -u)" -eq 0 ]; then
+        crf.prepareEnvironment
+    elif [ "$( which sudo )" ]; then
+        sudo -E "$0" "$config_entry"
+    else
+        term.log ">>>>>>>> Current user 'uid:$(id -u)' does not have super powers. Unable to prepare environment\n" 'magenta'
+    fi
+
+    cd "$WORKDIR"
+    term.log "\n${CONTAINER_NAME^^}: Finished executing startup scripts after $(timer.fmtElapsed $(( $(timer.getTimestamp)  - startTm )) )\n\n" 'info' 
+    shift
+
+    # this is the primary (default) codepath invoked by the Dockerfile
+    crf.logEnvironment
+
+    declare -a args=( "$@" )
+    declare -r tools=/usr/local/bin
+    if [ -e "${tools}/run.sh" ]; then
+        args=( "${tools}/run.sh" "${args[@]}" )
+    elif [ $# -eq 0 ]; then
+        trap.die "No ${tools}/run.sh detected, and no arguments provided"
+    fi
+
+#    if [ "$(id -u)" -eq 0 ]; then
+#    [ "${USER:-root}" = 'root' ] || args=( 'sudo' '-E' '-u' "$USER" "${args[@]}" )
+    term.log '..executing: ' 'green'
+    term.log "$(IFS=' '; echo ${args[*]})\n" 'yellow'
+    exec "${args[@]}"
+
+
+elif [[ "${1:-}" = "$config_entry" && "$(id -u)" -eq 0 ]]; then
+    # this codepath is invoked (from above) to perpare the runtime environment. User is 'root' so chmod & chown succeed
+    term.log '>>>>>>>> entering ' 'green'
+    term.log "$(IFS=' '; echo $*)\n" 'yellow'
+    crf.prepareEnvironment
+
+elif [ $# -gt 0 ]; then
+    # this codepath is invoked when a user invokes the container using 'docker run'
+    crf.logEnvironment
+    term.log '>>>>>>>> entering ' 'green'
+    term.log "custom\n" 'yellow'
+    exec "$@"
+fi
+term.log '<<<<<<<< returning from ' 'green'
+term.log "${*}\n" 'yellow'

@@ -1,0 +1,98 @@
+#!/bin/bash
+#############################################################################
+#
+#   trap.bashlib
+#
+#----------------------------------------------------------------------------
+
+# trap initialization
+function trap.__init()
+{
+    declare -ix trap_dying=0
+    declare -ix trap_pipe_error=0
+
+    # setting errtrace allows our ERR trap handler to be propagated to functions, expansions and subshells
+    set -o errtrace
+
+    # trap ERR to provide an error handler whenever a command exits nonzero
+    trap trap.catch_error ERR
+    trap trap.catch_int INT
+    trap trap.catch_pipe PIPE
+}
+export -f trap.__init
+
+#----------------------------------------------------------------------------
+# Exit on any error
+function trap.catch_error()
+{
+    local err=$?
+
+    set +o verbose
+    set +o xtrace
+    trap.log "***ERROR at ${BASH_SOURCE[1]}:${BASH_LINENO[0]}. '${BASH_COMMAND}' exited with status ${err}"
+    trap.stacktrace
+    exit 1
+}
+export -f trap.catch_error
+
+#----------------------------------------------------------------------------
+# Detect when build is aborted
+function trap.catch_int()
+{
+    trap.die "${BASH_SOURCE[0]} has been aborted with SIGINT (Ctrl-C)"
+}
+export -f trap.catch_int
+
+#----------------------------------------------------------------------------
+function trap.catch_pipe()
+{
+    trap_pipe_error+=1
+    [ ${trap_pipe_error:-} -eq 1 ] || return 0
+    [ ${trap_dying:-} -eq 0 ] || return 0
+
+    trap.die "${BASH_SOURCE[0]} has been aborted with SIGPIPE (broken pipe)"
+}
+export -f trap.catch_pipe
+
+#----------------------------------------------------------------------------
+function trap.die()
+{
+    local status=$?
+    [[ $status -ne 0 ]] || status=255
+    trap_dying+=1
+
+    local args="$*"
+    [ "${args:0:8}" = '***ERROR' ] || args="***ERROR: $args"
+    ( echo ''; trap.log "$args" ; echo '') >&2
+    [ "${DEBUG_TRACE:-}" = "2" ] || exit $status
+}
+export -f trap.die
+
+#----------------------------------------------------------------------------
+function trap.log()
+{
+    printf '\x1b[31m%s\x1b[0m\n' "$1" >&2
+}
+export -f trap.log
+
+#----------------------------------------------------------------------------
+# display stacktrace
+function trap.stacktrace()
+{
+    local __trap_options=$(set +o)
+    set +o nounset
+    set +o verbose
+    set +o xtrace
+
+    # Print out the stack trace described by $function_stack
+    if [ ${#FUNCNAME[@]} -gt 2 ]; then
+        trap.log "Stack trace:"
+        for ((i=1;i<${#FUNCNAME[@]}-1;i++)); do
+            trap.log "$(printf '>>>    %02d: %s %s  <<<' "$i" "${BASH_SOURCE[$i+1]}:${BASH_LINENO[$i]}" "${FUNCNAME[$i]}" )"
+        done
+    fi
+    eval "$__trap_options"
+}
+export -f trap.stacktrace
+
+[ "${trap_dying:-99}" -ne 99 ] || trap.__init

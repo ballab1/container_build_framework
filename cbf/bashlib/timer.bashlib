@@ -1,0 +1,57 @@
+#!/bin/bash
+
+##################################################################################
+#
+#  module:  bashlib/timer.sh
+#  purpose: provide simple interface to time functionality and report times
+#
+##################################################################################
+
+#----------------------------------------------------------------------------
+# calculate the elapsed time for an event
+function timer.fmtElapsed()
+{
+    local -ir elapsed=${1:?"Input parameter 'elapsed' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    printf '%02d:%02d:%02d' $((elapsed / 3600)) $((elapsed % 3600 / 60)) $((elapsed % 60))
+}
+export -f timer.fmtElapsed
+
+#----------------------------------------------------------------------------
+# log elapse time result
+function timer.logElapsed()
+{
+    local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -ir elapsed=${2:?"Input parameter 'elapsed' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    printf 'Time elapsed (%s): %s' "$name" "$(timer.fmtElapsed $elapsed)"
+}
+export -f timer.logElapsed
+
+#----------------------------------------------------------------------------
+# get the timestamp of a file in seconds
+function timer.getTimestamp()
+{
+    date +%s
+}
+export -f timer.getTimestamp
+
+#----------------------------------------------------------------------------
+function timer.measureCmd()
+{
+    local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r cmd=${2:?"Input parameter 'cmd' must be passed to 'function ${FUNCNAME[0]}()'"}
+    shift 2
+    local -a args=( "$@" )
+
+    local -i start_tm=$( timer.getTimestamp )
+    "$cmd" "${args[@]}"
+    local -i finish_tm=$( timer.getTimestamp )
+    local -i elapsed_tm=$((finish_tm - start_tm))
+    local fmt_tm=$( timer.fmtElapsed $elapsed_tm )
+
+    printf 'Time elapsed (%s): %s' "$name" "$fmt_tm"
+}
+export -f timer.measureCmd
+
+#----------------------------------------------------------------------------

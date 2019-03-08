@@ -1,0 +1,119 @@
+#!/bin/bash
+#############################################################################
+#
+#   package.bashlib: get OS packages
+#
+#############################################################################
+
+function package.checkPackages()
+{
+    local -ar pkgs=( $@ )
+
+    case "$( environ.OSid )" in
+        alpine)
+            local -a duplicates=( $(lib.intersect "${pkgs[*]}" "$( apk info )") )
+            [ ${#duplicates[*]} -eq 0 ] || trap.die "attempting to reinstall following packages: '${duplicates[*]}'"
+            # now verify that packages are actually valid for installation
+            for pkg in "${pkgs[@]}"; do
+                apk info "${pkg%%=*}" &>/dev/null || trap.die "Package $pkg not found"
+            done
+            ;;
+        centos|fedora)
+            local -a duplicates=( $(for pkg in "${pkgs[@]}"; do yum -q list installed "$pkg" 2>/dev/null | awk 'NR>1 {print $1}' ||:; done) )
+            [ ${#duplicates[*]} -eq 0 ] || trap.die "attempting to reinstall following packages: '${duplicates[*]}'"
+            # now verify that packages are actually valid for installation
+            for pkg in "${pkgs[@]}"; do
+                yum search "$pkg" &>/dev/null || trap.die "Package $pkg not found"
+            done
+            ;;
+        ubuntu)
+            local -a duplicates=( $(lib.intersect "${pkgs[*]}" "$( dpkg --get-selections | awk '{print $1}' )") )
+            [ ${#duplicates[*]} -eq 0 ] || trap.die "attempting to reinstall following packages: '${duplicates[*]}'"
+            # now verify that packages are actually valid for installation
+            for pkg in "${pkgs[@]}"; do
+                apt search "$pkg" &>/dev/null || trap.die "Package $pkg not found"
+            done
+            ;;
+    esac
+}
+export -f package.checkPackages
+
+#############################################################################
+function package.install()
+{
+    local -r defnFile=${1:?"Input parameter 'defnFile' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    term.log "Installing ${defnFile}\n" 'task'
+
+    source "$( crf.BIN )/init.runtime"
+    source "$defnFile"
+    [ "${#PKGS[*]}" -gt 0 ] || return 0
+
+    package.checkPackages "${PKGS[@]}"
+
+    : ${OPTS:=''}
+    case "$( environ.OSid )" in
+        alpine)
+            apk add --no-cache ${OPTS[*]} ${PKGS[*]}
+            ;;
+        centos|fedora)
+            yum install -y ${OPTS[*]} ${PKGS[*]}
+            yum clean all
+            ;;
+        ubuntu)
+            apt-get install --yes ${OPTS[*]} ${PKGS[*]}
+            ;;
+    esac
+}
+export -f package.install
+
+#############################################################################
+function package.installTimezone()
+{
+    local -r tz=${1:?"Input parameter 'tz' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    case "$( environ.OSid )" in
+        alpine)
+            package.updateIndexes
+            apk add --no-cache tzdata
+            ;;
+        centos|fedora)
+            ;;
+        ubuntu)
+            package.updateIndexes
+            apt-get install --yes tzdata
+            ;;
+    esac
+    echo "$tz" > /etc/TZ
+    cp "/usr/share/zoneinfo/$tz" /etc/timezone
+    cp "/usr/share/zoneinfo/$tz" /etc/localtime
+}
+export -f package.installTimezone
+
+#############################################################################
+function package.runScripts()
+{
+    local -a files=( "$@" )
+
+    for file in "${files[@]}"; do
+        ( package.install "$file" )
+    done
+}
+export -f package.runScripts
+
+#############################################################################
+function package.updateIndexes()
+{
+    case "$( environ.OSid )" in
+        alpine)
+            apk update
+            ;;
+        centos|fedora)
+            yum updateinfo -y
+            ;;
+        ubuntu)
+            apt-get update --yes
+            ;;
+    esac
+}
+export -f package.updateIndexes

@@ -1,0 +1,68 @@
+#!/bin/bash
+
+#############################################################################
+#
+#   download.bashlib: handle downloads
+#
+#############################################################################
+
+function download.getFile()
+{
+    local -r downloadDefnFile=${1:?"Input parameter 'downloadDefnFile' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    # load download definition
+    source "$downloadDefnFile"
+    local name="$( basename "$downloadDefnFile" )"
+    term.log "Downloading from definition:  ${name}\n" 'task'
+
+    # strip path & prefix from downloadDefnFile to get name
+    name="${name#[0-9][0-9].}"
+    eval name="\${name%.$(environ.OSid)}"
+
+    # derefernce our params
+    local -A params=( ['file']="$( lib.indirectReference 'file' "$name" )" \
+                      ['url']="$( lib.indirectReference 'url' "$name" )" \
+                      ['sha256']="$( lib.indirectReference 'sha256' "$name" )" \
+                    )
+    [ "${params['file']}" ] && [ "${params['url']}" ] && [ "${params['sha256']}" ] || trap.die "Invalid download definition provided: ${downloadDefnFile}"
+    [ $name = ${name^^} ] || trap.log "Convention violation: non-uppercase filename used for download definition: $(basename $downloadDefnFile)"
+
+    term.log "    ....file:  ${params['file']}\n"
+    term.log "    .....url:  ${params['url']}\n"
+    term.log "    ..sha256:  ${params['sha256']}\n"
+
+    local -i attempt
+    for attempt in {1..3}; do
+        [ ! -e "${params['file']}" ] || rm "${params['file']}"
+        mkdir -p "$(dirname "${params['file']}")" ||:
+        wget --no-check-certificate --no-verbose --output-document "${params['file']}" "${params['url']}"  || continue
+        local result=$(echo "${params['sha256']}  ${params['file']}" | sha256sum -cw 2>&1)
+        term.log "    ${result}\n" 'info'
+        if [[ "$result" == *'FAILED'* ]]; then
+            term.log "    ..Incorrect checksum for ${params['file']}\n" 'warn'
+            term.log "    actual:   $( sha256sum "${params['file']}" | awk '{ print $1 }')\n" 'warn'
+            continue
+        fi
+        if [[ "$result" == *' WARNING: '* ]]; then
+            term.log "    ..failed to successfully download ${params['file']}. Retrying....\n" 'white'
+            continue
+        fi
+        # successfully downloaded file :-)
+        return 0
+    done
+    trap.die "failed to successfully download ${params['file']}."
+}
+export -f download.getFile
+
+#############################################################################
+function download.runScripts()
+{
+    local -a files=( "$@" )
+
+    for file in "${files[@]}" ; do
+        crf.copyFileToRuntime 'ENV' "$file"
+        cd /tmp
+        eval download.getFile "$file" || term.log ">>>>> issue while downloading $( basename "$file" ) <<<<<\n" 'warn'
+    done
+}
+export -f download.runScripts

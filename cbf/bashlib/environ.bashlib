@@ -1,0 +1,148 @@
+#!/bin/bash
+
+#############################################################################
+#
+#   environ.bashlib; basic functions to get info about environment
+#
+#############################################################################
+
+#----------------------------------------------------------------------------------------------
+function environ.cpuType()
+{
+    lscpu | grep Architecture | awk '{print $2 }'
+}
+export -f environ.cpuType
+
+#----------------------------------------------------------------------------------------------
+function environ.domain()
+{
+    hostname -d
+}
+export -f environ.domain
+
+#----------------------------------------------------------------------------------------------
+function environ.fqdName()
+{
+    hostname -f
+}
+export -f environ.fqdName
+
+#----------------------------------------------------------------------------------------------
+function environ.hardwareName()
+{
+    uname -m
+}
+export -f environ.hardwareName
+
+#----------------------------------------------------------------------------------------------
+function environ.hardwarePlatform()
+{
+    uname -i
+}
+export -f environ.hardwarePlatform
+
+#----------------------------------------------------------------------------------------------
+function environ.hostIp()
+{
+    nslookup "$(hostname -f)" | grep 'Address:' | awk '{if(NR==2){print $2}}'
+}
+export -f environ.hostIp
+
+#----------------------------------------------------------------------------------------------
+function environ.hostName()
+{
+    hostname -s
+}
+export -f environ.hostName
+
+#----------------------------------------------------------------------------------------------
+function environ.ipAddressAndMask()
+{
+    local -r iface="${1:-eth0}"
+    ip -4 -o addr | grep "$iface" | awk '{print $4}'
+}
+export -f environ.ipAddressAndMask
+
+#----------------------------------------------------------------------------------------------
+function environ.ipAddress()
+{
+    hostname -i
+}
+export -f environ.ipAddress
+
+#----------------------------------------------------------------------------------------------
+function environ.kernelName()
+{
+    uname -s
+}
+export -f environ.kernelName
+
+#----------------------------------------------------------------------------------------------
+function environ.kernelRelease()
+{
+    uname -r
+}
+export -f environ.kernelRelease
+
+#----------------------------------------------------------------------------------------------
+function environ.kernelVersion()
+{
+    uname -v
+}
+export -f environ.kernelVersion
+
+#----------------------------------------------------------------------------------------------
+function environ.memorySize()
+{
+    local -r allocated_memory="$(grep MemTotal /proc/meminfo | awk '{print $2}')"
+    echo "$(( allocated_memory*1024 ))"
+}
+export -f environ.memorySize
+
+#----------------------------------------------------------------------------------------------
+function environ.nodeName()
+{
+    uname -n
+}
+export -f environ.nodeName
+
+#----------------------------------------------------------------------------------------------
+function environ.numCPUs()
+{
+    nproc --all # or grep -c (processor /proc/cpuinfo)
+}
+export -f environ.numCPUs
+
+#----------------------------------------------------------------------------------------------
+function environ.operatingSystem()
+{
+    uname -o
+}
+export -f environ.operatingSystem
+
+#----------------------------------------------------------------------------------------------
+function environ.OSid()
+{
+    if [ -e /etc/os-release ]; then
+        grep -e '^ID=' /etc/os-release | awk -F'=' '{ print $2 }' | tr -d '"'
+    else
+        echo 'unknown'
+    fi
+}
+export -f environ.OSid
+
+#----------------------------------------------------------------------------------------------
+function environ.processorType()
+{
+    uname -p
+}
+export -f environ.processorType
+
+#----------------------------------------------------------------------------------------------
+function environ.shortName()
+{
+    hostname -s
+}
+export -f environ.shortName
+
+#----------------------------------------------------------------------------------------------

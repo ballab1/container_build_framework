@@ -1,0 +1,369 @@
+#!/bin/bash
+#############################################################################
+#
+#   crf.bashlib: container_run_framework
+#
+#############################################################################
+
+: ${CRF_PROPERTIES_FILE:="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")/..")/CRF.properties"}
+export CRF_PROPERTIES_FILE
+
+#############################################################################
+function crf.__init()
+{
+    local -r crf_base="${1:?"Input parameter 'crf' must be passed to 'function ${FUNCNAME[0]}()'"}"
+
+#    CRF_PROPERTIES_FILE="${crf_base}/CRF.properties"
+    # this function is usually called from bin/init.libraries
+    local SUDO=''
+    [ $(id -u) -eq 0 ] || SUDO='sudo'
+    if [ ! -e "$CRF_PROPERTIES_FILE" ]; then
+        eval $SUDO mkdir -p "$crf_base"
+        eval $SUDO touch "$CRF_PROPERTIES_FILE"
+        eval $SUDO chmod a+rw "$CRF_PROPERTIES_FILE"
+        cat << EOF > "$CRF_PROPERTIES_FILE"
+BASE=$crf_base
+BIN=${crf_base}/bin
+ENV=${crf_base}/environment
+LIB=${crf_base}/bashlib
+STARTUP=${crf_base}/startup
+EOF
+
+        [ "$DEBUG_TRACE" = 0 ] || cat "$CRF_PROPERTIES_FILE"
+        [ -e "$(crf.propertiesFile)" ] || term.log "runtime initialized\n"
+    fi
+#    term.__init
+#    trap.__init
+}
+export -f crf.__init
+
+#############################################################################
+function crf.BASE()
+{
+    lib.getProperty "${FUNCNAME[0]##*.}" "$( crf.propertiesFile )"
+}
+export -f crf.BASE
+
+#############################################################################
+function crf.BIN()
+{
+    lib.getProperty "${FUNCNAME[0]##*.}" "$( crf.propertiesFile )"
+}
+export -f crf.BIN
+
+#############################################################################
+function crf.ENV()
+{
+    lib.getProperty "${FUNCNAME[0]##*.}" "$( crf.propertiesFile )"
+}
+export -f crf.ENV
+
+#############################################################################
+function crf.LIB()
+{
+    lib.getProperty "${FUNCNAME[0]##*.}" "$( crf.propertiesFile )"
+}
+export -f crf.LIB
+
+#############################################################################
+function crf.RT_ENVIRON()
+{
+    echo "$( crf.BIN )/rt.environment"
+}
+export -f crf.RT_ENVIRON
+
+#############################################################################
+function crf.RT_ENVIRON_PREFIX()
+{
+    echo 'export '
+}
+export -f crf.RT_ENVIRON_PREFIX
+
+#############################################################################
+function crf.STARTUP()
+{
+    lib.getProperty "${FUNCNAME[0]##*.}" "$( crf.propertiesFile )"
+}
+export -f crf.STARTUP
+
+#############################################################################
+function crf.alreadyFixed()
+{
+    local -r dir="${1:?'Input parameter "dir" must be defined'}"
+    local -r user=${2:-$(crf.currentUser)}
+
+    [ -z "$user" ] && trap.die "Must specify a user when checking the 'fixUpCache'"
+
+    local cache_file=/tmp/fixUpCache
+    touch "$cache_file"
+
+    local -r uid="$(lib.getUID "$user")"
+    [ -z "$uid" ] && trap.die "Unable to find specified user '$user' on system, when checking the 'fixUpCache'"
+
+    local -r previous="$(lib.getProperty "$dir" "$cache_file")"
+    if [ "$previous" ]; then
+        if [ "$previous" = "$uid" ]; then
+            term.log "    ${dir} already fixed up. Skipping request\n"
+        else
+            term.log "    ${dir} already fixed up. Skipping request to change to user: $(lib.getUserInfo "$user" 'extended')\n" 'lt_yellow'
+        fi
+        return 0
+    fi
+
+    # user not found. Add to cache
+    term.log "    adding dir: ${dir}, uid: $uid to cache_file: ${cache_file}\n" 'lt_gray'
+
+    lib.updatePropertyFile "$dir" "$uid" "$cache_file" 'must_exist'
+    return 1
+}
+export -f crf.alreadyFixed
+
+#############################################################################
+function crf.copyFileToRuntime()
+{
+    local loc="${1^^:?"Input parameter 'loc' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r file="${2:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local rt_sha
+
+    # validate 'loc' arguement
+    case "$loc" in
+        BIN)         loc='bin';;
+        ENV)         loc='environment';;
+        LIB)         loc='bashlib';;
+        STARTUP)     loc='startup';;
+        *)  trap.die "Invalid runtime location '$loc' specified";;
+    esac
+
+    local -r rt_file="/usr/local/crf/${loc}/$( basename "$file" )"
+    [ -e "$rt_file" ] && rt_sha="$(sha256sum "$rt_file" | awk '{ print $1}')"
+
+
+    # use input file if it exists, otherwise determine if file exists in coresponding '/usr/local/crf' folder
+    local src_file="$file"
+    [ -e "$src_file" ] || src_file="$( cbf.BASE )/usr/local/crf/${loc} )/$( basename "$file" )"
+
+
+    # copy file to crf folder for use by runtime
+    if [ ! -e "$src_file" ]; then
+        term.log "Attempt to copy non-existent file '$(basename "$src_file")' to ${rt_file}\n" 'warning'
+        return
+    fi
+
+    if [ "${rt_sha:-}" ]; then
+        # about to overrite an existing file, just return if it is same as current
+        [ "$(sha256sum "$src_file" | awk '{ print $1}')" == "$rt_sha" ] && return
+        trap.die "Attempt to overwrite file '$rt_file' will likely result in unintented consequences"
+    fi
+
+    # copy file
+    term.log "    copying $src_file to $rt_file\n" 'lt_gray'
+    cp "$src_file" "$rt_file"
+}
+export -f crf.copyFileToRuntime
+
+#############################################################################
+function crf.currentUser()
+{
+    local user="$(crf.runtimeProperty 'USER')"
+
+    [ "${user:-}" ] && user=$(lib.lookupId "$user" 'passwd')
+    [ "${user:-}" ] || [ -z "${USER:-}" ] || user=$(lib.lookupId "$USER" 'passwd')
+    [ "${user:-}" ] || [ -z "${UID:-}" ] || user=$(lib.lookupId "$UID" 'passwd')
+    [ "${user:-}" ] || user=0
+
+    [ -z "$user" ] && trap.log "No current user identified"
+
+    echo "$user"
+}
+export -f crf.currentUser
+
+#############################################################################
+function crf.fixupDirectory()
+{
+    local -r dir="${1:?'Input parameter "dir" must be defined'}"
+    local -r user=${2:-$(crf.currentUser)}
+
+    [ -z "$user" ] && trap.die "Must specify a user when fixing up a directory"
+
+    if [ ! "$dir" != '/' ]; then
+        term.log "Attempt to fix up '${dir}' is not permitted.\n" 'warn'
+        return 1
+    fi
+
+    # check/update cache of what has been 'fixed up'
+    (crf.alreadyFixed "$dir" "$user") && return 0
+
+    # set access on specificed directory
+    term.log "    Fixing up directory: ${dir}  for user: $(lib.getUserInfo "$user" 'extended')\n"
+
+    [ -d "$dir" ] || mkdir -p "$dir"
+    find "$dir" -type d ! -perm 777 ! -name '.*' -exec chmod a+xr '{}' \; || :  # (use || :) to inhibit error
+    find "$dir" -type f ! -perm 666 ! -name '.*' -exec chmod a+rw '{}' \; || :
+
+    [ "$user" = root ] && return 0
+    [ "$user" = 0 ] && return 0
+
+    # set owner to uid & login group for uid
+    local group="$( uidgid.verifyUserExists "$user" )"
+    if [ "${group:-}" ]; then
+        term.log "     - changing ownership for directory: ${dir}  to ${user}:${group}\n" 'lt_gray'
+        find "$dir" ! -user "$user" ! -name '.*' -exec chown "${user}:$group" '{}' \; || :
+    else
+        term.log "     - changing ownership for directory: ${dir}  to ${user}\n" 'lt_gray'
+        find "$dir" ! -user "$user" ! -name '.*' -exec chown "$user" '{}' \; || :
+    fi
+
+#    term.log "    crf.fixupDirectory returning\n" 'lt_gray'
+    return 0
+}
+export -f crf.fixupDirectory
+
+#############################################################################
+function crf.logEnvironment()
+{
+    printf '%s starting.\n' "${CONTAINER_NAME:-}"
+    local env_file="$(crf.RT_ENVIRON)"
+    [ -e "$env_file" ] || trap.die "No CRF environment definition file: $env_file"
+    printf '\nrt.environment:\n'
+    for ln in $(cat "$env_file" | sort); do
+        [ "${ln:0:6}" = 'export' ] && printf '    %s\n' "$(eval echo ${ln:7})"
+    done
+    echo
+    printf '    Current user info: %s\n'  "$(getent 'passwd' "$UID")"
+    uidgid.verifyUserExists "$USER" > /dev/null
+    printf '    Target  user info: %s\n\n'  "$(getent 'passwd' "$USER")"
+}
+export -f crf.logEnvironment
+
+#############################################################################
+function crf.prepareEnvironment()
+{
+    local -a files
+    mapfile -t files < <( lib.getFiles "$( crf.STARTUP )" )
+    if [ ${#files[*]} -gt 0 ]; then
+
+        # execute scritps in sorted order
+        local -a failed_to_run=()
+        for _name in $( printf '%s\n' "${files[@]}" | sort ); do
+            crf.runScript "$_name" || failed_to_run+=( "$_name" )
+        done
+        if [ ${#failed_to_run[*]} -gt 0 ]; then
+            term.log "Failed to run: ${#failed_to_run[*]} out of ${#files[*]} startup scripts..\n" 'lt_gray'
+            [ "$DEBUG_TRACE" = 0 ] || term.log "  files:\n$(printf '    %s\n'  "${files[@]}")\n" 'lt_gray'
+#            trap.die "failed to execute all scripts"
+        fi
+    fi
+    chmod a+rx "/usr/local/bin/"*
+
+}
+export -f crf.prepareEnvironment
+
+#############################################################################
+function crf.propertiesFile()
+{
+    echo "${CRF_PROPERTIES_FILE:="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")/..")/CRF.properties"}"
+}
+export -f crf.propertiesFile
+
+#############################################################################
+function crf.removeFromRuntimeEnvironment()
+{
+    local -r key="${1:?"Input parameter 'entry' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r env_file="$( crf.RT_ENVIRON )"
+
+    if [ -e "$env_file" ] && grep -qE "^.*\s+${key}=" "$env_file" ; then
+        sed -i "s|^.* ${key}=.*$||" "$env_file"
+    fi
+}
+export -f crf.removeFromRuntimeEnvironment
+
+#############################################################################
+function crf.runScript()
+{
+    local file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local tmp_script="/tmp/crfScript.$( basename "$file" )"
+
+    term.log "..executing ${file}\n" 'info'
+
+cat << EOF > "$tmp_script"
+#!/bin/bash
+
+# Use the Unofficial Bash Strict Mode
+set -o errexit
+set -o nounset
+set -o pipefail
+trap.__init
+IFS=\$'\n\t'
+
+function sourcingMessage()
+{
+    local -r src=\$1
+    local -r name="\$(basename "\$src")"
+    local \dir="\$(dirname "\$src")"
+    [ \$(( __env_count++ )) -eq 0 ] && printf '    sourcing (%s):  ' "$(term.log 'CRF' 'magenta')"
+    printf '\x1b[%dm%s\x1b[0m ' 35 "\$name"
+}
+
+
+# load the associative array defitions
+declare -i __env_count=0
+declare -ra _files=( \$(lib.getFiles "\$(crf.ENV)") )
+if [ "\${#_files[*]}" -gt 0 ]; then
+    for _src in "$(printf '%s\n' "\${_files[@]}" | sort)"; do
+        sourcingMessage "\${_src}"
+        source "\$_src"
+    done
+fi
+[ \$__env_count -gt 0 ] && echo ''
+
+cd "$WORKDIR"
+source "$file"
+EOF
+
+    chmod a+xr "$file"
+    chmod a+xr "$tmp_script"
+    local -i status
+    ( command "$tmp_script" ) && status=$? || status=$?
+    if [ $status -ne 0 ]; then
+        term.log "-------------------------------------------------------------\n"
+        cat "$file"
+        term.log "\n-------------------------------------------------------------\n"
+        term.log ">>>>> issue while executing $( basename "$file" ) <<<<<\n" 'warn'
+    fi
+    rm  "$tmp_script"
+    return $status
+}
+export -f crf.runScript
+
+#############################################################################
+function crf.runtimeProperty()
+{
+    local key="${1:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}"
+
+    local env_file="$(crf.RT_ENVIRON)"
+    [ ! -e "$env_file" ] && return
+
+    lib.getProperty "$(crf.RT_ENVIRON_PREFIX)${key}" "$env_file"
+}
+export -f crf.runtimeProperty
+
+#############################################################################
+function crf.updateRuntimeEnvironment()
+{
+    local -a in_array=( "$@" )
+
+    local -r env_file="$( crf.RT_ENVIRON )"
+    [ ! -e "$env_file" ] && return
+
+
+    for line in "${in_array[@]}"; do
+        local key="${line%%=*}"
+        if grep -qE "^.*\s+${key}=" "$env_file" ; then
+            sed -i "s|^.* ${key}=.*$|$(crf.RT_ENVIRON_PREFIX)$line|" "$env_file"
+        else
+            echo "$(crf.RT_ENVIRON_PREFIX)$line" >> "$env_file"
+        fi
+    done
+}
+export -f crf.updateRuntimeEnvironment
+
