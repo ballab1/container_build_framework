@@ -48,6 +48,18 @@ function term.decode()
 export -f term.decode
 
 #############################################################################
+function term.elog()
+{
+    local -r msg=${1:?}
+    local msg_type=${2:-}
+    if [ "${DEBUG:-}" ] || [ "${DEBUG_TRACE:-}" ];then
+        term.log "$msg" "$msg_type" >&2
+    fi
+    term.log "$msg" "$msg_type" >> /var/log/cbf.log
+}
+export -f term.elog
+
+#############################################################################
 function term.header()
 {
     local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}

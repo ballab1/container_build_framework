@@ -11,5 +11,5 @@ if [ -f /usr/local/bin/docker-entrypoint.sh ]; then
     chmod ug+rwx /usr/local/bin/docker-entrypoint.sh
     [ -h /docker-entrypoint.sh ] || ln -s /usr/local/bin/docker-entrypoint.sh /docker-entrypoint.sh
 else
-    echo 'No /usr/local/bin/docker-entrypoint.sh found!'
+    term.elog 'No /usr/local/bin/docker-entrypoint.sh found!\n'
 fi
