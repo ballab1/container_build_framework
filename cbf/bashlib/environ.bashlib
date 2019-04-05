@@ -7,6 +7,17 @@
 #############################################################################
 
 #----------------------------------------------------------------------------------------------
+function environ.container()
+{
+    export HOST_IP="$(environ.ipAddress)"
+    export HOST_NAME="$(environ.shortName)"
+    export HOST_FQDN="$(environ.fqdName)"
+    export CFG_USER_SECRETS=${CFG_USER_SECRETS:-}
+    export CRYPT_FILE=~/.crypt-key
+}
+export -f environ.container
+
+#----------------------------------------------------------------------------------------------
 function environ.cpuType()
 {
     lscpu | grep Architecture | awk '{print $2 }'

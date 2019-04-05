@@ -7,7 +7,7 @@ function __initrt.cleanUp()
     local _file
     for _file in "$@"; do
         [ -f "$_file" ] || continue
-        rm "$_file"
+        [ -w "$_file" ] && rm "$_file"
     done
 }
 
@@ -20,6 +20,7 @@ function __initrt.envNotLoaded()
     local -i status
     (grep -sq "$envname" "$envTracker" > /dev/null 2>&1 ) && status=$? || status=$?
     [ "$status" -ne 0 ] || return 1
+    [ -w "$envTracker" ] || return 0
     echo "$envname" >> "$envTracker"
     return 0
 }
@@ -32,7 +33,7 @@ function __initrt.pathNotScanned()
     local -i status
     (grep -sq "$path" "$scanTracker" > /dev/null 2>&1 ) && status=$? || status=$?
     [ "$status" -ne 0 ] || return 1
-    echo "$path" >> "$scanTracker"
+    [ -w  "$scanTracker" ] && (echo "$path" >> "$scanTracker")
     return 0
 }
 
@@ -45,7 +46,7 @@ function __initrt.libNotLoaded()
     local -i status
     (grep -sq "$libname" "$crfLibTracker" > /dev/null 2>&1 ) && status=$? || status=$?
     [ "$status" -ne 0 ] || return 1
-    echo "$libname" >> "$crfLibTracker"
+    [ -w "$crfLibTracker" ] && (echo "$libname" >> "$crfLibTracker")
     return 0
 }
 
@@ -137,12 +138,12 @@ declare -i __envCount=0
 
 # initialize files
 if [ -e "$cbfLibTracker" ]; then
-    cp "$cbfLibTracker" "$crfLibTracker"
+    [ -w "$crfLibTracker" ] && cp "$cbfLibTracker" "$crfLibTracker"
 else
-    :>  "$crfLibTracker"
+    [ -w "$crfLibTracker" ] && :>  "$crfLibTracker"
 fi
-:>  "$envTracker"
-:>  "$scanTracker"
+[ -w "$envTracker" ] && :>  "$envTracker"
+[ -w "$scanTracker" ] && :>  "$scanTracker"
 
 # load our bashlibs
 __initrt.loadLibs "$CRF_LOCATION" 35                                            # magenta

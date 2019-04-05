@@ -146,7 +146,7 @@ function crf.copyFileToRuntime()
     # copy file to crf folder for use by runtime
     if [ ! -e "$src_file" ]; then
         term.log "Attempt to copy non-existent file '$(basename "$src_file")' to ${rt_file}\n" 'warning'
-        return
+        return 0
     fi
 
     if [ "${rt_sha:-}" ]; then
@@ -221,17 +221,17 @@ export -f crf.fixupDirectory
 #############################################################################
 function crf.logEnvironment()
 {
-    printf '%s starting.\n' "${CONTAINER_NAME:-}"
+    term.log "${CONTAINER_NAME:-}"' starting.\n'
     local env_file="$(crf.RT_ENVIRON)"
     [ -e "$env_file" ] || trap.die "No CRF environment definition file: $env_file"
-    printf '\nrt.environment:\n'
+    term.log '\nrt.environment:\n'
     for ln in $(cat "$env_file" | sort); do
-        [ "${ln:0:6}" = 'export' ] && printf '    %s\n' "$(eval echo ${ln:7})"
+        [ "${ln:0:6}" = 'export' ] && term.log '    '${ln:7}'\n'
     done
-    echo
-    printf '    Current user info: %s\n'  "$(getent 'passwd' "$UID")"
+    term.log '\n'
+    term.log '    Current user info: '$(getent 'passwd' "$UID")'\n'
     uidgid.verifyUserExists "$USER" > /dev/null
-    printf '    Target  user info: %s\n\n'  "$(getent 'passwd' "$USER")"
+    term.log '    Target  user info: '$(getent 'passwd' "$USER")'\n\n'
 }
 export -f crf.logEnvironment
 
@@ -242,7 +242,7 @@ function crf.prepareEnvironment()
     mapfile -t files < <( lib.getFiles "$( crf.STARTUP )" )
     if [ ${#files[*]} -gt 0 ]; then
 
-        # execute scritps in sorted order
+        # execute scripts in sorted order
         local -a failed_to_run=()
         for _name in $( printf '%s\n' "${files[@]}" | sort ); do
             crf.runScript "$_name" || failed_to_run+=( "$_name" )
@@ -299,9 +299,8 @@ function sourcingMessage()
 {
     local -r src=\$1
     local -r name="\$(basename "\$src")"
-    local \dir="\$(dirname "\$src")"
-    [ \$(( __env_count++ )) -eq 0 ] && printf '    sourcing (%s):  ' "$(term.log 'CRF' 'magenta')"
-    printf '\x1b[%dm%s\x1b[0m ' 35 "\$name"
+    [ \$(( __env_count++ )) -eq 0 ] && (term.log '    sourcing (CRF):  '; term.log 'CRF' 'magenta')
+    term.log "\$name" 'magenta'
 }
 
 
@@ -309,12 +308,12 @@ function sourcingMessage()
 declare -i __env_count=0
 declare -ra _files=( \$(lib.getFiles "\$(crf.ENV)") )
 if [ "\${#_files[*]}" -gt 0 ]; then
-    for _src in "$(printf '%s\n' "\${_files[@]}" | sort)"; do
+    for _src in \$(printf '%s\n' "\${_files[@]}" | sort); do
         sourcingMessage "\${_src}"
         source "\$_src"
     done
 fi
-[ \$__env_count -gt 0 ] && echo ''
+[ \$__env_count -gt 0 ] && echo
 
 cd "$WORKDIR"
 source "$file"
@@ -325,12 +324,12 @@ EOF
     local -i status
     ( command "$tmp_script" ) && status=$? || status=$?
     if [ $status -ne 0 ]; then
-        term.log "-------------------------------------------------------------\n"
-        cat "$file"
-        term.log "\n-------------------------------------------------------------\n"
+        term.log '-------------------------------------------------------------\n'
+        term.log "$(< "$file")"
+        term.log '\n-------------------------------------------------------------\n'
         term.log ">>>>> issue while executing $( basename "$file" ) <<<<<\n" 'warn'
     fi
-    rm  "$tmp_script"
+    [ -z "${DEBUG:-}" ] && rm "$tmp_script" ||:
     return $status
 }
 export -f crf.runScript

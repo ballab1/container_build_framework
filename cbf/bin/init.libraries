@@ -55,6 +55,7 @@ function __init.libNotLoaded()
     local -i status
     (grep -sq "$libname" "$libTracker" > /dev/null 2>&1 ) && status=$? || status=$?
     [ "$status" -ne 0 ] || return 1
+    [ -w "$libTracker" ] || return 1
     echo "$libname" >> "$libTracker"
     return 0
 }
@@ -68,9 +69,9 @@ function __init.loader()
 
     # init our cache files
     [ "${libTracker:-}" ] || libTracker="${CBF_LOCATION}/cbf.bashlibs.loaded"
-    :> "$libTracker"
-    [ ! -e "${CBF_LOCATION}/CBF.properties" ] || rm "${CBF_LOCATION}/CBF.properties"
-    [ ! -e "${CRF_LOCATION}/CRF.properties" ] || rm "${CRF_LOCATION}/CRF.properties"
+    [ -w "$libTracker" ] && :> "$libTracker"
+    [ ! -e "${CBF_LOCATION}/CBF.properties" ] || ( [ -w "${CBF_LOCATION}/CBF.properties" ] && rm "${CBF_LOCATION}/CBF.properties" )
+    [ ! -e "${CRF_LOCATION}/CRF.properties" ] || ( [ -w "${CRF_LOCATION}/CRF.properties" ] && rm "${CRF_LOCATION}/CRF.properties" )
 
 
     # load our bashlibs
@@ -122,6 +123,5 @@ if [ "${DEBUG_TRACE:-}" ]; then
 else
     __init.loader &> /dev/null
 fi
-
+set +x
 unset __libCount
-
