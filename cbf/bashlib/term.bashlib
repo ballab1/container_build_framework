@@ -1,14 +1,24 @@
 #!/bin/bash
 #############################################################################
 #
-#   term-codes.bashlib
+#   term.bashlib
 #
 #############################################################################
 
 function term.__init()
 {
-    declare -rx LOG=term.log
-    declare -rx TERM_DIR="$(readlink -f "$( dirname "${BASH_SOURCE[0]}" )/properties")"
+    export LOG=term.log
+    export TERM_DIR="$(readlink -f "$( dirname "${BASH_SOURCE[0]}" )/properties")"
+
+    export CBF_LOG_FILE
+    if [ -w /var/log ]; then
+        CBF_LOG_FILE=/var/log/cbf.log
+    elif [ -w /tmp ]; then
+        CBF_LOG_FILE=/tmp/cbf.log
+    else
+        CBF_LOG_FILE=/dev/null
+    fi
+    readonly CBF_LOG_FILE
 }
 
 #############################################################################
@@ -52,10 +62,10 @@ function term.elog()
 {
     local -r msg=${1:?}
     local msg_type=${2:-}
-    if [ "${DEBUG:-}" ] || [ "${DEBUG_TRACE:-}" ];then
+    if [ "${DEBUG:-}" ] || [ "${DEBUG_TRACE:-0}" -gt 0 ];then
         term.log "$msg" "$msg_type" >&2
     fi
-    term.log "$msg" "$msg_type" >> /var/log/cbf.log
+    term.log "$msg" "$msg_type" >> "$CBF_LOG_FILE"
 }
 export -f term.elog
 
@@ -124,4 +134,4 @@ function term.propertiesDir()
 }
 export -f term.propertiesDir
 
-[[ ${LOG:-} = term.log ]] || term.__init
+[[ "${LOG:-}" = 'term.log' ]] || term.__init

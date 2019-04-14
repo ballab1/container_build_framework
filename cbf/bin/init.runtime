@@ -69,7 +69,7 @@ function __initrt.loadLibrary()
     local -r color=${2:-0}
     local -r name="$(basename "$src")"
 
-    if [ ${DEBUG_TRACE:-} != 0 ] || [ "${DEBUG:-}" ]; then
+    if [ "${DEBUG_TRACE:-0}" != 0 ] || [ "${DEBUG:-}" ]; then
         [ $(( __libCount2++ )) -eq 0 ] && printf '    loading libraries (\x1b[35m%s\x1b[0m:\x1b[36m%s\x1b[0m):  ' 'CRF' 'pwd'
         printf '\x1b[%sm%s\x1b[0m ' "$color" "$name"
     fi
@@ -138,12 +138,12 @@ declare -i __envCount=0
 
 # initialize files
 if [ -e "$cbfLibTracker" ]; then
-    [ -w "$crfLibTracker" ] && cp "$cbfLibTracker" "$crfLibTracker"
+    [ -w "$(dirname "$crfLibTracker")" ] && cp "$cbfLibTracker" "$crfLibTracker"
 else
-    [ -w "$crfLibTracker" ] && :>  "$crfLibTracker"
+    [ -w "$(dirname "$crfLibTracker")" ] && :>  "$crfLibTracker"
 fi
-[ -w "$envTracker" ] && :>  "$envTracker"
-[ -w "$scanTracker" ] && :>  "$scanTracker"
+[ -w "$(dirname "$envTracker")" ] && :>  "$envTracker"
+[ -w "$(dirname "$scanTracker")" ] && :>  "$scanTracker"
 
 # load our bashlibs
 __initrt.loadLibs "$CRF_LOCATION" 35                                            # magenta
@@ -152,7 +152,7 @@ __initrt.loadLibs "$( readlink -f "$( dirname "${BASH_SOURCE[0]}" )/.." )" 36   
 
 # load our environment
 if [ -e "${CRF_LOCATION}/bin/rt.environment" ]; then
-    [ ${DEBUG_TRACE:-} = 0 ] && [ -z "${DEBUG:-}" ] || __initrt.sourcingMessage "${CRF_LOCATION}/bin/rt.environment"
+    [ "${DEBUG_TRACE:-0}" = 0 ] && [ -z "${DEBUG:-}" ] || __initrt.sourcingMessage "${CRF_LOCATION}/bin/rt.environment"
     source "${CRF_LOCATION}/bin/rt.environment"
 fi
 
@@ -164,7 +164,7 @@ if [ "${#_files[@]}" -gt 0 ]; then
     declare _src
     for _src in "${_files[@]}" ; do
         if __initrt.envNotLoaded "$_src" ; then
-            [ ${DEBUG_TRACE:-} = 0 ] && [ -z "${DEBUG:-}" ] || __initrt.sourcingMessage "$_src"
+            [ "${DEBUG_TRACE:-0}" = 0 ] && [ -z "${DEBUG:-}" ] || __initrt.sourcingMessage "$_src"
             source "$_src"
         fi
     done
