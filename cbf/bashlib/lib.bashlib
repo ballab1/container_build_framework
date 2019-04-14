@@ -8,7 +8,6 @@
 #
 #############################################################################
 
-#############################################################################
 #
 # usage: lib.file_env VAR [DEFAULT]
 #    ie: lib.file_env 'XYZ_DB_PASSWORD' 'example'
@@ -97,18 +96,22 @@ function lib.getProperty()
 
     # get definition from property file
     if [ ! -e "$file" ]; then
-        [ -z "$default_val" ] || echo "$default_val"
-        return
+        [ -z "${default_val:-}" ] || echo "$default_val"
+        return 0
     fi
 
-    local -r val="$( grep -e "^${prop}\s*=" "$file" )"
+    local -i status
+    local -r val="$( grep -e "^${prop}\s*=" "$file" )" && status=$? || status=$?
 
     # only report eval'd string (after removing 'prop=' prefix) if something was found
-    if [ $? -eq 0 ] && [ "$val" ]; then
+    if [ $status -eq 0 ] && [ "${val:-}" ]; then
         eval 'echo' "${val#*=}"
-    elif [ "$default_val" ]; then
+        return 0
+    elif [ "${default_val:-}" ]; then
         echo "$default_val"
+        return 0
     fi
+    return $status
 }
 export -f lib.getProperty
 

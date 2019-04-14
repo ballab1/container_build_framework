@@ -49,7 +49,7 @@ if [ "${1:-}" != *-setup ]; then
     :> "$logFile"
     chmod 666 "$logFile"
 
-    if [[ "${DEBUG:-}"  ||  "${DEBUG_TRACE:-}" ]]; then
+    if [[ "${DEBUG:-}"  ||  "${DEBUG_TRACE:-0}" ]]; then
         my.banner 2>&1 | tee "$logFile" >&2
     else
         my.banner &> "$logFile"
@@ -69,7 +69,7 @@ if [[ "${1:-}" = "$CONTAINER_NAME" ]]; then
         trap.die "No ${tools}/run.sh detected, and no arguments provided"
     fi
 
-    if [[ "${DEBUG:-}"  ||  "${DEBUG_TRACE:-}" ]]; then
+    if [[ "${DEBUG:-}"  ||  "${DEBUG_TRACE:-0}" ]]; then
         my.defaultInit "$CONTAINER_NAME" "${args[@]}"  2>&1 | tee -a "$logFile" >&2
     else
         my.defaultInit "$CONTAINER_NAME" "${args[@]}" &>> "$logFile"
@@ -79,7 +79,7 @@ if [[ "${1:-}" = "$CONTAINER_NAME" ]]; then
 
 elif [[ "${1:-}" = "$config_entry" && "$(id -u)" -eq 0 ]]; then
     # this codepath is invoked (from above) to perpare the runtime environment. User is 'root' so chmod & chown succeed
-    if [[ "${DEBUG:-}"  ||  "${DEBUG_TRACE:-}" ]]; then
+    if [[ "${DEBUG:-}"  ||  "${DEBUG_TRACE:-0}" ]]; then
         {
         term.log '>>>>>>>> entering ' 'green'
         term.log "$(IFS=' '; echo "$*")\n" 'yellow'
@@ -95,7 +95,7 @@ elif [[ "${1:-}" = "$config_entry" && "$(id -u)" -eq 0 ]]; then
 
 elif [ $# -gt 0 ]; then
     # this codepath is invoked when a user invokes the container using 'docker run'
-    if [[ "${DEBUG:-}"  ||  "${DEBUG_TRACE:-}" ]]; then
+    if [[ "${DEBUG:-}"  ||  "${DEBUG_TRACE:-0}" ]]; then
         {
         crf.logEnvironment
         term.log '>>>>>>>> entering ' 'green'
