@@ -1,10 +1,11 @@
 #!/bin/bash
-#############################################################################
+
+#----------------------------------------------------------------------------------------------
 #
 #   package.bashlib: get OS packages
 #
-#############################################################################
 
+#----------------------------------------------------------------------------------------------
 function package.checkPackages()
 {
     local -ar pkgs=( $@ )
@@ -38,7 +39,7 @@ function package.checkPackages()
 }
 export -f package.checkPackages
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function package.install()
 {
     local -r defnFile=${1:?"Input parameter 'defnFile' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -67,7 +68,7 @@ function package.install()
 }
 export -f package.install
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function package.installTimezone()
 {
     local -r tz=${1:?"Input parameter 'tz' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -90,7 +91,7 @@ function package.installTimezone()
 }
 export -f package.installTimezone
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function package.runScripts()
 {
     local -a files=( "$@" )
@@ -101,7 +102,7 @@ function package.runScripts()
 }
 export -f package.runScripts
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function package.updateIndexes()
 {
     case "$( environ.OSid )" in

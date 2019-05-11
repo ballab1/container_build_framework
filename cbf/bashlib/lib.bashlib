@@ -1,13 +1,28 @@
 #!/bin/bash
-#############################################################################
+
+#----------------------------------------------------------------------------------------------
 #
 #   lib.bashlib: container_build_framework
 #
 #  thanks to Stephen R. Scaffidi for relativize
 #        (https://gist.github.com/hercynium/3899407#file-relpath-bash)
 #
-#############################################################################
 
+#----------------------------------------------------------------------------------------------
+function lib.exportFileVars()
+{
+    local -r settings="${1:?"Input parameter 'settings' must be passed to 'function ${FUNCNAME[0]}()'"}"
+
+    if [ -e "$settings" ]; then
+        # import our setup configuration
+        while read -r line; do
+            eval "export $line"
+        done < <(cat "$settings")
+    fi
+}
+export -f lib.exportFileVars
+
+#----------------------------------------------------------------------------------------------
 #
 # usage: lib.file_env VAR [DEFAULT]
 #    ie: lib.file_env 'XYZ_DB_PASSWORD' 'example'
@@ -34,22 +49,38 @@ function lib.file_env()
 }
 export -f lib.file_env
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
+function lib.fileSha256()
+{
+    local -r filename=${1:?"Input parameter 'filename' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    if [ -f "$filename" ]; then
+        sha256sum "$filename" | cut -d' ' -f1
+    fi
+}
+export -f lib.fileSha256
+
+#----------------------------------------------------------------------------------------------
 function lib.getFiles()
 {
     local -r dir=${1:?"Input parameter 'dir' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r filter=${2:-}
 
-    if [ -d "$dir" ]; then
-        for file in $(find "$dir" -maxdepth 1 -and ! -name '.*' -and  -type f -or -type l | sort); do
-            [ "$filter" ] && "$filter" "$file" && echo "$file"
-            [ "$filter" ] || echo "$file"
-        done
-    fi
+    [ -d "$dir" ] || return 0
+
+    # ignore hidden files and ~files
+    for file in $(find "$dir" -maxdepth 1 -and ! -name '.*' -and ! -name '~*' -and \( -type f -or -type l \) | sort); do
+        if [ "$filter" ]; then
+            "$filter" "$file" && echo "$file" ||:
+        else
+            echo "$file"
+        fi
+    done
+    return 0
 }
 export -f lib.getFiles
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function lib.getGroupInfo()
 {
     local -r group=${1:-$(lib.getGroupNameOfUser)}
@@ -63,7 +94,7 @@ function lib.getGroupInfo()
 }
 export -f lib.getGroupInfo
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function lib.getGroupNameOfUser()
 {
     local -r user=${1:-$(crf.currentUser)}
@@ -78,7 +109,7 @@ function lib.getGroupNameOfUser()
 }
 export -f lib.getGroupNameOfUser
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function lib.getGID()
 {
     local -r group=${1:-$(lib.getGroupNameOfUser)}
@@ -87,7 +118,7 @@ function lib.getGID()
 }
 export -f lib.getGID
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function lib.getProperty()
 {
     local -r prop=${1:?"Input parameter 'prop' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -115,7 +146,7 @@ function lib.getProperty()
 }
 export -f lib.getProperty
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function lib.getUserInfo()
 {
     local -r user=${1:-$(crf.currentUser)}
@@ -129,7 +160,7 @@ function lib.getUserInfo()
 }
 export -f lib.getUserInfo
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function lib.getUID()
 {
     local -r user=${1:-$(crf.currentUser)}
@@ -138,7 +169,7 @@ function lib.getUID()
 }
 export -f lib.getUID
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function lib.indirectReference()
 {
     local -r key=${1:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -150,7 +181,7 @@ function lib.indirectReference()
     echo "$val"
 }
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function lib.intersect()
 {
     local -r a1=${1:?"Input parameter 'a1' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -170,7 +201,7 @@ function lib.intersect()
 }
 export -f lib.intersect
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function lib.isActionFile()
 {
     local -r file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -188,7 +219,7 @@ function lib.isActionFile()
 }
 export -f lib.isActionFile
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function lib.lookupId()
 {
     local -r entry=${1:?"Input parameter 'entry' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -207,7 +238,7 @@ function lib.lookupId()
 }
 export -f lib.lookupId
 
-############################################################################
+#----------------------------------------------------------------------------------------------
 function lib.normalizePath()
 {
     local path="${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}"
@@ -235,7 +266,7 @@ function lib.normalizePath()
 }
 export -f lib.normalizePath
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function lib.primaryPid()
 {
     local -r cmdName=${1:?"Input parameter 'cmdName' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -247,7 +278,7 @@ function lib.primaryPid()
 }
 export -f lib.primaryPid
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function lib.pidAncestors()
 {
     local -ri pid=${1:-$$}
@@ -262,7 +293,7 @@ function lib.pidAncestors()
 }
 export -f lib.pidAncestors
 
-######################################################################
+#----------------------------------------------------------------------------------------------
 function lib.relativize()
 {
     local pos="${1:?"Input parameter 'pos' must be passed to 'function ${FUNCNAME[0]}()'"}"
@@ -286,7 +317,7 @@ function lib.relativize()
 }
 export -f lib.relativize
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function lib.removeProperty()
 {
     local -r key="${1:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}"
@@ -299,7 +330,7 @@ function lib.removeProperty()
 }
 export -f lib.removeProperty
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function lib.updateConfigFromENV()
 {
     local -r env_prefix="${1:?"Input parameter 'env_prefix' must be passed to 'function ${FUNCNAME[0]}()'"}"
@@ -317,7 +348,7 @@ function lib.updateConfigFromENV()
 }
 export -f lib.updateConfigFromENV
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function lib.updatePropertyFile()
 {
     local -r key="${1:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}"
@@ -336,7 +367,7 @@ function lib.updatePropertyFile()
 }
 export -f lib.updatePropertyFile
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function lib.updateProperties()
 {
     local -r config_file="${1:?"Input parameter 'config_file' must be passed to 'function ${FUNCNAME[0]}()'"}"

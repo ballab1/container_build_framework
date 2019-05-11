@@ -1,10 +1,11 @@
 #!/bin/bash
-#############################################################################
+
+#----------------------------------------------------------------------------------------------
 #
 #   uidgid.bashlib
 #
-#############################################################################
 
+#----------------------------------------------------------------------------------------------
 function uidgid.createGroup()
 {
     local -r group=${1:?"Input parameter 'group' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -43,7 +44,7 @@ function uidgid.createGroup()
 }
 export -f -f uidgid.createGroup
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function uidgid.createUser()
 {
     local -r user=${1:?"Input parameter 'user' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -84,7 +85,7 @@ function uidgid.createUser()
 }
 export -f -f uidgid.createUser
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function uidgid.runScripts()
 {
     local -a files=( "$@" )
@@ -96,7 +97,7 @@ function uidgid.runScripts()
 }
 export -f uidgid.runScripts
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function uidgid.userAndGroupFromFile()
 {
     local -r userDefnFile=${1:?"Input parameter 'userDefnFile' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -131,7 +132,7 @@ function uidgid.userAndGroupFromFile()
 }
 export -f -f uidgid.userAndGroupFromFile
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function uidgid.verify()
 {
     local -a files
@@ -151,7 +152,7 @@ function uidgid.verify()
 }
 export -f uidgid.verify
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function uidgid.verifyUserExists()
 {
     local -r user=${1:?"Input parameter 'user' must be passed to 'function ${FUNCNAME[0]}()'"}

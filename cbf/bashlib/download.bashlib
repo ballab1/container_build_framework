@@ -1,11 +1,11 @@
 #!/bin/bash
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 #
 #   download.bashlib: handle downloads
 #
-#############################################################################
 
+#----------------------------------------------------------------------------------------------
 function download.getFile()
 {
     local -r downloadDefnFile=${1:?"Input parameter 'downloadDefnFile' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -40,7 +40,7 @@ function download.getFile()
         term.log "    ${result}\n" 'info'
         if [[ "$result" == *'FAILED'* ]]; then
             term.log "    ..Incorrect checksum for ${params['file']}\n" 'warn'
-            term.log "    actual:   $( sha256sum "${params['file']}" | awk '{ print $1 }')\n" 'warn'
+            term.log "    actual:   $(lib.fileSha256 "${params['file']}")\n" 'warn'
             continue
         fi
         if [[ "$result" == *' WARNING: '* ]]; then
@@ -54,7 +54,7 @@ function download.getFile()
 }
 export -f download.getFile
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function download.runScripts()
 {
     local -a files=( "$@" )

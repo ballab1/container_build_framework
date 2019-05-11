@@ -1,0 +1,281 @@
+#!/bin/bash
+
+#----------------------------------------------------------------------------------------------
+#
+#  general 'git' scripts
+#
+
+#----------------------------------------------------------------------------------------------
+function git.branch()
+{
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog 'git rev-parse --abbrev-ref HEAD\n' 'grey'
+    git rev-parse --abbrev-ref HEAD
+}
+export -f git.branch
+
+#----------------------------------------------------------------------------------------------
+function git.branchOrTagName()
+{
+    # Checking if we are currently on a branch or tag
+    # If we are on a tag then "git branch" outputs "* (detached from <tag_name>)"
+    # otherwise outputs "* <branch_name>"
+    local gb="$(git branch)"
+    local checkBranchOrTag="$(grep '\* (detached' <<< "$gb")"
+
+    # If the value is null then it is branch so the conditional search needs to be for a branch
+    # otherwise for a tag. Defaulting the conditional search for a branch as that is the usual case
+    if [ -z "${checkBranchOrTag:-}" ]; then
+        grep \*  <<< "$gb" | cut -d ' ' -f2
+    else
+        grep \*  <<< "$gb" | cut -d ' ' -f4 | tr -d ')'
+    fi
+}
+export -f git.branchOrTagName
+
+#----------------------------------------------------------------------------------------------
+function git.checkout()
+{
+    local -r commit=${1:?}
+    shift
+    local -r flags=( "$@" )
+
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog "git checkout ${flags[*]:-} $commit"'\n' 'grey'
+    git checkout ${flags[*]:-} "$commit"
+}
+export -f git.checkout
+
+#----------------------------------------------------------------------------------------------
+function git.clone()
+{
+    local -r repo=${1:?}
+    local -r dir=${2:-}
+    shift 2
+    local -r flags=( "$@" )
+
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog "git clone ${flags[*]:-} -- $repo ${dir:-}"'\n' 'grey'
+    git clone ${flags[*]:-} -- "$repo" ${dir:-}
+}
+export -f git.clone
+
+#----------------------------------------------------------------------------------------------
+function git.commitAuthor()
+{
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog 'git log -1 --pretty=format:"%an"\n' 'grey'
+    git log -1 --pretty=format:"%an"
+}
+export -f git.commitAuthor
+
+#----------------------------------------------------------------------------------------------
+function git.commitDate()
+{
+    term..elog 'git log -1 --pretty=format:"%cd"' 'grey'
+    git log -1 --pretty=format:"%cd"
+}
+export -f git.commitDate
+
+#----------------------------------------------------------------------------------------------
+function git.commitEmail()
+{
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog 'git log -1 --pretty=format:"%ce"\n' 'grey'
+    git log -1 --pretty=format:"%ce"
+}
+export -f git.commitEmail
+
+#----------------------------------------------------------------------------------------------
+function git.commitEpoch()
+{
+    git log -1 --pretty=format:"%ct"
+}
+export -f git.commitEpoch
+
+#----------------------------------------------------------------------------------------------
+function git.commitSummary()
+{
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog 'git log -1 --pretty=format:"%s"\n' 'grey'
+    git log -1 --pretty=format:"%s"
+}
+export -f git.commitSummary
+
+#----------------------------------------------------------------------------------------------
+function git.cryptUnlock()
+{
+    local -r key=${1:-}
+
+    git crypt unlock ${key:-}
+}
+export -f git.cryptUnlock
+
+#----------------------------------------------------------------------------------------------
+function git.HEAD()
+{
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog 'git rev-parse HEAD\n' 'grey'
+    git rev-parse HEAD
+}
+export -f git.HEAD
+
+#----------------------------------------------------------------------------------------------
+#
+# Returns true if the argument passed in is a repository managed file
+# if git.isRepositoryFile "project.version" echo "yes"
+#
+function git.isRepositoryFile()
+{
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog "git ls-files $1 --error-unmatch"'\n' 'grey'
+    git ls-files "$1" --error-unmatch &> /dev/null
+}
+export -f git.isRepositoryFile
+
+#----------------------------------------------------------------------------------------------
+function git.lsRemote()
+{
+    local -r branch=${1:?}
+
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog "git ls-remote $branch"'\n' 'grey'
+    git ls-remote "$branch"
+}
+export -f git.lsRemote
+
+#----------------------------------------------------------------------------------------------
+function git.lsTree()
+{
+    local -r tree_ish=${1:?}
+    local -r path=${2:?}
+    shift 2
+    local -r flags=( "$@" )
+
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog "git ls-tree ${flags[*]:-} -- $tree_ish $path"'\n' 'grey'
+    git ls-tree ${flags[*]:-} -- "$tree_ish" "$path"
+}
+export -f git.lsTree
+
+#----------------------------------------------------------------------------------------------
+function git.origin()
+{
+    local -r dir=${1:-.}
+
+    cd "$dir"
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog 'git describe --tags --dirty --always\n' 'grey'
+    local version=$(git describe --tags --dirty --always)
+
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog 'git ls-files --others --exclude-standard\n' 'grey'
+    local -i untracked=$(git ls-files --others --exclude-standard | wc -l)
+
+
+    if [ "$untracked" -gt 0 ]; then
+        if [ "$version" = *dirty ]; then
+            version="${version}+"
+        else
+            version="${version}-dirty-"
+        fi
+    fi
+    echo "$version"
+}
+export -f git.origin
+
+#----------------------------------------------------------------------------------------------
+function git.pull()
+{
+    local -r flags=( "$@" )
+
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog "git pull ${flags[*]:-}"'\n' 'grey'
+    git pull ${flags[*]:-}
+}
+export -f git.pull
+
+#----------------------------------------------------------------------------------------------
+function git.refs()
+{
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog 'git log -n1 --oneline --decorate\n' 'grey'
+    git log -n1 --oneline --decorate | sed 's/[^\(]*(\([^\)]*\)).*/\1/'
+}
+export -f git.refs
+
+#----------------------------------------------------------------------------------------------
+function git.remoteUrl()
+{
+#    git remote get-url origin
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog 'git config --get remote.origin.url\n' 'grey'
+    git config --get remote.origin.url
+}
+export -f git.remoteUrl
+
+#----------------------------------------------------------------------------------------------
+function git.repoName()
+{
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog 'git rev-parse --show-toplevel\n' 'grey'
+    basename "$(git rev-parse --show-toplevel)"
+}
+export -f git.repoName
+
+#----------------------------------------------------------------------------------------------
+function git.reset()
+{
+    local -r commit=${1:?}
+    shift
+    local -r flags=( "$@" )
+
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog "git reset ${flags[*]:-} $commit"'\n' 'grey'
+    git reset ${flags[*]:-} "$commit"
+}
+export -f git.reset
+
+#----------------------------------------------------------------------------------------------
+function git.status()
+{
+    local -r flags=( "$@" )
+
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog "git status ${flags[*]:-}"'\n' 'grey'
+    git status ${flags[*]:-}
+}
+export -f git.status
+
+#----------------------------------------------------------------------------------------------
+function git.toHTTPS()
+{
+    local remote=${1:?"Input parameter 'remote' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    remote="${remote#git@}"
+    remote="${remote%.git}"
+    remote="${remote//.com:/.com/}"
+    [ "${remote:0:8}" = 'https://' ] || remote="https://$remote"
+    echo "$remote"
+}
+export -f git.toHTTPS
+
+#----------------------------------------------------------------------------------------------
+function git.url()
+{
+    git.toHTTPS "$( git.remoteUrl )"
+}
+export -f git.url
+
+#----------------------------------------------------------------------------------------------
+function git.urlCommit()
+{
+    echo "$(git.url)/commit/$(git.HEAD)"
+}
+export -f git.urlCommit
+
+#----------------------------------------------------------------------------------------------
+function git.user()
+{
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog 'git config --get adsk.github.account\n' 'grey'
+    git config --get adsk.github.account 2>/dev/null || :
+}
+export -f git.user
+
+#----------------------------------------------------------------------------------------------
+function git.userEmail()
+{
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog 'git config --get user.email\n' 'grey'
+    git config --get user.email || :
+}
+export -f git.userEmail
+
+#----------------------------------------------------------------------------------------------
+function git.userName()
+{
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.elog 'git config --get user.name\n' 'grey'
+    git config --get user.name || :
+}
+export -f git.userName
