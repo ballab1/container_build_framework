@@ -1,14 +1,15 @@
 #!/bin/bash
-#############################################################################
+
+#----------------------------------------------------------------------------------------------
 #
 #   crf.bashlib: container_run_framework
 #
-#############################################################################
+#----------------------------------------------------------------------------------------------
 
 : ${CRF_PROPERTIES_FILE:="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")/..")/CRF.properties"}
 export CRF_PROPERTIES_FILE
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function crf.__init()
 {
     local -r crf_base="${1:?"Input parameter 'crf' must be passed to 'function ${FUNCNAME[0]}()'"}"
@@ -37,56 +38,56 @@ EOF
 }
 export -f crf.__init
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function crf.BASE()
 {
     lib.getProperty "${FUNCNAME[0]##*.}" "$( crf.propertiesFile )"
 }
 export -f crf.BASE
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function crf.BIN()
 {
     lib.getProperty "${FUNCNAME[0]##*.}" "$( crf.propertiesFile )"
 }
 export -f crf.BIN
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function crf.ENV()
 {
     lib.getProperty "${FUNCNAME[0]##*.}" "$( crf.propertiesFile )"
 }
 export -f crf.ENV
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function crf.LIB()
 {
     lib.getProperty "${FUNCNAME[0]##*.}" "$( crf.propertiesFile )"
 }
 export -f crf.LIB
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function crf.RT_ENVIRON()
 {
     echo "$( crf.BIN )/rt.environment"
 }
 export -f crf.RT_ENVIRON
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function crf.RT_ENVIRON_PREFIX()
 {
     echo 'export '
 }
 export -f crf.RT_ENVIRON_PREFIX
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function crf.STARTUP()
 {
     lib.getProperty "${FUNCNAME[0]##*.}" "$( crf.propertiesFile )"
 }
 export -f crf.STARTUP
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function crf.alreadyFixed()
 {
     local -r dir="${1:?'Input parameter "dir" must be defined'}"
@@ -118,7 +119,7 @@ function crf.alreadyFixed()
 }
 export -f crf.alreadyFixed
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function crf.copyFileToRuntime()
 {
     local loc="${1^^:?"Input parameter 'loc' must be passed to 'function ${FUNCNAME[0]}()'"}"
@@ -135,7 +136,7 @@ function crf.copyFileToRuntime()
     esac
 
     local -r rt_file="/usr/local/crf/${loc}/$( basename "$file" )"
-    [ -e "$rt_file" ] && rt_sha="$(sha256sum "$rt_file" | awk '{ print $1}')"
+    [ -e "$rt_file" ] && rt_sha="$(lib.fileSha256 "$rt_file")"
 
 
     # use input file if it exists, otherwise determine if file exists in coresponding '/usr/local/crf' folder
@@ -151,7 +152,7 @@ function crf.copyFileToRuntime()
 
     if [ "${rt_sha:-}" ]; then
         # about to overrite an existing file, just return if it is same as current
-        [ "$(sha256sum "$src_file" | awk '{ print $1}')" == "$rt_sha" ] && return
+        [ "$(lib.fileSha256 "$src_file")" == "$rt_sha" ] && return
         trap.die "Attempt to overwrite file '$rt_file' will likely result in unintented consequences"
     fi
 
@@ -161,7 +162,7 @@ function crf.copyFileToRuntime()
 }
 export -f crf.copyFileToRuntime
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function crf.currentUser()
 {
     local user="$(crf.runtimeProperty 'USER')"
@@ -177,7 +178,7 @@ function crf.currentUser()
 }
 export -f crf.currentUser
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function crf.fixupDirectory()
 {
     local -r dir="${1:?'Input parameter "dir" must be defined'}"
@@ -218,7 +219,7 @@ function crf.fixupDirectory()
 }
 export -f crf.fixupDirectory
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function crf.logEnvironment()
 {
     term.log "${CONTAINER_NAME:-}"' starting.\n'
@@ -235,7 +236,7 @@ function crf.logEnvironment()
 }
 export -f crf.logEnvironment
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function crf.prepareEnvironment()
 {
     local -a files
@@ -258,14 +259,14 @@ function crf.prepareEnvironment()
 }
 export -f crf.prepareEnvironment
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function crf.propertiesFile()
 {
     echo "${CRF_PROPERTIES_FILE:="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")/..")/CRF.properties"}"
 }
 export -f crf.propertiesFile
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function crf.removeFromRuntimeEnvironment()
 {
     local -r key="${1:?"Input parameter 'entry' must be passed to 'function ${FUNCNAME[0]}()'"}"
@@ -277,7 +278,7 @@ function crf.removeFromRuntimeEnvironment()
 }
 export -f crf.removeFromRuntimeEnvironment
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function crf.runScript()
 {
     local file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -334,7 +335,7 @@ EOF
 }
 export -f crf.runScript
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function crf.runtimeProperty()
 {
     local key="${1:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}"
@@ -346,7 +347,7 @@ function crf.runtimeProperty()
 }
 export -f crf.runtimeProperty
 
-#############################################################################
+#----------------------------------------------------------------------------------------------
 function crf.updateRuntimeEnvironment()
 {
     local -a in_array=( "$@" )

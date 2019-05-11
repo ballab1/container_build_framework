@@ -1,11 +1,10 @@
 #!/bin/bash
 
-##################################################################################
+#----------------------------------------------------------------------------------------------
 #
-#  module:  bashlib/timer.sh
+#  module:  timer.bashlib
 #  purpose: provide simple interface to time functionality and report times
 #
-##################################################################################
 
 #----------------------------------------------------------------------------
 # calculate the elapsed time for an event
@@ -45,12 +44,14 @@ function timer.measureCmd()
     local -a args=( "$@" )
 
     local -i start_tm=$( timer.getTimestamp )
-    "$cmd" "${args[@]}"
+    local -i status
+    ("$cmd" "${args[@]}") && status=$? || status=$?
     local -i finish_tm=$( timer.getTimestamp )
     local -i elapsed_tm=$((finish_tm - start_tm))
     local fmt_tm=$( timer.fmtElapsed $elapsed_tm )
 
     printf 'Time elapsed (%s): %s' "$name" "$fmt_tm"
+    return $status
 }
 export -f timer.measureCmd
 
