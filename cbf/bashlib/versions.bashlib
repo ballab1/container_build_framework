@@ -133,9 +133,7 @@ function versions.get()
     local -r versions="$(versions.FILE "$containerOS" "$version_info")"
     [ -e "$versions" ] || trap.die "Unrecognized CONTAINER_OS: $containerOS"
 
-    while read -r line; do
-        eval "$fn $line"
-    done < <(grep -E "^\s*([^#]+=[^#]+)\s*" "$versions" | sed -r -e 's|^\s*([^#]+=[^#]+)\s*|\1|')
+    lib.exportFileVars "$versions" "$fn"
 }
 export -f versions.get
 
