@@ -66,6 +66,7 @@ function registry.deleteImage()
 
     echo -n "deleting ${name} - $digest  "
     registry.DELETE --silent --show-error --write-out '%{http_code}\n' "$(registry.URL)/${name}/manifests/$digest" || echo "Failed to delete $name:$digest"
+    echo
 }
 export -f registry.deleteImage
 
@@ -395,18 +396,22 @@ export -f registry.repoRetention
 function registry.reportCatalogAsJson()
 {
     local -a catalog=( "$@" )
-    mapfile -t catalog < <(registry.matchRepos "${catalog[@]}" | sort)
+    mapfile -t catalog < <(registry.matchRepos "${catalog[@]}" | sort ||:)
 
-    local -i index=0
     echo -n '['
-    for entry in "${catalog[@]}"; do
-        (( index++ )) && echo -n ','
+    if [ "${#catalog[*]}" -gt 0 ]; then
+        local -i index=0
+        for entry in "${catalog[@]}"; do
+            (( index++ )) && echo -n ','
 
-        local digests="$(registry.digests "$entry")"
-        printf '{"id":"%05d","repository":"%s"' "$index" "$entry"
-        [ -z "$digests" ] || echo -n ',"digests":['"${digests}]"
-        echo -n '}'
-    done
+            local digests="$(registry.digests "$entry")"
+            printf '{"id":"%05d","repository":"%s"' "$index" "$entry"
+            [ -z "$digests" ] || echo -n ',"digests":['"${digests}]"
+            echo -n '}'
+        done
+    else
+        trap.elog 'No content specified' 'warn' >&2
+    fi
     echo -n ']'
 }
 export -f registry.reportCatalogAsJson
