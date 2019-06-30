@@ -13,7 +13,7 @@ function package.checkPackages()
     case "$( environ.OSid )" in
         alpine)
             local -a duplicates=( $(lib.intersect "${pkgs[*]}" "$( apk info )") )
-            [ ${#duplicates[*]} -eq 0 ] || trap.die "attempting to reinstall following packages: '${duplicates[*]}'"
+            [ ${#duplicates[*]} -eq 0 ] || trap.warn "attempting to reinstall following packages: '${duplicates[*]}'"
             # now verify that packages are actually valid for installation
             for pkg in "${pkgs[@]}"; do
                 apk info "${pkg%%=*}" &>/dev/null || trap.die "Package $pkg not found"
@@ -21,7 +21,7 @@ function package.checkPackages()
             ;;
         centos|fedora)
             local -a duplicates=( $(for pkg in "${pkgs[@]}"; do yum -q list installed "$pkg" 2>/dev/null | awk 'NR>1 {print $1}' ||:; done) )
-            [ ${#duplicates[*]} -eq 0 ] || trap.die "attempting to reinstall following packages: '${duplicates[*]}'"
+            [ ${#duplicates[*]} -eq 0 ] || trap.warn "attempting to reinstall following packages: '${duplicates[*]}'"
             # now verify that packages are actually valid for installation
             for pkg in "${pkgs[@]}"; do
                 yum search "$pkg" &>/dev/null || trap.die "Package $pkg not found"
@@ -29,7 +29,7 @@ function package.checkPackages()
             ;;
         ubuntu)
             local -a duplicates=( $(lib.intersect "${pkgs[*]}" "$( dpkg --get-selections | awk '{print $1}' )") )
-            [ ${#duplicates[*]} -eq 0 ] || trap.die "attempting to reinstall following packages: '${duplicates[*]}'"
+            [ ${#duplicates[*]} -eq 0 ] || trap.warn "attempting to reinstall following packages: '${duplicates[*]}'"
             # now verify that packages are actually valid for installation
             for pkg in "${pkgs[@]}"; do
                 apt search "$pkg" &>/dev/null || trap.die "Package $pkg not found"

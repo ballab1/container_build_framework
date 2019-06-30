@@ -71,7 +71,7 @@ function github.io()
 
 
     # an error occurred
-    local -r errors="$(echo "$response" | jq '.errors[]?')"
+    local -r errors="$(echo "$response" | jq '.errors[]?' 2>/dev/null)"
 
     local curl_cmd=( 'curl' '--insecure' "$@" )
     echo

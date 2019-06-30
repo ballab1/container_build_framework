@@ -57,6 +57,17 @@ function trap.catch_pipe()
 export -f trap.catch_pipe
 
 #----------------------------------------------------------------------------
+function trap.warn()
+{
+    local status=$?
+    local args="$*"
+    [ "${args:0:7}" = '***WARN' ] || args="***WARN: $args"
+    ( echo ''; trap.log "$args" ; echo '') >&2
+    [[ ${CBF_WARN_FORCE_EXIT:-0} -ne 1 && $status -ne 0 ]] || exit $status
+}
+export -f trap.warn
+
+#----------------------------------------------------------------------------
 function trap.die()
 {
     local status=$?

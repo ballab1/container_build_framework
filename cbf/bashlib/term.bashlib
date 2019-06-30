@@ -59,7 +59,7 @@ function term.decode()
 export -f term.decode
 
 #----------------------------------------------------------------------------------------------
-function term.elog()
+function term.dlog()
 {
     local -r msg=${1:?}
     local msg_type=${2:-}
@@ -67,6 +67,13 @@ function term.elog()
         term.log "$msg" "$msg_type" >&2
     fi
     term.log "$msg" "$msg_type" >> "$CBF_LOG_FILE"
+}
+export -f term.dlog
+
+#----------------------------------------------------------------------------------------------
+function term.elog()
+{
+    term.log "$@" >&2
 }
 export -f term.elog
 
