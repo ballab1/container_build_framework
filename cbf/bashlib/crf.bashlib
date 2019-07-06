@@ -301,7 +301,7 @@ function sourcingMessage()
     local -r src=\$1
     local -r name="\$(basename "\$src")"
     [ \$(( __env_count++ )) -eq 0 ] && (term.log '    sourcing (CRF):  '; term.log 'CRF' 'magenta')
-    term.log "\$name" 'magenta'
+    term.log " \$name" 'magenta'
 }
 
 

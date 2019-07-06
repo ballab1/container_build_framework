@@ -111,5 +111,5 @@ elif [ $# -gt 0 ]; then
     exec "$@"
 
 fi
-term.elog '<<<<<<<< returning from ' 'green'
-term.elog "${*}\n" 'yellow'
+term.dlog '<<<<<<<< returning from ' 'green'
+term.dlog "${*}\n" 'yellow'

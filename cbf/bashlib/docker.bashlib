@@ -16,6 +16,53 @@ function docker.networks()
 export -f docker.networks
 
 #----------------------------------------------------------------------------------------------
+function docker.pushRetained()
+{
+    local -ri isRetainedImage="${1:?}"
+    shift
+    local -ra images=( "$@" )
+    [ ${#images[*]} -eq 0 ] && return 1
+
+    local imageList=$(docker images --format '{{.Repository}}:{{.Tag}}')
+
+    local image
+    local -a allImages=()
+    for image in "${images[@]}"; do
+        grep -q "$image" <<< "$imageList" || continue
+        allImages+=( "$image" )
+        [ "${isRetainedImage:-0}" -gt 0 ] || continue
+        local fp="$(docker inspect "$image" | jq -r '.[].Config.Labels."container.fingerprint"?')"
+        if [ "${fp:-}" ]; then
+            allImages+=( "${image%:*}:${fp}" )
+            docker tag "$image" "${image%:*}:${fp}"  > /dev/null 2>&1 ||: # ignore errors
+        fi
+    done
+    [ "${#allImages[*]}" -gt 0 ] || trap.die 'no valid images found'
+    mapfile -t allImages < <(printf '%s\n' "${allImages[@]}" | uniq)
+
+    local attempt
+    local -i wasPushed
+    for image in "${allImages[@]}"; do
+        wasPushed=0
+        for attempt in {0..2}; do
+            term.log "    Pushing ${image}"'\n' 'lt_blue'
+            docker push "$image" && wasPushed=1 && break
+            echo 'retrying...'
+        done
+        [ "$wasPushed" -eq 0 ] && trap.die "Failed to push $image"
+    done
+
+    for image in "${allImages[@]}"; do
+        local -i wasTagged=0
+        for inp in "${images[@]}"; do
+            [ "$inp" = "$image" ] && wasTagged=1 && break
+        done
+        [ "$wasTagged" -eq 1 ] || docker rmi "$image"
+    done
+}
+export -f docker.pushRetained
+
+#----------------------------------------------------------------------------------------------
 function docker.rmOldContainers()
 {
     local -a collection
@@ -23,7 +70,8 @@ function docker.rmOldContainers()
 
     # remove all containers which are stopped along with their associated volumes
     collection=()
-    collection=( $(docker ps --all --quiet --filter "status=exited" --filter "status=dead" --format "{{.Names}}") )
+    collection+=( $(docker ps --all --quiet --filter "status=dead" --format "{{.Names}}") )
+    collection+=( $(docker ps --all --quiet --filter "status=exited" --format "{{.Names}}") )
     if [ ${#collection[@]} -gt 0 ]; then
         printf 'Deleting %d exited containers\n' ${#collection[@]}
         docker rm --volumes "${collection[@]}"  ||:
@@ -31,9 +79,32 @@ function docker.rmOldContainers()
 
     # remove any 'dangling' images  (those with <none> in name)
     collection=( $(docker images --quiet --filter "dangling=true") )
+
+    local fingerprint image
+    for image in $(docker image ls --format '{{.Repository}}:{{.Tag}}' | grep ':tmp' ||:); do
+        collection+=( $image )
+    done
+    for image in $(docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>' ||:); do
+        fingerprint=$(docker inspect "$image" | jq -r '.[].Config.Labels."container.fingerprint"?') ||:
+        [ -z "${fingerprint}:-" ] && continue
+        [ "$fingerprint" != "${image##*:}" ] && continue
+        collection+=( $image )
+    done
+    for image in $(docker images | grep '<none>' | awk '{if($1 == "<none>"){print $3}}' ||:); do
+        fingerprint=$(docker inspect "$image" | jq -r '.[].Config.Labels."container.fingerprint"?') ||:
+        [ -z "${fingerprint}:-" ] && continue
+        [ "$fingerprint" != "${image##*:}" ] && continue
+        collection+=( $image )
+    done
     if [ ${#collection[@]} -gt 0 ]; then
-        printf 'Deleting %d dangling images\n' ${#collection[@]}
-        docker rmi "${collection[@]}" ||:
+        # do not try to remove images associated with running containers
+        for image in $(docker ps --format '{{.Image}}' | sort -u); do
+            collection=( ${collection[@]/$image} )
+        done
+        if [ ${#collection[@]} -gt 0 ]; then
+            printf 'Deleting %d dangling images\n' ${#collection[@]}
+            docker rmi "${collection[@]}" ||:
+        fi
     fi
 
     # get list of volumes associated with running containers
@@ -42,6 +113,7 @@ function docker.rmOldContainers()
         collection+=( $(docker inspect "$volume" | jq -r '.[] | .Mounts | .[] | .Name | select(.)') )
     done
     [ ${#collection[*]} -eq 0 ] || printf 'Detected %d mounts associated with running containers\n' ${#collection[*]}
+
     if [ ${#collection[@]} -gt 0 ]; then
         local volumes="$( printf '%s\n' "${collection[@]}" )"
 
@@ -57,7 +129,7 @@ function docker.rmOldContainers()
 
     local -i blocksUsedAfter="$(df /var/lib/docker/volumes | awk '{if (NR==2) {print $3}}')"
     local -i recovered=$(( blocksUsedBefore - blocksUsedAfter ))
-    [ "$recovered" -gt 0 ] || printf 'Space Recovered: %d kb\n' "$recovered"
+    [ "$recovered" -gt 0 ] && printf 'Space Recovered: %d kb\n' "$recovered"
     echo
 }
 export -f docker.rmOldContainers

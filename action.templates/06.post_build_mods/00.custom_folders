@@ -25,7 +25,7 @@ declare -ra dirs=( bin
 for dir in "${dirs[@]}" ; do
     declare custom_folder="$( cbf.BASE )/$dir"
     if [ -d "$custom_folder" ]; then
-        term.elog "    updating ${dir} from ${custom_folder}"'\n' 'info'
+        term.dlog "    updating ${dir} from ${custom_folder}"'\n' 'info'
         cp -r "${custom_folder}/". "/${dir}/"
     fi
 done
