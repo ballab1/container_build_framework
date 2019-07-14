@@ -1,0 +1,79 @@
+#!/bin/bash
+
+#----------------------------------------------------------------------------------------------
+#
+#  general 'json' scripts
+#
+
+#----------------------------------------------------------------------------------------------
+function json.arrayValues()
+{
+    printf '"%s"\n' "$@"
+}
+export -f json.arrayValues
+
+#----------------------------------------------------------------------------------------------
+function json.encodeArray()
+{
+    local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
+    shift
+
+    [ "$name" = '--' ] || printf '"%s":' "$name"
+    printf '['
+    json.streamValues "$@"
+    printf ']'
+}
+export -f json.encodeArray
+
+#----------------------------------------------------------------------------------------------
+function json.encodeField()
+{
+    local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r rawVal=${2:-}
+
+    printf '"%s":%s' "$name" "$(json.encodeValue "$rawVal")"
+}
+export -f json.encodeField
+
+#----------------------------------------------------------------------------------------------
+function json.encodeHash()
+{
+    local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
+    shift
+
+    [ "$name" = '--' ] || printf '"%s":' "$name"
+    printf '{'
+    json.streamValues "$@"
+    printf '}'
+}
+export -f json.encodeHash
+
+#----------------------------------------------------------------------------------------------
+function json.encodeValue()
+{
+    local -r rawVal=${1:-}
+
+    if [ -z "$rawVal" ]; then
+        printf 'null'
+#    elif [[ "$rawVal" =~ ^[0-9]+$ ]]; then
+#        printf '%d' "$rawVal"
+    else
+        printf '"%s"' "${rawVal//\"/\\\"}"
+    fi
+}
+export -f json.encodeValue
+
+#----------------------------------------------------------------------------------------------
+function json.streamValues()
+{
+    local -ar vals=( "$@" )
+    local valStr=''
+    if [ "${#vals[@]}" -gt 0 ]; then
+        for val in "${vals[@]}"; do
+            [ -z "$valStr" ] || printf ','
+            printf '%s' "$val"
+            valStr="1"
+        done
+    fi
+}
+export -f json.streamValues
