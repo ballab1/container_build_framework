@@ -302,6 +302,13 @@ function registry.PUT()
 export -f registry.PUT
 
 #----------------------------------------------------------------------------------------------
+function registry.REGISTRY()
+{
+    echo "${_REGISTRY_SERVER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( registry.propertiesFile )")}"
+}
+export -f registry.REGISTRY
+
+#----------------------------------------------------------------------------------------------
 function registry.SERVER()
 {
     echo "${_REGISTRY_SERVER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( registry.propertiesFile )")}"
