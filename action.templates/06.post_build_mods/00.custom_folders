@@ -1,0 +1,31 @@
+#!/bin/bash
+
+##########################################################
+#
+#  copy any customizations (from /tmp/) into their proper directories
+#
+##########################################################
+
+
+declare -ra dirs=( bin
+                   etc
+                   home
+                   lib
+                   lib64
+                   media
+                   mnt
+                   opt
+                   root
+                   run
+                   sbin
+                   usr
+                   var
+                   www )
+
+for dir in "${dirs[@]}" ; do
+    declare custom_folder="$( cbf.BASE )/$dir"
+    if [ -d "$custom_folder" ]; then
+        term.dlog "    updating ${dir} from ${custom_folder}"'\n' 'info'
+        cp -r "${custom_folder}/". "/${dir}/"
+    fi
+done

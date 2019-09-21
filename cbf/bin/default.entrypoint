@@ -1,0 +1,115 @@
+#!/bin/bash
+declare startTm=$(date +%s) 
+
+
+function my.banner()
+{
+    echo -e '\n\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
+    echo -e 'args: '$*'\n'
+}
+
+function my.defaultInit()
+{
+    term.log '>>>>>>>> entering ' 'green'
+    term.log "$(IFS=' '; echo "$*")\n" 'yellow'
+
+    # run the startup scripts defined in the framework
+    if [ "$(id -u)" -eq 0 ]; then
+        crf.prepareEnvironment
+    elif [ "$( which sudo )" ]; then
+        sudo -E "$0" "$config_entry"
+    else
+        term.log ">>>>>>>> Current user 'uid:$(id -u)' does not have super powers. Unable to prepare environment\n" 'magenta'
+        return 1
+    fi
+
+    cd "$WORKDIR"
+    term.log "\n${CONTAINER_NAME^^}: Finished executing startup scripts after $(timer.fmtElapsed $(( $(timer.getTimestamp)  - startTm )) )\n\n" 'info'
+
+    # this is the primary (default) codepath invoked by the Dockerfile
+    crf.logEnvironment
+}
+
+# Use the Unofficial Bash Strict Mode
+set -o errexit
+set -o nounset
+set -o pipefail
+IFS=$'\n\t'
+
+# save our context incase our any of scripts need it
+printf "%s\n" "$@" > /tmp/args.txt
+printf "%s\n" "$(env | sort)" > /tmp/env.txt
+
+source /usr/local/crf/bin/init.runtime
+
+declare -r config_entry="${CONTAINER_NAME}-setup"
+declare -r logFile=/var/log/cbf.log
+
+if [ "${1:-}" != *-setup ]; then
+    :> "$logFile"
+    chmod 666 "$logFile"
+
+    if [[ "${DEBUG:-}"  ||  "${DEBUG_TRACE:-0}" ]]; then
+        my.banner 2>&1 | tee "$logFile" >&2
+    else
+        my.banner &> "$logFile"
+    fi
+fi
+
+
+#  startup container
+if [[ "${1:-}" = "$CONTAINER_NAME" ]]; then
+    shift
+
+    declare -a args=( "$@" )
+    declare -r tools=/usr/local/bin
+    if [ -e "${tools}/run.sh" ]; then
+        args=( "${tools}/run.sh" "${args[@]}" )
+    elif [ $# -eq 0 ]; then
+        trap.die "No ${tools}/run.sh detected, and no arguments provided"
+    fi
+
+    if [[ "${DEBUG:-}"  ||  "${DEBUG_TRACE:-0}" ]]; then
+        my.defaultInit "$CONTAINER_NAME" "${args[@]}"  2>&1 | tee -a "$logFile" >&2
+    else
+        my.defaultInit "$CONTAINER_NAME" "${args[@]}" &>> "$logFile"
+    fi
+    exec "${args[@]}"
+
+
+elif [[ "${1:-}" = "$config_entry" && "$(id -u)" -eq 0 ]]; then
+    # this codepath is invoked (from above) to perpare the runtime environment. User is 'root' so chmod & chown succeed
+    if [[ "${DEBUG:-}"  ||  "${DEBUG_TRACE:-0}" ]]; then
+        {
+        term.log '>>>>>>>> entering ' 'green'
+        term.log "$(IFS=' '; echo "$*")\n" 'yellow'
+        crf.prepareEnvironment
+        } 2>&1 | tee -a "$logFile" >&2
+    else
+        {
+        term.log '>>>>>>>> entering ' 'green'
+        term.log "$(IFS=' '; echo "$*")\n" 'yellow'
+        crf.prepareEnvironment
+        } &>> "$logFile"
+    fi
+
+elif [ $# -gt 0 ]; then
+    # this codepath is invoked when a user invokes the container using 'docker run'
+    if [[ "${DEBUG:-}"  ||  "${DEBUG_TRACE:-0}" ]]; then
+        {
+        crf.logEnvironment
+        term.log '>>>>>>>> entering ' 'green'
+        term.log "custom\n" 'yellow'
+        } 2>&1 | tee -a "$logFile" >&2
+    else
+        {
+        crf.logEnvironment
+        term.log '>>>>>>>> entering ' 'green'
+        term.log "custom\n" 'yellow'
+        } &>> "$logFile"
+    fi
+    exec "$@"
+
+fi
+term.dlog '<<<<<<<< returning from ' 'green'
+term.dlog "${*}\n" 'yellow'

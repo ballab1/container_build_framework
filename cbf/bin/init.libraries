@@ -1,0 +1,134 @@
+#!/bin/bash
+
+export CBF_LOCATION
+export CRF_LOCATION
+export DEBUG_TRACE
+export libTracker
+declare -i __libCount
+
+
+#############################################################################
+function __init.loadLibrary()
+{
+    local -r src=${1:?"Input parameter 'src' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r color=${2:-0}
+    local -r name="$(basename "$src")"
+
+    if [ "${DEBUG_TRACE:-0}" != 0 ];then
+        if [ $(( __libCount++ )) -eq 0 ];then
+            local CBF='\x1b[32CBF\x1b[0m'                         # green
+            local CRF='\x1b[35mCRF\x1b[0m'                        # magenta
+            local action_folder='\x1b[36maction_folder\x1b[0m'    # cyan
+            echo -en '    loading libraries ('"$CBF"':'"$CRF"':'"$action_folder"'): '
+        fi
+
+        local reset='\x1b[0m'
+        color='\x1b['"$color"'m'
+        if [ "${DEBUG:-}" ]; then
+            echo -e "        ${color}${src}$reset"
+        else
+            echo -en " ${color}${name}$reset"
+        fi
+    fi
+    source "$src"
+}
+
+#############################################################################
+function __init.loadLibs()
+{
+    local -r path=${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r color=${2:-0}
+
+    [ "$path" ] || return 0
+    [ -d "$path" ] || return 0
+    local -a files
+    mapfile -t files < <(find "$path" -maxdepth 1 -mindepth 1 -name '*.bashlib')
+    [ ${#files[@]} -gt 0 ] || return 0
+
+    local src
+    for src in "${files[@]}" ; do
+        if  __init.libNotLoaded "$src" ; then
+            __init.loadLibrary "$src" "$color"
+        fi
+    done
+}
+
+#############################################################################
+function __init.libNotLoaded()
+{
+    local -r filename=${1:?"Input parameter 'filename' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r libname="$( basename "$filename" )"
+
+    local -i status
+    (grep -sq "$libname" "$libTracker" > /dev/null 2>&1 ) && status=$? || status=$?
+    [ "$status" -ne 0 ] || return 1
+    [ -w "$libTracker" ] || return 1
+    echo "$libname" >> "$libTracker"
+    return 0
+}
+
+#############################################################################
+function __init.loader()
+{
+    : ${CBF_LOCATION:="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")/../..")"}
+    : ${CRF_LOCATION:=/usr/local/crf}
+    : ${DEBUG_TRACE:=0}
+
+    # init our cache files
+    [ "${libTracker:-}" ] || libTracker="${CBF_LOCATION}/cbf.bashlibs.loaded"
+    [ -w "$(dirname "$libTracker")" ] && :> "$libTracker"
+    [ ! -e "${CBF_LOCATION}/CBF.properties" ] || ( [ -w "${CBF_LOCATION}/CBF.properties" ] && rm "${CBF_LOCATION}/CBF.properties" )
+    [ ! -e "${CRF_LOCATION}/CRF.properties" ] || ( [ -w "${CRF_LOCATION}/CRF.properties" ] && rm "${CRF_LOCATION}/CRF.properties" )
+
+
+    # load our bashlibs
+    __libCount=0
+    __init.loadLibs "${CBF_LOCATION}/cbf/bashlib" 32                      # green
+    __init.loadLibs "${CRF_LOCATION}/cbf/bashlib" 35                      # magenta
+    __init.loadLibs "${CBF_LOCATION}/action_folders/00.bashlib" 36        # cyan
+
+
+    # init the framework
+    [ ! -e "${CBF_LOCATION}/cbf/bin/init.runtime" ] || source "${CBF_LOCATION}/cbf/bin/init.runtime"
+    cbf.__init "$CBF_LOCATION" "$CRF_LOCATION"
+
+    [ ! -e "init.cache" ] || source "init.cache"
+
+    # verify init was successful
+    [ "$( cbf.CBFBASE )" ] || trap.die 'error when setting up container build framework'
+    [ "$( cbf.CRT_BASE )" ] || trap.die 'error when setting up container build framework'
+}
+#############################################################################
+
+
+#  expected properties after initialization
+##############################################################################
+# echo "CBF.properties: $CBF_PROPERTIES_FILE"
+#     CBF.properties: /tmp/container_build_framework/CBF.properties
+# cat "$CBF_PROPERTIES_FILE"
+#     CBFBASE=/tmp/container_build_framework
+#     BIN=/tmp/container_build_framework/bin
+#     LIB=/tmp/container_build_framework/cbf/bashlib
+#     TEMPLATES=/tmp/container_build_framework/action.templates
+#     BASE=/tmp/
+#     ACTION=/tmp/action_folders
+#     CRF_BASE=/tmp/container_build_framework/cbf
+#     CRF_BIN=/usr/local/crf/bin
+#     CRT_BASE=/usr/local/crf
+# echo "CRF.properties: $CRF_PROPERTIES_FILE"
+#     CRF.properties: /usr/local/crf/CRF.properties
+# cat "$CRF_PROPERTIES_FILE"
+#     BASE=/usr/local/crf
+#     BIN=/usr/local/crf/bin
+#     ENV=/usr/local/crf/environment
+#     LIB=/usr/local/crf/bashlib
+#     STARTUP=/usr/local/crf/startup
+
+
+if [ "${DEBUG_TRACE:-0}" -ne 0 ]; then
+    __init.loader >&2
+else
+    __init.loader &> /dev/null
+fi
+set +x
+unset __libCount
