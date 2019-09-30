@@ -42,7 +42,7 @@ function versions.data()
     (versions.isNotDirty "$versions_dir") || return 0
 
     # ensure version info is up-to-date
-    if [ "${commit,,:-}" != 'latest' ]; then
+    if [ "${commit^^:-}" = 'HEAD' ]; then
         ( cd "$versions_dir"
           if ! git.checkout "$(versions.COMMIT)" --quiet ; then
               cd ..

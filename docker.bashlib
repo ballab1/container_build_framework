@@ -49,7 +49,7 @@ function docker.clean()
         mapfile -t collection < <(printf '%s\n' ${collection[@]} | sort -u)   # remove duplicates
 
         # Allow any images associated with running containers
-        local -r processes="$(for i in $(docker ps --all --format '{{.Image}}'); do docker inspect $i | jq -r '[.[].Id[7:19]]|unique[]' ;done)"
+        local -r processes="$(for i in $(docker ps --all --format '{{.Image}}'); do docker inspect $i 2>/dev/null | jq -r '[.[].Id[7:19]]|unique[]' ||: ;done)"
         local -i idx=${#collection[*]}
         while [ $(( idx-- )) -gt 0 ]; do
             image=${collection[$idx]}
@@ -59,7 +59,7 @@ function docker.clean()
         # Finally, remove all the images we found
         if [ "${#collection[*]}" -gt 0 ]; then
             printf "Deleting %d dangling/temporary images\n" "${#collection[*]}"
-            docker rmi ${collection[@]}
+            docker rmi ${collection[@]} ||:
         fi
     fi
 
@@ -79,7 +79,7 @@ function docker.clean()
         for dir in $(sudo find '/var/lib/docker/volumes/' -mindepth 1 -maxdepth 1 -type d); do
             (grep "$dir" <<< "$volumes") && continue
             sudo rm -rf "$dir"
-            (( deletions++ ))
+            (( deletions++ )) ||:
         done
         [ $deletions -gt 0 ] && printf "Deleted %d directories associated with volumes no longer in use\n" $deletions
     fi
@@ -94,6 +94,16 @@ function docker.clean()
     ) >&2
 }
 export -f docker.clean
+
+#----------------------------------------------------------------------------------------------
+function docker.isRunning()
+{
+    if [ -S /run/docker.sock ]; then
+        curl --silent --unix-socket /run/docker.sock GET http://127.0.0.1/ping &> /dev/null && return 0
+    fi
+    return 1
+}
+export -f docker.isRunning
 
 #----------------------------------------------------------------------------------------------
 function docker.networks()
