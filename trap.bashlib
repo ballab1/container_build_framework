@@ -49,8 +49,8 @@ export -f trap.catch_int
 function trap.catch_pipe()
 {
     trap_pipe_error+=1
-    [ ${trap_pipe_error:-} -eq 1 ] || return 0
-    [ ${trap_dying:-} -eq 0 ] || return 0
+    [ ${trap_pipe_error:-1} -eq 1 ] || return 0
+    [ ${trap_dying:-0} -eq 0 ] || return 0
 
     trap.die "${BASH_SOURCE[0]} has been aborted with SIGPIPE (broken pipe)"
 }
@@ -63,7 +63,7 @@ function trap.warn()
     local args="$*"
     [ "${args:0:7}" = '***WARN' ] || args="***WARN: $args"
     ( echo ''; trap.log "$args" ; echo '') >&2
-    [[ ${CBF_WARN_FORCE_EXIT:-0} -ne 1 && $status -ne 0 ]] || exit $status
+    [[ ${CBF_WARN_FORCE_EXIT:-0} -ne 1 && ${status:-0} -ne 0 ]] || exit $status
 }
 export -f trap.warn
 
@@ -71,7 +71,7 @@ export -f trap.warn
 function trap.die()
 {
     local status=$?
-    [[ $status -ne 0 ]] || status=255
+    [ ${status:-} -ne 0 ] || status=255
     trap_dying+=1
 
     local args="$*"
