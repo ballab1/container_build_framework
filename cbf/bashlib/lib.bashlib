@@ -13,6 +13,7 @@ function lib.exportFileVars()
 {
     local -r settings="${1:?"Input parameter 'settings' must be passed to 'function ${FUNCNAME[0]}()'"}"
     local -r fn="${2:-export}"
+    local -r override="${3:-false}"
 
     [ -e "$settings" ] || return 0
 
@@ -20,7 +21,7 @@ function lib.exportFileVars()
 
     while read -r line; do
         key="$(cut -d '=' -f 1 <<< "$line")"
-        [ "${!key:-}" ] && continue
+        [ "$override" = 'false' ] && [ "${!key:-}" ] && continue
         eval "$fn $line"
     done < <(grep '=' "$settings" | grep -Ev "^\s*#")
 }
