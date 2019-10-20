@@ -31,7 +31,6 @@ function trap.catch_error()
     set +o verbose
     set +o xtrace
     trap.log "***ERROR at ${BASH_SOURCE[1]}:${BASH_LINENO[0]}. '${BASH_COMMAND}' exited with status ${err}"
-    trap.log ">>>    Current directory $(pwd)"
     trap.stacktrace
     exit 1
 }
@@ -41,7 +40,11 @@ export -f trap.catch_error
 # Detect when build is aborted
 function trap.catch_int()
 {
-    trap.die "${BASH_SOURCE[0]} has been aborted with SIGINT (Ctrl-C)"
+    set +o verbose
+    set +o xtrace
+    trap.log "${BASH_SOURCE[0]} has been aborted with SIGINT (Ctrl-C)"
+    trap.stacktrace
+    exit 1
 }
 export -f trap.catch_int
 
@@ -52,20 +55,13 @@ function trap.catch_pipe()
     [ ${trap_pipe_error:-1} -eq 1 ] || return 0
     [ ${trap_dying:-0} -eq 0 ] || return 0
 
-    trap.die "${BASH_SOURCE[0]} has been aborted with SIGPIPE (broken pipe)"
+    set +o verbose
+    set +o xtrace
+    trap.log "${BASH_SOURCE[0]} has been aborted with SIGPIPE (broken pipe)"
+    trap.stacktrace
+    exit 1
 }
 export -f trap.catch_pipe
-
-#----------------------------------------------------------------------------
-function trap.warn()
-{
-    local status=$?
-    local args="$*"
-    [ "${args:0:7}" = '***WARN' ] || args="***WARN: $args"
-    ( echo ''; trap.log "$args" ; echo '') >&2
-    [[ ${CBF_WARN_FORCE_EXIT:-0} -ne 1 && ${status:-0} -ne 0 ]] || exit $status
-}
-export -f trap.warn
 
 #----------------------------------------------------------------------------
 function trap.die()
@@ -92,11 +88,15 @@ export -f trap.log
 # display stacktrace
 function trap.stacktrace()
 {
+    [ ${DEBUG:-0} -ne 0 ] && return
+
     local __trap_options=$(set +o)
     set +o nounset
     set +o verbose
     set +o xtrace
 
+    echo >&2
+    trap.log ">>>    Current directory $(pwd)"
     # Print out the stack trace described by $function_stack
     if [ ${#FUNCNAME[@]} -gt 2 ]; then
         trap.log "Stack trace:"
@@ -107,5 +107,18 @@ function trap.stacktrace()
     eval "$__trap_options"
 }
 export -f trap.stacktrace
+
+#----------------------------------------------------------------------------
+function trap.warn()
+{
+    local status=$?
+    local args="$*"
+    [ "${args:0:7}" = '***WARN' ] || args="***WARN: $args"
+    ( echo ''; trap.log "$args" ; echo '') >&2
+    [[ ${CBF_WARN_FORCE_EXIT:-0} -ne 1 && ${status:-0} -ne 0 ]] || exit $status
+}
+export -f trap.warn
+
+#----------------------------------------------------------------------------
 
 [ "${trap_dying:-99}" -ne 99 ] || trap.__init
