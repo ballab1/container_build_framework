@@ -83,7 +83,7 @@ function registry.digest()
                                     --head \
                                     "$(registry.URL)/${name}/manifests/$(tr -d '"' <<< "$tag")" || echo "Failed to get $(registry.URL)/${name}/manifests/$tag" >&2)"
 
-    [ -z "$digest" ] || ( awk '{gsub(/\r/,"");if ($1 == "Docker-Content-Digest:") {print $2}}' ) <<< "$digest"
+    [ -z "$digest" ] || ( awk '{gsub(/\r/,"");if (tolower($1) == "docker-content-digest:") {print $2}}' ) <<< "$digest"
 }
 export -f registry.digest
 
@@ -171,7 +171,7 @@ function registry.digestsWithoutTimes()
     for tag in "${tags[@]}"; do
         digest=$(registry.digest "$name" "$tag")
         if [ -z "${digest:-}" ]; then
-            term.log "WARNING:  $name:$tag failed to return a digest" 'warning'
+            term.elog "WARNING:  $name:$tag failed to return a digest" 'warning'
             continue
         fi
         digests["$digest"]="$(echo -en "${tag}\n${digests[$digest]:-}")"
@@ -217,6 +217,7 @@ function registry.io()
 
     headers=$(mktemp)
     args=( "${credentials[@]}" '--silent' '--dump-header' "$headers" "$@" )
+
     response=$(curl "${args[@]}") && status=$? || status=$?
 
     if [ "$status" -eq 0 ]; then
