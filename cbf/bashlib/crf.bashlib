@@ -305,7 +305,7 @@ function sourcingMessage()
 }
 
 
-# load the associative array defitions
+# load the associative array definitions
 declare -i __env_count=0
 declare -ra _files=( \$(lib.getFiles "\$(crf.ENV)") )
 if [ "\${#_files[*]}" -gt 0 ]; then

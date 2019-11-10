@@ -410,3 +410,22 @@ function lib.urlencode()
     done
 }
 
+#----------------------------------------------------------------------------------------------
+function lib.yamlToJson()
+{
+    local -r yamlFile=${1:?}
+    local -ar YAML_TO_JSON=( 'python' '-c' 'import sys, yaml, json; json.dump(yaml.safe_load(sys.stdin), sys.stdout, indent=4)' )
+
+    if [ -e "$yamlFile"  ]; then
+        "${YAML_TO_JSON[@]}" < "$yamlFile"
+
+    elif [[ "$yamlFile" == http* ]]; then
+        "${YAML_TO_JSON[@]}" <<< "$(curl --insecure --silent --request GET "$yamlFile")"
+
+    else
+        "${YAML_TO_JSON[@]}" <<< "$yamlFile"
+    fi
+}
+export -f lib.yamlToJson
+#----------------------------------------------------------------------------------------------
+

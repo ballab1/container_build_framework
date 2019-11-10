@@ -88,7 +88,7 @@ export -f trap.log
 # display stacktrace
 function trap.stacktrace()
 {
-    [ ${DEBUG:-0} -ne 0 ] && return
+    [ ${DEBUG:-0} -eq 0 ] && return
 
     local __trap_options=$(set +o)
     set +o nounset
