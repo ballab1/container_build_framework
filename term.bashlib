@@ -23,14 +23,54 @@ function term.__init()
 }
 
 #----------------------------------------------------------------------------------------------
+function term.codes_ATTR_RESET()
+{
+    local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    declare -Ax ATTR_RESET=( ['bold']=21 ['dim']=22 ['underline']=24 ['blink']=25 ['invert']=27 ['hidden']=28 ['all']=0 )
+    echo "${ATTR_RESET[$name]:-}"
+}
+export -f term.codes_ATTR_RESET
+
+#----------------------------------------------------------------------------------------------
+function term.codes_ATTR_SETTERS()
+{
+    local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    declare -Ax ATTR_SETTERS=( ['bold']=1 ['dim']=2 ['underline']=4 ['blink']=5 ['invert']=7 ['hidden']=8 )
+    echo "${ATTR_SETTERS[$name]:-}"
+}
+export -f term.codes_ATTR_SETTERS
+
+#----------------------------------------------------------------------------------------------
+function term.codes_BACKGROUND()
+{
+    local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    declare -Ax BACKGROUND=( ['default']=49 ['black']=40 ['red']=41 ['green']=42 ['yellow']=43 ['blue']=44 ['magenta']=45 ['cyan']=46 ['gray']=47 ['grey']=47 ['lt_gray']=47 ['lt_grey']=47 ['dk_gray']=100 ['dk_grey']=100 ['lt_red']=101 ['lt_green']=102 ['lt_yellow']=103 ['lt_blue']=104 ['lt_magenta']=105 ['lt_cyan']=106 ['white']=107 )
+    echo "${BACKGROUND[$name]:-}"
+}
+export -f term.codes_BACKGROUND
+
+#----------------------------------------------------------------------------------------------
+function term.codes_FOREGROUND()
+{
+    local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    declare -Ax FOREGROUND=( ['black']=30 ['blue']=34 ['cyan']=36 ['default']=39 ['dk_gray']=90 ['dk_grey']=90 ['gray']=90 ['grey']=90 ['green']=32 ['lt_blue']=94 ['lt_cyan']=96 ['lt_gray']=37 ['lt_grey']=37 ['lt_green']=92 ['lt_magenta']=95 ['lt_red']=91 ['lt_yellow']=93 ['magenta']=35 ['red']=31 ['white']=97 ['yellow']=33 )
+    echo "${FOREGROUND[$name]:-}"
+}
+export -f term.codes_FOREGROUND
+
+#----------------------------------------------------------------------------------------------
 function term.codes()
 {
-#    [ -t 1 ] || return 0
     local -r mode=${1:?"Input parameter 'mode' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r name=${2:?"Input parameter 'code' must be passed to 'function ${FUNCNAME[0]}()'"}
 
-    local -r code=$(lib.getProperty "$name" "$(term.propertiesDir "term_${mode^^}.properties")")
-    [ $? -ne 0 ] || [ -z "$code" ] || printf '\x1b[%dm' "$code"
+
+    local -i code="$("term.codes_$mode" "$name")"
+    [ "${code:--1}" -lt 0 ] || printf '\x1b[%dm' "$code"
 }
 export -f term.codes
 
@@ -51,9 +91,9 @@ function term.decode()
                 *)     term.codes 'FOREGROUND' ${fg};;
         esac
     else
-        local -r bg_code=$(lib.getProperty "$bg" "$(term.propertiesDir "term_BACKGROUND.properties")")
-        local -r fg_code=$(lib.getProperty "$fg" "$(term.propertiesDir "term_FOREGROUND.properties")")
-        [ -z "$bg_code" ] || [ -z "$fg_code" ] || printf '\x1b[%d;%dm' "$fg_code" "$bg_code"
+        local -r bg_code=$(term.codes 'BACKGROUND' "$bg")
+        local -r fg_code=$(term.codes 'FOREGROUND' "$fg")
+        [ -z "${bg_code:-}" ] || [ -z "${fg_code:-}" ] || printf '\x1b[%d;%dm' "$fg_code" "$bg_code"
     fi
 }
 export -f term.decode
@@ -105,41 +145,5 @@ function term.log()
 }
 export -f term.log
 
-#----------------------------------------------------------------------------------------------
-#
-# search everywhere we know of to find our properties file
-#
-function term.propertiesDir()
-{
-    local -r file=${1:?"Input parameter 'file' must be passed to 'function ${FUNCNAME[0]}()'"}
-
-    local -a search_path=("${TERM_DIR:-}"
-                          "$(crf.LIB)"
-                          "$(cbf.CRF_BASE)"
-                          "$(cbf.CRT_BASE)"
-                          "$(readlink -f "$( dirname "${BASH_SOURCE[0]}" )/properties" 2>/dev/null ||:)"
-                          "/usr/local/crf"
-                          "."
-                         )
-
-    for _props_dir in "${search_path[@]}"; do
-        [ -z "$_props_dir" ] && continue
-
-        if [ -f "${_props_dir}/bashlib/properties/$file" ]; then
-            echo "${_props_dir}/bashlib/properties/$file"
-            return
-        fi
-        if [ -f "${_props_dir}/properties/$file" ]; then
-            echo "${_props_dir}/properties/$file"
-            return
-        fi
-        if [ -f "${_props_dir}/$file" ]; then
-            echo "${_props_dir}/$file"
-            return
-        fi
-    done
-    trap.die "unable to locate property file: $file"
-}
-export -f term.propertiesDir
 
 [[ "${LOG:-}" = 'term.log' ]] || term.__init

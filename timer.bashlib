@@ -17,6 +17,14 @@ function timer.fmtElapsed()
 export -f timer.fmtElapsed
 
 #----------------------------------------------------------------------------
+# get the timestamp of a file in seconds
+function timer.getTimestamp()
+{
+    date +%s
+}
+export -f timer.getTimestamp
+
+#----------------------------------------------------------------------------
 # log elapse time result
 function timer.logElapsed()
 {
@@ -26,14 +34,6 @@ function timer.logElapsed()
     printf 'Time elapsed (%s): %s' "$name" "$(timer.fmtElapsed $elapsed)"
 }
 export -f timer.logElapsed
-
-#----------------------------------------------------------------------------
-# get the timestamp of a file in seconds
-function timer.getTimestamp()
-{
-    date +%s
-}
-export -f timer.getTimestamp
 
 #----------------------------------------------------------------------------
 function timer.measureCmd()
@@ -54,5 +54,21 @@ function timer.measureCmd()
     return $status
 }
 export -f timer.measureCmd
+
+#----------------------------------------------------------------------------
+# get the secoonds since midnight
+function timer.secondsSinceMidnight()
+{
+    date -d "1970-01-01 UTC $(date +%T)" +%s
+}
+export -f timer.secondsSinceMidnight
+
+#----------------------------------------------------------------------------
+# get the time from UTC in universal format
+function timer.zuluTime()
+{
+    date +%Y-%m-%d\T%H:%M:%S.%N\Z -u
+}
+export -f timer.zuluTime
 
 #----------------------------------------------------------------------------

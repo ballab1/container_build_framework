@@ -20,7 +20,7 @@ function git.branch()
                                 awk '{if(length($0)>0) {print $0}}')
         if [ "${#branches[0]}" -eq 0 ]; then
             term.elog "***ERROR: failure to determine current branch for $(git.repoName). Most likely on a detached HEAD"'\n' 'warn'
-            git log -8 --graph --abbrev-commit --decorate --all >&2
+            git log -n8 --oneline --graph --abbrev-commit --decorate --all >&2
             return 1
         fi
         branch="${branches[0]}"
