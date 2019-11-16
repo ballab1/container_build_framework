@@ -215,7 +215,7 @@ function registry.io()
     local headers response url
     local -i status=0
     local -A links
-    local -ra credentials=( $(custom.credentials registry) )
+    local -ra credentials=( $(credentials.get registry) )
 
     headers=$(mktemp)
     args=( "${credentials[@]}" '--silent' '--dump-header' "$headers" "$@" )

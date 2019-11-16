@@ -13,39 +13,6 @@ function custom.cbfVersion()
 export -f custom.cbfVersion
 
 #----------------------------------------------------------------------------------------------
-function custom.credentials()
-{
-    local -r system=${1:?}
-
-    # permit obtaining cached results to speed up access
-    case "$system" in
-        github)         echo "${_GITHUB_CREDENTIALS:=$(custom.readCredentials github)}";;
-        jenkins)        echo "${_JENKINS_CREDENTIALS:=$(custom.readCredentials jenkins)}";;
-        registry)       echo "${_REGISTRY_CREDENTIALS:=$(custom.readCredentials registry)}";;
-    esac
-}
-export -f custom.credentials
-
-#----------------------------------------------------------------------------------------------
-function custom.readCredentials()
-{
-#    local -r system="${1:?}"
-#
-#    local user="${USERNAME:-${USER:-}}"
-#    [ "${user:-}" ] || user="$( ${system}.USER )"
-#    local password="${!user:-}"
-#    [ "${password:-}" ] || password="$(lib.getProperty "$user" "$(custom.secretsFile)")"
-#
-#    if [ "${password:-}" ]; then
-#        echo '--user'
-#        echo "${user}:${password}"
-#    fi
-#    echo '--location-trusted'
-    echo '--insecure'
-}
-export -f custom.readCredentials
-
-#----------------------------------------------------------------------------------------------
 function custom.storage()
 {
     echo 'GitHub'
