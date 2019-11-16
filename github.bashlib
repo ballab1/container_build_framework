@@ -43,7 +43,7 @@ function github.io()
     local headers response url
     local -i status=0
     local -A links
-    local -ra credentials=( $(custom.credentials github) )
+    local -ra credentials=( $(credentials.get github) )
 
     headers=$(mktemp)
     args=( "${credentials[@]}" '--silent' '--dump-header' "$headers" "$@" )
