@@ -6,143 +6,98 @@
 #
 #----------------------------------------------------------------------------------------------
 
-export VERSIONS_INFO_FILE
-
-#----------------------------------------------------------------------------------------------
-function versions.COMMIT()
-{
-    local file="${1:-$VERSIONS_INFO_FILE}"
-    lib.getProperty "${FUNCNAME[0]##*.}" "$file"
-}
-export -f versions.COMMIT
-
-#----------------------------------------------------------------------------------------------
-function versions.set_VERSIONS_INFO_FILE()
-{
-    local file="${1:-$VERSIONS_INFO_FILE}"
-    [ "${VERSIONS_INFO_FILE:-}" ] || VERSIONS_INFO_FILE="$(readlink -f "$file")"
-    [ "${_VERSIONS_DIRECTORY:-}" ] || _VERSIONS_DIRECTORY="$(versions.DIR "$VERSIONS_INFO_FILE")"
-    export _VERSIONS_REPO="$(versions.REPO "$VERSIONS_INFO_FILE")"
-}
-export -f versions.set_VERSIONS_INFO_FILE
-
 #----------------------------------------------------------------------------------------------
 function versions.data()
 {
-    versions.set_VERSIONS_INFO_FILE ${1:?}
+    local -r deploy_yaml=${1:?}
     local commit=${2:-}
 
-    local -r versions_dir="$(versions.DIR)"
-    if [ ! -d "$versions_dir" ]; then
-        mkdir -p "$(dirname "$versions_dir")" || trap.die 'no version information available'
-        git.clone "$(versions.REPO)" "$versions_dir"  --quiet
-    fi
+    local -r deploy_json="$(lib.yamlToJson "$deploy_yaml")"
 
-    # return if versions directory is dirty
-    (versions.isNotDirty "$versions_dir") || return 0
+    # parse version info from provided yaml file into 'VERSIONS' associative array
+    local key val
+    local -A VERSIONS=()
+    while read -r key; do
+        val="$(jq --compact-output --monochrome-output --raw-output '.versions.'"$key" <<< "$deploy_json")"
+        VERSIONS[$key]="$(eval echo "$val")"
+    done < <(jq --compact-output --monochrome-output --raw-output '.versions|keys[]' <<< "$deploy_json")
 
-    # ensure version info is up-to-date
-    if [ "${commit^^:-}" = 'HEAD' ]; then
-        ( cd "$versions_dir"
-          if ! git.checkout "$(versions.COMMIT)" --quiet ; then
-              cd ..
-              rm -rf "$versions_dir"
-              git.clone "$(versions.REPO)" "$versions_dir" --no-checkout
-              cd "$versions_dir"
-              git.checkout "$(versions.COMMIT)" --quiet
-          fi
-        )
-        return 0
-    fi
+    # ensure that our versions repo matches what is specified in provided yaml file (or overridden with provided 'commit')
+    (
+        if [ "${VERSIONS['commit']:-}" ] || [ ! -d "${VERSIONS['dir']}" ]; then
+            (( DEBUG_TRACE-- )) ||:                 # temporarily reduce DEBUG_TRACE to prevent 'git' tracing
+            if versions.initialize "$commit"; then
+                commit=$(versions.lastCommit)
+                if [ "$commit" != "${VERSIONS['commit']}" ]; then
+                    sed -E -i 's|commit:.*$|commit: '${commit}'|' "$deploy_yaml"
+                fi
+            fi
+            (( DEBUG_TRACE++ )) ||:
+        fi
+    )
 
-    commit=$(versions.lastCommit "$versions_dir")
-    [ "$commit" = $(versions.COMMIT) ] || lib.updatePropertyFile 'COMMIT' "$commit" "$VERSIONS_INFO_FILE" force
+    local container_os="$(jq --compact-output --monochrome-output --raw-output 'try .container_os' <<< "$deploy_json" ||:)"
+    versions.export "$container_os"
 }
 export -f versions.data
 
 #----------------------------------------------------------------------------------------------
-function versions.DIRECTORY()
-{
-    if [ -z "${_VERSIONS_DIRECTORY:-}" ]; then
-        local file="${1:-$VERSIONS_INFO_FILE}"
-        _VERSIONS_DIRECTORY=$( readlink -m $(versions.DIR "$file"))
-    fi
-    echo "$_VERSIONS_DIRECTORY"
-}
-export -f versions.DIRECTORY
-
-#----------------------------------------------------------------------------------------------
-function versions.DIR()
-{
-    local file="${1:-$VERSIONS_INFO_FILE}"
-    local dir=$(lib.getProperty "${FUNCNAME[0]##*.}" "$file")
-    [ "${dir:0:1}" = '/' ] || dir="$( dirname "$file" )/$dir"
-    echo $(readlink -m "$dir")
-}
-export -f versions.DIR
-
-#----------------------------------------------------------------------------------------------
-function versions.FILE()
+function versions.export()
 {
     local -r containerOS=${1:?}
-    local file="${2:-$VERSIONS_INFO_FILE}"
-    readlink -m "$(versions.DIRECTORY "$file")/$containerOS"
+
+    # export data for requested OS
+    local -r versions="$(readlink -m "${VERSIONS['dir']}/$containerOS")"
+    [ -e "$versions" ] || trap.die "Unrecognized CONTAINER_OS: $containerOS"
+
+    lib.exportFileVars "$versions" 'export'
 }
-export -f versions.FILE
+export -f versions.export
 
 #----------------------------------------------------------------------------------------------
-function versions.isNotDirty()
+function versions.initialize()
 {
-    local versions_dir="${1:?}"
+    local commit=${1:-}
 
+    local -r versions_dir="${VERSIONS['dir']}"
+    if [ ! -d "$versions_dir" ]; then
+        mkdir -p "$(dirname "$versions_dir")" || trap.die 'no version information available'
+        git.clone "${VERSIONS['repo']}" "$versions_dir"  --quiet
+    fi
     cd "$versions_dir"
-    [[ "$(git describe --tags --always --dirty)" != *-dirty ]]
+    VERSIONS['dir']="$(pwd)"
+
+    # return if versions directory is dirty
+    versions.isDirty && return 1
+
+    # ensure version info is up-to-date
+    if [ "${commit^^:-}" = 'HEAD' ] || [ -z "${VERSIONS['commit']:-}" ]; then
+        git.reset "origin/${VERSIONS['branch']:-master}" --hard
+        return 1
+    fi
+
+    git.checkout "${VERSIONS['commit']}" --quiet
+
+    # return 0 to indicate no change in commit
+    return 0
 }
-export -f versions.isNotDirty
+export -f versions.initialize
+
+#----------------------------------------------------------------------------------------------
+function versions.isDirty()
+{
+    [[ "$(git describe --tags --always --dirty)" = *-dirty ]]
+}
+export -f versions.isDirty
 
 #----------------------------------------------------------------------------------------------
 function versions.lastCommit()
 {
-    local -r versions_dir="${1:?}"
-
-    cd "$versions_dir"
-    git.checkout $(versions.LATEST) &>/dev/null
+    git.checkout "${VERSIONS['branch']:-master}" &>/dev/null
     git.reset --hard 'HEAD~1' &>/dev/null
     git.pull --quiet
     git.HEAD
 }
 export -f versions.lastCommit
-
-#----------------------------------------------------------------------------------------------
-function versions.LATEST()
-{
-    local file="${1:-$VERSIONS_INFO_FILE}"
-    local branch=$(lib.getProperty "${FUNCNAME[0]##*.}" "$file" 'master')
-    echo "$branch"
-}
-export -f versions.LATEST
-
-#----------------------------------------------------------------------------------------------
-function versions.get()
-{
-    local -r containerOS=${1:?}
-    local -r fn=${2:?}
-    local -r version_info=${3:-$VERSIONS_INFO_FILE}
-
-    # export data for requested OS
-    local -r versions="$(versions.FILE "$containerOS" "$version_info")"
-    [ -e "$versions" ] || trap.die "Unrecognized CONTAINER_OS: $containerOS"
-
-    lib.exportFileVars "$versions" "$fn"
-}
-export -f versions.get
-
-#----------------------------------------------------------------------------------------------
-function versions.REPO()
-{
-    local file="${1:-$VERSIONS_INFO_FILE}"
-    echo ${_VERSIONS_REPO:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$file")}
-}
-export -f versions.REPO
 
 #----------------------------------------------------------------------------------------------

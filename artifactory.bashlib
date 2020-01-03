@@ -1,0 +1,305 @@
+#!/bin/bash
+
+#----------------------------------------------------------------------------------------------
+#
+# DO NOT ADD "IN-LINE" code to this file. Only functions should be included.
+#
+#  module:  artifactory.bashlib
+#  purpose: general 'artifactory' scripts
+#
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+function artifactory.propFile()
+{
+    echo "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/properties/$(basename "${BASH_SOURCE[0]%.*}").properties"
+}
+export -f artifactory.propFile
+
+export ARTIFACTORY_PROPERTIES_FILE="${ARTIFACTORY_PROPERTIES_FILE:=$(artifactory.propFile)}"
+
+#----------------------------------------------------------------------------------------------
+function artifactory.DELETE()
+{
+    artifactory.io --request DELETE "$@" || return 1
+}
+export -f artifactory.DELETE
+
+#----------------------------------------------------------------------------------------------
+function artifactory.deleteArtifact()
+{
+    local -r artifact=${1:?"need an artifact"}
+
+    echo -n "Deleting artifact: $artifact  "
+    local url="https://$(artifactory.SERVER)/artifactory/$artifact"
+    [[ "$artifact" = 'http'* ]] && url="$artifact"
+    artifactory.DELETE --show-error --write-out '%{http_code}\n' "$url" || echo "Failed to delete $artifact"
+    echo
+}
+export -f artifactory.deleteArtifact
+
+#----------------------------------------------------------------------------------------------
+# This function will delete the property ($prop) from the artifact located at $path.
+# eg:
+# artifactory.deleteProperty https://arhost1.usd.lab.emc.com/artifactory/api/storage/cyclone-dev/com/emc/adapters/1.0-SNAPSHOT/adapters-1.0-20160212.202741-1.pom testProp
+function artifactory.deleteProperty()
+{
+    local path=${1:?"ERROR: no path provided to ${FUNCNAME[0]}()!"}
+    local prop=${2:?"ERROR: no property provided to ${FUNCNAME[0]}()!"}
+
+    echo "Deleting property $prop from $path..."
+
+    local url="$path?properties=$prop"
+    artifactory.DELETE "$url" || return $?
+}
+export -f artifactory.deleteProperty
+
+#----------------------------------------------------------------------------------------------
+# This function will create a new artifact at $url
+# eg:
+# artifactoryArtifactDeploy  https://arhost1.usd.lab.emc.com/artifactory/cyclone-dev/com/emc/adapters/1.0.1 random.tar
+function artifactory.deployArtifact()
+{
+    local targetFolder=${1:?"ERROR: no targetFolder provided to ${FUNCNAME[0]}()!"}
+    local localFilePath=${2:?"ERROR: no localFilePath provided to ${FUNCNAME[0]}()!"}
+
+    if [ ! -f "$localFilePath" ]; then
+        echo "ERROR: local file $localFilePath does not exists!"
+        return 1
+    fi
+
+    which md5sum || return $?
+    which sha1sum || return $?
+
+    local md5Value="$(md5sum "$localFilePath")"
+    local md5Value="${md5Value:0:32}"
+    local sha1Value="$(sha1sum "$localFilePath")"
+    local sha1Value="${sha1Value:0:40}"
+    local fileName="$(basename "$localFilePath")"
+
+    local url="$targetFolder/$fileName"
+
+    echo "$md5Value $sha1Value $localFilePath"
+
+    echo "INFO: Uploading $localFilePath to $url"
+    artifactory.PUT --header "X-Checksum-Md5: $md5Value" --header "X-Checksum-Sha1: $sha1Value" --upload-file "$localFilePath" "$url" || return $?
+}
+export -f artifactory.deployArtifact
+
+#----------------------------------------------------------------------------------------------
+function artifactory.GET()
+{
+    artifactory.io --request GET "$@" || return $?
+}
+export -f artifactory.GET
+
+#----------------------------------------------------------------------------------------------
+function artifactory.io()
+{
+    local -a args
+    local headers response url
+    local -i status=0
+    local -A links
+    local -a credentials=( $(credentials.get artifactory) )
+    if [ "${DEBUG:-0}" -eq 0 ]; then
+        credentials+=( '--silent' )
+    else
+        echo "curl $*" >&2
+    fi
+
+    headers=$(mktemp)
+    args=( "${credentials[@]}" '--dump-header' "$headers" "$@" )
+    response=$(curl "${args[@]}") && status=$? || status=$?
+
+    if [ "$status" -eq 0 ]; then
+        # Status: 200 OK
+        http_code=$(head -1 "$headers" | sed -Ee 's|^\S+\s+(.+)\r?$|\1|')
+        if [ "${http_code:0:1}" -gt 3 ]; then
+            status=-1
+        else
+            [ "${DEBUG:-0}" -ne 0 ] && (echo '----------'; echo "$response" ; echo '----------'; echo )  >&2
+            echo -n "$response"
+        fi
+    fi
+
+    rm "$headers"
+    [ "$status" -ne 0 ] || return 0
+
+    # an error occurred
+
+    local curl_cmd=( 'curl' '--insecure' "$@" )
+    (
+        echo
+        term.log "***ERROR: failure to complete artifactory request
+    command:       $(printf '%s ' "${curl_cmd[@]}")
+    error code:    $(sed -E 's|,|                  |g' <<< "$response")
+
+    " 'warn' >&2
+    )
+
+    # check that 'term.log' was successful, otherwise, make sure something is echo'd
+    [ $? -eq 0 ] || echo "command:       $(printf '%s ' "${curl_cmd[@]}")\\n    error code:    $response" >&2
+
+    return 1
+}
+export -f artifactory.io
+
+#----------------------------------------------------------------------------------------------
+function artifactory.propertiesFile()
+{
+    echo "${ARTIFACTORY_PROPERTIES_FILE:=$(artifactory.propFile)}"
+}
+export -f artifactory.propertiesFile
+
+#----------------------------------------------------------------------------------------------
+function artifactory.POST()
+{
+    artifactory.io --request POST "$@" || return $?
+}
+export -f artifactory.POST
+
+#----------------------------------------------------------------------------------------------
+function artifactory.PUT()
+{
+    artifactory.io --request PUT "$@" || return $?
+}
+export -f artifactory.PUT
+
+#----------------------------------------------------------------------------------------------
+# This function will retrieve the artifact at $url
+# eg:
+# artifactoryArtifactRetrieve  https://arhost1.usd.lab.emc.com/artifactory/cyclone-dev/com/emc/adapters/1.0-SNAPSHOT/adapters-1.0-20160212.202741-1.pom
+# note that this url must be of the form /artifactory/<repo> as apposed to /artifactory/api/storage/<repo> in order to download the file
+function artifactory.retrieveArtifact()
+{
+    local url=${1:?"ERROR: no url provided to ${FUNCNAME[0]}()!"}
+    local filename=$(basename "$url")
+
+    echo "Downloading $url to current dir..."
+    artifactory.GET "$url" --output "$filename" || return $?
+}
+export -f artifactory.retrieveArtifact
+
+#----------------------------------------------------------------------------------------------
+function artifactory.saveCBF()
+{
+    local filename="${1:?}"
+    local tmpDir="${2:-$(mktemp -d)}"
+
+    local tarfile="${tmpDir}/${filename}"
+    local filetime="$(cd container_build_framework; git log -1 --format="%ci")"
+
+    # create tgz file with fixed timestamp (so we get consistent sha256)
+    tar --exclude='C?F.properties' --create --mtime "$filetime" container_build_framework | gzip -n > "$tarfile"
+
+    artifactory.uploadFile "container_build_framework/${filename}"  "$tarfile" >&2 || return 1
+    artifactory.uploadFile "container_build_framework/latest.tar.gz"  "$tarfile" >&2 || return $?
+}
+export -f artifactory.saveCBF
+
+#----------------------------------------------------------------------------------------------
+# This function will search for artifacts using AQL  (Artifactor Query Language) - json query save in file
+# eg:
+# artifactoryPropertySearch aqlFile
+function artifactory.search()
+{
+    local -r aql=${1:?"ERROR: no aql provided to ${FUNCNAME[0]}()!"}
+
+    if [ -e "$aql" ]; then
+        artifactory.POST "$(artifactory.REST_API)/search/aql" -T "$aql"
+    else
+        artifactory.POST "$(artifactory.REST_API)/search/aql" -T <(echo "$aql")
+    fi
+}
+export -f artifactory.search
+
+#----------------------------------------------------------------------------------------------
+# This function will set the artifact located at $path to have the given property and value ($prop and $val)
+# eg:
+# artifactory.setProperty https://arhost1.usd.lab.emc.com/artifactory/api/storage/cyclone-dev/com/emc/adapters/1.0-SNAPSHOT/adapters-1.0-20160212.202741-1.pom testProp testVal
+function artifactory.setProperty()
+{
+    local path=${1:?"ERROR: no path provided to ${FUNCNAME[0]}()!"}
+    local prop=${2:?"ERROR: no property provided to ${FUNCNAME[0]}()!"}
+    local val=${3:?"ERROR: no value provided to ${FUNCNAME[0]}()!"}
+
+    echo "Adding property $prop=$val to $path..."
+    local url="$path?properties=$prop=$val"
+    artifactory.PUT "$url" || return $?
+}
+export -f artifactory.setProperty
+
+#----------------------------------------------------------------------------------------------
+function artifactory.uploadFile()
+{
+    local -r target="${1:?}"
+    local -r file="${2:?}"
+
+    local md5Value="$(md5sum "$file")"
+    md5Value="${md5Value:0:32}"
+    local sha1Value="$(sha1sum "$file")"
+    sha1Value="${sha1Value:0:40}"
+
+    local url="$target"
+    [[ "$url" = https://* ]] || [[ "$url" = http://* ]] || url="$(artifactory.URL)/cyclone-devops-mw/cyclone-devops/$target"
+
+    echo "INFO: Uploading $file to $url"
+    artifactory.PUT --header "X-Checksum-Md5: $md5Value" --header "X-Checksum-Sha1: $sha1Value" --upload-file "$file" "$url" || return $?
+}
+export -f artifactory.uploadFile
+
+#----------------------------------------------------------------------------------------------
+function artifactory.ARTIFACTORY_PROD()
+{
+    echo "${_ARTIFACTORY_PROD:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( artifactory.propertiesFile )")}"
+}
+export -f artifactory.ARTIFACTORY_PROD
+
+#----------------------------------------------------------------------------------------------
+function artifactory.ARTIFACTORY_TEST()
+{
+    echo "${_ARTIFACTORY_TEST:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( artifactory.propertiesFile )")}"
+}
+export -f artifactory.ARTIFACTORY_TEST
+
+#----------------------------------------------------------------------------------------------
+function artifactory.REST_API()
+{
+    echo "${_ARTIFACTORY_REST_API:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( artifactory.propertiesFile )")}"
+}
+export -f artifactory.REST_API
+
+#----------------------------------------------------------------------------------------------
+function artifactory.ROUSER()
+{
+    echo "${_ARTIFACTORY_ROUSER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( artifactory.propertiesFile )")}"
+}
+export -f artifactory.ROUSER
+
+#----------------------------------------------------------------------------------------------
+function artifactory.SERVER()
+{
+    echo "${_ARTIFACTORY_SERVER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( artifactory.propertiesFile )")}"
+}
+export -f artifactory.SERVER
+
+#----------------------------------------------------------------------------------------------
+function artifactory.URL()
+{
+    echo "${_ARTIFACTORY_URL:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( artifactory.propertiesFile )")}"
+}
+export -f artifactory.URL
+
+#----------------------------------------------------------------------------------------------
+function artifactory.USER()
+{
+    echo "${_ARTIFACTORY_USER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( artifactory.propertiesFile )")}"
+}
+export -f artifactory.USER
+
+#----------------------------------------------------------------------------------------------
+function artifactory.USERID()
+{
+    echo "${_ARTIFACTORY_USERID:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( artifactory.propertiesFile )")}"
+}
+export -f artifactory.USERID

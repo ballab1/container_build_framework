@@ -73,6 +73,7 @@ function trap.die()
     local args="$*"
     [ "${args:0:8}" = '***ERROR' ] || args="***ERROR: $args"
     ( echo ''; trap.log "$args" ; echo '') >&2
+    trap.stacktrace
     [ "${DEBUG_TRACE:-0}" = "2" ] || exit $status
 }
 export -f trap.die
