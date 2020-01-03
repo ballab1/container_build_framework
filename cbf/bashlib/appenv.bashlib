@@ -1,0 +1,66 @@
+#!/bin/bash
+
+#----------------------------------------------------------------------------------------------
+#
+#   appenv.bashlib; basic functions to load our libraries
+#
+#----------------------------------------------------------------------------------------------
+
+declare TOP
+
+#----------------------------------------------------------------------------------------------
+function appenv.loader()
+{
+    local fn="${1:?}"
+
+    local top="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+    if [ "$(env | grep -c "BASH_FUNC_${fn}%%")" -ne 0 ]; then
+        TOP=/opt
+
+    elif [ "$top" = '/usr/local/bin' ] && [ -e /usr/local/crf/bin/loadLibraries.sh ]; then
+        source /usr/local/crf/bin/loadLibraries.sh
+        TOP="$(pwd)"
+
+    else
+        local dir
+        for dir in '.' 'bin' 'bashlib' 'bin/bashlb'; do
+            local libs="${top}/${dir}/loadLibraries.sh"
+            if [ -e "$libs" ]; then
+                source "$libs"
+                case "$dir" in
+                    bin|bashlib)
+                        TOP="$(readlink -f "${top}/..")";;
+                    bin/bashlib)
+                        TOP="$(readlink -f "${top}/../..")";;
+                    *)
+                        TOP="$top";;
+                esac
+                return
+            fi
+        done
+    fi
+
+    echo '***ERROR unable to locate libraries'
+    exit 1
+}
+
+#----------------------------------------------------------------------------------------------
+function appenv.results()
+{
+    local val
+    if [ ${#opts[*]} -gt 0 ]; then
+        local -i i=0
+        for val in "${!opts[@]}"; do
+            [ $(( i++ )) -gt 0 ] && echo -n ' '
+            printf '['\''%s'\'']='\''%s'\' "$val" "${opts[$val]}"
+        done
+        echo
+    else
+        echo "['dummy']=0"
+    fi
+    if [ $# -gt 0 ]; then
+        for val in "$@"; do
+            echo "$val"
+        done
+    fi
+}
