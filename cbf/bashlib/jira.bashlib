@@ -1,0 +1,295 @@
+#!/bin/bash
+
+#----------------------------------------------------------------------------------------------
+#
+# DO NOT ADD "IN-LINE" code to this file. Only functions should be included.
+#
+#  module:  jira.bashlib
+#  purpose: general 'jira' scripts
+#
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+function jira.propFile()
+{
+    echo "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/properties/$(basename "${BASH_SOURCE[0]%.*}").properties"
+}
+export -f jira.propFile
+
+export JIRA_PROPERTIES_FILE="${JIRA_PROPERTIES_FILE:=$(jira.propFile)}"
+
+#----------------------------------------------------------------------------------------------
+function jira.DELETE()
+{
+    jira.io --request DELETE --show-error --write-out '\n%{http_code}\n' "$@"  || return $?
+}
+export -f jira.DELETE
+
+#----------------------------------------------------------------------------------------------
+function jira.comments()
+{
+    local issue=${1:-?}
+
+    local uri=$(printf 'jira.REST_API)/issue/%s/comment' "$issue")
+    jira.GET "$uri"
+}
+export -f jira.comments
+
+#----------------------------------------------------------------------------------------------
+function jira.fields()
+{
+    jira.GET "$(jira.REST_API)/field"
+}
+export -f jira.fields
+
+#----------------------------------------------------------------------------------------------
+function jira.GET()
+{
+    jira.io --request GET "$@" || return $?
+}
+export -f jira.GET
+
+#----------------------------------------------------------------------------------------------
+function jira.io()
+{
+    local -a args
+    local headers response url
+    local -i status=0
+    local -A links
+    local -a credentials=( $(credentials.get jira) )
+    if [ "${DEBUG:-0}" -eq 0 ]; then
+        credentials+=( '--silent' )
+    else
+        echo "curl $*" >&2
+    fi
+
+    headers=$(mktemp)
+    args=( "${credentials[@]}" '--header' 'Content-Type: application/json' '--dump-header' "$headers" "$@" )
+    response=$(curl "${args[@]}") && status=$? || status=$?
+
+    if [ "$status" -eq 0 ]; then
+        # Status: 200 OK
+        http_code=$(head -1 "$headers" | sed -Ee 's|^\S+\s+(.+)\r?$|\1|')
+        if [ "${http_code:0:1}" -gt 3 ]; then
+            [ "${DEBUG:-0}" -ne 0 ] && cat  "$headers" >&2
+            status=-1
+        else
+            [ "${DEBUG:-0}" -ne 0 ] && (echo '----------'; echo "$response" ; echo '----------'; echo )  >&2
+            echo -n "$response"
+        fi
+    fi
+    rm "$headers"
+    [ "$status" -ne 0 ] || return 0
+
+    # an error occurred
+#    local -r errors="$(echo "$response" | jq --compact-output --monochrome-output '.errors[]?' 2>/dev/null)"
+    local -r errors="$(echo "$response" | grep '<title>' | sed -E 's|^.*<title>(.+)</title>.*$|\1|')"
+
+    local curl_cmd=( 'curl' '--insecure' "$@" )
+    (
+        term.log '***ERROR: failure to complete JIRA API request\n' 'warn'
+        term.log "    error message: $errors"'\n' 'warn'
+        term.log "    command:       $(printf '%s ' "${curl_cmd[@]}")"'\n' 'warn'
+        echo
+    ) >&2
+
+    # check that 'term.log' was successful, otherwise, make sure something is echo'd
+    [ $? -eq 0 ] || echo "command:       $(printf '%s ' "${curl_cmd[@]}")\\n    error code:    $errors" >&2
+
+    return 1
+}
+export -f jira.io
+
+#----------------------------------------------------------------------------------------------
+function jira.issue()
+{
+    local issue=${1:-?}
+
+    local uri=$(printf '$(jira.REST_API)/issue/%s' "$issue")
+    jira.GET "$uri"
+}
+export -f jira.issue
+
+#----------------------------------------------------------------------------------------------
+function jira.issueEditMeta()
+{
+    local issue=${1:-?}
+
+    local uri=$(printf '$(jira.REST_API)/issue/%s/editmeta' "$issue")
+    jira.GET "$uri"
+}
+export -f jira.issue
+
+#----------------------------------------------------------------------------------------------
+# This function will search for artifacts using JQL  (JIRA Query Language) - json query
+# eg:
+# jqlSearch jql file
+function jira.jqlSearch()
+{
+    local -r jql_json=${1:?"ERROR: no jql_json provided to ${FUNCNAME[0]}()!"}
+
+    jira.POST --data "$jql_json" "$(jira.REST_API)/search"
+}
+export -f jira.jqlSearch
+
+#----------------------------------------------------------------------------------------------
+function jira.projectInfo()
+{
+    local project=${1:-MDT};
+
+    local -r JIRA_PROJECT_INFO_API='issue/createmeta?projectKeys=%s&issuetypeNames=Bug&expand=projects.issuetypes.fields'
+    local uri=$(printf "$(jira.REST_API)/$JIRA_PROJECT_INFO_API" $project)
+    local response=$(jira.GET $uri)
+
+    jq --compact-output --monochrome-output '.projects[]|select(.key=="'${project}'").issuetypes[0].fields|to_entries' <<< "$response"
+}
+export -f jira.projectInfo
+
+#----------------------------------------------------------------------------------------------
+function jira.propertiesFile()
+{
+    echo "${JIRA_PROPERTIES_FILE:=$(jira.propFile)}"
+}
+export -f jira.propertiesFile
+
+#----------------------------------------------------------------------------------------------
+function jira.POST()
+{
+    jira.io --request POST "$@" || return $?
+}
+export -f jira.POST
+
+#----------------------------------------------------------------------------------------------
+function jira.PUT()
+{
+    jira.io --request PUT "$@" || return $?
+}
+export -f jira.PUT
+
+#----------------------------------------------------------------------------------------------
+function jira.remoteLinks()
+{
+    local issue=${1:-?}
+
+    local uri=$(printf 'jira.REST_API)/issue/%s/remotelink' "$issue")
+    jira.GET "$uri"
+}
+export -f jira.remoteLinks
+
+#----------------------------------------------------------------------------------------------
+# This function will search for JIRA issues using JQL  (JIRA Query Language) - json query
+# when there are too many issues (>100), JIRA starts to paginate. This method loops through pages
+# for the output generated by this function:
+#  use < jq --compact-output --monochrome-output --slurp '.' > to process output as an array
+#   or < jq --compact-output --monochrome-output '.' > to process all idividual items
+# argumens:
+#     jira.search jql_json
+#
+function jira.search()
+{
+    local jql_json=${1:?"ERROR: no jql _jsonprovided to ${FUNCNAME[0]}()!"}
+
+    [ "$jql_json" ] || trap.die "JQL search: '$jql_json' not found"
+
+    local -i count i maxResults startAt endAt status
+    local -A fromFields toFields
+    local field fieldInfo json newName results
+
+    fieldInfo="$(jira.fields)"
+    # use 'jq' to return bash Associative arrays with the appropriate key/values
+    eval "fromFields=( $(jq --compact-output --monochrome-output --raw-output '.[]|"[\"\(.name)\"]=\"\(.id)\""' <<< "$fieldInfo") )"
+    eval "toFields=( $(jq --compact-output --monochrome-output --raw-output '.[]|"[\"\(.id)\"]=\"\(.name)\""' <<< "$fieldInfo") )"
+
+
+    maxResults=$(jq --compact-output --monochrome-output --raw-output '.maxResults?' <<< "$jql_json"| awk '{if ($1 != "null"){print $1}else{print "0"}}')
+    startAt=$(jq --compact-output --monochrome-output --raw-output '.startAt?' <<< "$jql_json" | awk '{if ($1 != "null"){print $1}else{print "0"}}')
+    count=$( jq --compact-output --monochrome-output --raw-output '.fields|length' <<< "$jql_json")
+    for (( i=0; i<$count; i++ )); do
+        field="$( jq --compact-output --monochrome-output --raw-output '.fields['${i}']' <<< "$jql_json")"
+        newName="${fromFields[${field}]:-}"
+        [ "$newName" ] || continue
+        echo "field: $field -> $newName" >&2
+        jql_json=$(jq --compact-output --monochrome-output '.fields['${i}']|="'${newName}'"' <<< "$jql_json")
+    done
+    if [ $maxResults -eq 0 ]; then
+        jql_json=$(jq --compact-output --monochrome-output '. + {maxResults:1000}' <<< "$jql_json")
+        maxResults=1000
+    fi
+
+    status=1
+    while true; do
+        results="$(jira.jqlSearch "$jql_json")" && status=$? || status=$?
+        [ $status -ne 0 ] && break
+
+        count=$(jq --compact-output --monochrome-output --raw-output '.issues | length' <<< "$results")
+        total=$(jq --compact-output --monochrome-output --raw-output '.total' <<< "$results")
+        endAt=$(( startAt + count ))
+        echo "found issues $startAt :: $(( endAt - 1 ))" >&2
+
+        jq --compact-output --monochrome-output '.issues|.[0:'$(( count - 2 ))'][]' <<< "$results" || status=$?
+        [[ $status -ne 0 || $endAt -ge ${total:-0} ]] && break
+
+        jql_json=$(jq --compact-output --monochrome-output ".startAt|=${endAt}" <<< "$jql_json")
+        startAt=$endAt
+    done
+    return $status
+}
+export -f jira.search
+
+#----------------------------------------------------------------------------------------------
+function jira.supportMaterialsPath()
+{
+    local issue=${1:?"ERROR: No Path provided to ${FUNCNAME[0]}()!"}
+
+    echo "$issue"
+}
+export -f jira.supportMaterialsPath
+
+#----------------------------------------------------------------------------------------------
+function jira.JIRA_PROD()
+{
+    echo "${_JIRA_PROD:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
+}
+export -f jira.JIRA_PROD
+
+#----------------------------------------------------------------------------------------------
+function jira.JIRA_STAGING()
+{
+    echo "${_JIRA_STAGING:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
+}
+export -f jira.JIRA_STAGING
+
+#----------------------------------------------------------------------------------------------
+function jira.JIRA_TEST()
+{
+    echo "${_JIRA_TEST:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
+}
+export -f jira.JIRA_TEST
+
+#----------------------------------------------------------------------------------------------
+function jira.REST_API()
+{
+    echo "${_JIRA_REST_API:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
+}
+export -f jira.REST_API
+
+#----------------------------------------------------------------------------------------------
+function jira.SERVER()
+{
+    echo "${_JIRA_SERVER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
+}
+export -f jira.SERVER
+
+#----------------------------------------------------------------------------------------------
+function jira.USER()
+{
+    echo "${_JIRA_USER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
+}
+export -f jira.USER
+
+#----------------------------------------------------------------------------------------------
+function jira.USERID()
+{
+    echo "${_JIRA_USERID:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
+}
+export -f jira.USERID
