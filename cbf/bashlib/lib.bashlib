@@ -9,6 +9,22 @@
 #
 
 #----------------------------------------------------------------------------------------------
+# Check boolean value
+function lib.checkBoolean()
+{
+    case "${1,,}" in
+        true|1|yes)
+            echo 1
+            return 0;;
+        false|0|no)
+            echo 0
+            return 1;;
+    esac
+    return -1
+}
+export -f lib.checkBoolean
+
+#----------------------------------------------------------------------------------------------
 function lib.exportFileVars()
 {
     local -r settings="${1:?"Input parameter 'settings' must be passed to 'function ${FUNCNAME[0]}()'"}"
@@ -53,6 +69,21 @@ function lib.file_env()
     unset "$fileVar"
 }
 export -f lib.file_env
+
+
+#----------------------------------------------------------------------------------------------
+function lib.functions()
+{
+    local -r libdir="${1:?}"
+    local op="${2:-'unset'}"
+
+    [ "$op" = 'unset' ] || op='export'
+    local f
+    for f in $(grep -E '^function ' "${libdir}"/*.bashlib | sed -re 's|^.*function (.+)\s*\(.+$|\1|'); do
+       $op -f "$f"
+    done
+}
+export -f lib.functions
 
 #----------------------------------------------------------------------------------------------
 function lib.fileSha256()
@@ -336,6 +367,21 @@ function lib.removeProperty()
 export -f lib.removeProperty
 
 #----------------------------------------------------------------------------------------------
+function lib.saveMultiLineRecords()
+{
+    local numRecs=${1:?}
+    local delimStr=${2:?}
+    local file=${3:?}
+
+    if [ -e "$file" ]; then
+        # save the last numRecs sections of $file  (as in 'tail -$numRecs')
+        local -i offs=$(( $(grep -n "$delimStr" "$file" | cut -d ':' -f 1 | tail -$numRecs | head -n 1) - 1 ))
+        [ ${offs:-0} -le 0 ] || sed -i -e "1,$offs d" "$file"
+    fi
+}
+export -f lib.saveMultiLineRecords
+
+#----------------------------------------------------------------------------------------------
 function lib.updateConfigFromENV()
 {
     local -r env_prefix="${1:?"Input parameter 'env_prefix' must be passed to 'function ${FUNCNAME[0]}()'"}"
@@ -414,7 +460,7 @@ function lib.urlencode()
 function lib.yamlToJson()
 {
     local -r yamlFile=${1:?}
-    local -ar YAML_TO_JSON=( 'python' '-c' 'import sys, yaml, json; json.dump(yaml.safe_load(sys.stdin), sys.stdout, indent=4)' )
+    local -ar YAML_TO_JSON=( 'python' '-c' 'import sys, yaml, json; json.dump(yaml.safe_load(sys.stdin), sys.stdout)' )
 
     if [ -e "$yamlFile"  ]; then
         "${YAML_TO_JSON[@]}" < "$yamlFile"
