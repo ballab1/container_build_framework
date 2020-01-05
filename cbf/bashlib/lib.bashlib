@@ -78,7 +78,7 @@ function lib.functions()
 
     [ "$op" = 'unset' ] || op='export'
     local f
-    for f in $(grep -R '^function ' "${PROGRAM_DIR}/bashlib"/*.bashlib | sed -re 's|^.*function (.+)\s*\(.+$|\1|'); do
+    for f in $(grep -E '^function ' "${PROGRAM_DIR}/bashlib"/*.bashlib | sed -re 's|^.*function (.+)\s*\(.+$|\1|'); do
        $op -f "$f"
     done
 }

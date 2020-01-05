@@ -144,7 +144,7 @@ function cbf.buildContainer()
 
         # get array of files in directory
         local -a files
-        mapfile -t files < <( lib.getFiles "$( cbf.ACTION )/$dir" 'lib.isActionFile' )
+        mapfile -t files < <( lib.getFiles "$( cbf.ACTION )/$dir" 'lib.isActionFile' ) # ignore files with OS extensions which do not match current OS
         if [ ${#files[*]} -gt 0 ] && [ "$dir" = '07.run.startup' ]; then
             cbf.showActionNotice 'last_notice' "$dir"
             term.log "  - copying files to $(cbf.CRT_BASE)\n" 'task'
