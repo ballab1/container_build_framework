@@ -75,6 +75,15 @@ function git.clone()
 export -f git.clone
 
 #----------------------------------------------------------------------------------------------
+function git.commit()
+{
+    local -r branch_id=${1:?}
+
+    git rev-parse "refs/remotes/origin/${branch_id}^{commit}"
+}
+export -f git.commit
+
+#----------------------------------------------------------------------------------------------
 function git.commitAuthor()
 {
     [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git log -1 --pretty=format:"%an"\n' 'grey'
@@ -118,9 +127,23 @@ function git.cryptUnlock()
 {
     local -r key=${1:-}
 
+    if [ -z $(command -v git-crypt) ]; then
+        term.elog 'Unable to locate "git-crypt"'
+        return 1
+    fi
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git crypt unlock\n' 'grey'
     git crypt unlock ${key:-}
 }
 export -f git.cryptUnlock
+
+#----------------------------------------------------------------------------------------------
+function git.fetch()
+{
+    [ $# -eq 0 ] && return 1
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git fetch '$(IFS=' ' echo $*)'\n' 'grey'
+    git fetch $@
+}
+export -f git.fetch
 
 #----------------------------------------------------------------------------------------------
 function git.HEAD()
@@ -129,6 +152,29 @@ function git.HEAD()
     git rev-parse HEAD
 }
 export -f git.HEAD
+
+#----------------------------------------------------------------------------------------------
+function git.initWorkspace()
+{
+    local -r repo=${1:?}
+
+    # commands obtained from Jenkins console output
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git init .\n' 'grey'
+    git init '.'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git config --local credential.helper environ\n' 'grey'
+    git config --local credential.helper environ || trap.die "Failed to set credential helper"
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git -c core.askpass=true fetch --tags --progress $repo +refs/heads/*:refs/remotes/origin/*"'\n' 'grey'
+    git -c core.askpass=true fetch --tags --progress "$repo" '+refs/heads/*:refs/remotes/origin/*'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git config remote.origin.url $repo"'\n' 'grey'
+    git config remote.origin.url "$repo" # timeout=10
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git config --add remote.origin.fetch +refs/heads/*:refs/remotes/origin/*\n' 'grey'
+    git config --add remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*' # timeout=10
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git config remote.origin.url $repo"'\n' 'grey'
+    git config remote.origin.url "$repo" # timeout=10
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git -c core.askpass=true fetch --tags --progress $repo +refs/heads/*:refs/remotes/origin/*"'\n' 'grey'
+    git -c core.askpass=true fetch --tags --progress "$repo" '+refs/heads/*:refs/remotes/origin/*'
+}
+export -f git.initWorkspace
 
 #----------------------------------------------------------------------------------------------
 #
@@ -166,6 +212,14 @@ function git.lsTree()
 export -f git.lsTree
 
 #----------------------------------------------------------------------------------------------
+function git.mainBranch()
+{
+    local master="$(git config --get core.branch)"
+    [ -z "$master" ] && master='master'
+    echo $master
+}
+
+#----------------------------------------------------------------------------------------------
 function git.origin()
 {
     local -r dir=${1:-.}
@@ -188,6 +242,18 @@ function git.origin()
     echo "$version"
 }
 export -f git.origin
+
+#----------------------------------------------------------------------------------------------
+function git.populateWorkspace()
+{
+    local -r commitid=${1:?}
+
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git checkout -q -f $commitid --"'\n' 'grey'
+    GIT_LFS_SKIP_SMUDGE=1 git checkout -q -f "$commitid" --
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git lfs pull\n' 'grey'
+    git lfs pull
+}
+export -f git.populateWorkspace
 
 #----------------------------------------------------------------------------------------------
 function git.pull()

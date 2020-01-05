@@ -63,6 +63,12 @@ function timer.secondsSinceMidnight()
 }
 export -f timer.secondsSinceMidnight
 
+#----------------------------------------------------------------------------------------------
+function timer.sysDateTime()
+{
+    date +"%F %T%:::z"
+}
+
 #----------------------------------------------------------------------------
 # get the time from UTC in universal format
 function timer.zuluTime()
