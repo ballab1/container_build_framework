@@ -79,6 +79,7 @@ function git.commit()
 {
     local -r branch_id=${1:?}
 
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git rev-parse refs/remotes/origin/${branch_id}^{commit}"'\n' 'grey'
     git rev-parse "refs/remotes/origin/${branch_id}^{commit}"
 }
 export -f git.commit
@@ -157,22 +158,21 @@ export -f git.HEAD
 function git.initWorkspace()
 {
     local -r repo=${1:?}
+    local -r refs=${2:-'*'}
 
     # commands obtained from Jenkins console output
     [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git init .\n' 'grey'
     git init '.'
     [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git config --local credential.helper environ\n' 'grey'
-    git config --local credential.helper environ || trap.die "Failed to set credential helper"
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git -c core.askpass=true fetch --tags --progress $repo +refs/heads/*:refs/remotes/origin/*"'\n' 'grey'
-    git -c core.askpass=true fetch --tags --progress "$repo" '+refs/heads/*:refs/remotes/origin/*'
+    git config --local credential.helper environ 2>/dev/null || trap.die "Failed to set credential helper"
     [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git config remote.origin.url $repo"'\n' 'grey'
     git config remote.origin.url "$repo" # timeout=10
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git config --add remote.origin.fetch +refs/heads/*:refs/remotes/origin/*\n' 'grey'
-    git config --add remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*' # timeout=10
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git config --add remote.origin.fetch +refs/heads/${refs}:refs/remotes/origin/${refs}\n' 'grey'
+    git config --add remote.origin.fetch "+refs/heads/${refs}:refs/remotes/origin/${refs}" # timeout=10
     [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git config remote.origin.url $repo"'\n' 'grey'
     git config remote.origin.url "$repo" # timeout=10
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git -c core.askpass=true fetch --tags --progress $repo +refs/heads/*:refs/remotes/origin/*"'\n' 'grey'
-    git -c core.askpass=true fetch --tags --progress "$repo" '+refs/heads/*:refs/remotes/origin/*'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git -c core.askpass=true fetch --tags --depth=1 $repo +refs/heads/${refs}:refs/remotes/origin/${refs}"'\n' 'grey'
+    git -c core.askpass=true fetch --tags --depth=1 "$repo" "+refs/heads/${refs}:refs/remotes/origin/${refs}" 2>/dev/null
 }
 export -f git.initWorkspace
 
@@ -212,14 +212,6 @@ function git.lsTree()
 export -f git.lsTree
 
 #----------------------------------------------------------------------------------------------
-function git.mainBranch()
-{
-    local master="$(git config --get core.branch)"
-    [ -z "$master" ] && master='master'
-    echo $master
-}
-
-#----------------------------------------------------------------------------------------------
 function git.origin()
 {
     local -r dir=${1:-.}
@@ -248,10 +240,10 @@ function git.populateWorkspace()
 {
     local -r commitid=${1:?}
 
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git checkout -q -f $commitid --"'\n' 'grey'
-    GIT_LFS_SKIP_SMUDGE=1 git checkout -q -f "$commitid" --
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git checkout --quiet --force $commitid --"'\n' 'grey'
+    GIT_LFS_SKIP_SMUDGE=1 git checkout --quiet --force "$commitid" -- 2>/dev/null
     [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git lfs pull\n' 'grey'
-    git lfs pull
+    git lfs pull 2>/dev/null
 }
 export -f git.populateWorkspace
 
@@ -266,10 +258,20 @@ function git.pull()
 export -f git.pull
 
 #----------------------------------------------------------------------------------------------
+function git.referenceBranch()
+{
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git config --get core.branch\n' 'grey'
+
+    local ref="$(git config --get core.branch)"
+    [[ -z "$ref" || $(git rev-parse --verify --quiet "origin/$ref" &> /dev/null ; echo $?) -ne 0 ]] && ref='master'
+    echo $ref
+}
+
+#----------------------------------------------------------------------------------------------
 function git.refs()
 {
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git log -n1 --oneline --decorate\n' 'grey'
-    git log -n1 --oneline --decorate | sed 's/[^\(]*(\([^\)]*\)).*/\1/'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git log -n 1 --pretty=%d HEAD\n' 'grey'
+    git log -n 1 --pretty=%d HEAD | sed 's/[^\(]*(\([^\)]*\)).*/\1/'
 }
 export -f git.refs
 

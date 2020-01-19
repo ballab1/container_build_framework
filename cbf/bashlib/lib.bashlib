@@ -39,7 +39,7 @@ function lib.exportFileVars()
         key="$(cut -d '=' -f 1 <<< "$line")"
         [ "$override" = 'false' ] && [ "${!key:-}" ] && continue
         eval "$fn $line"
-    done < <(grep '=' "$settings" | grep -Ev "^\s*#")
+    done < <(grep '=' "$settings" | grep -Ev "^\s*#" ||:)
 }
 export -f lib.exportFileVars
 

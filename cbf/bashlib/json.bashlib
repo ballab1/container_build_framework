@@ -27,6 +27,7 @@ function json.encodeArray()
         done
         echo -n ']'
     fi
+    return 0
 }
 
 #----------------------------------------------------------------------------------------------
@@ -36,54 +37,83 @@ function json.encodeBoolean()
 
     [ "$boolVal" = true ] || boolVal='false'
     echo -n "$boolVal"
+    return 0
 }
 
 #----------------------------------------------------------------------------------------------
 function json.encodeField()
 {
     local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
-    shift
+    local -r val=${2:-}
+    local -r mode=${3:-''}
 
     [ "$name" = '--' ] || printf '"%s":' "$name"
-    if [[ $# -eq 0 || -z "${1:-}" ]]; then
+    if [ "${val:-null}" = 'null' ]; then
         echo -n 'null'
 
-    elif [[ "$1" =~ ^true|false$ ]]; then
-        json.encodeBoolean "$1"
-
-    elif [[ "$1" =~ ^[0-9]+$ ]]; then
-        json.encodeInteger "$1"
-
-    elif [[ "$1" = '{'*'}' ]]; then
-        json.encodeHash "${1:1:-1}"
-
-    elif [[ "$1" = '['*']' ]]; then
-        json.encodeArray "${1:1:-1}"
-
     else
-        json.encodeString "$1"
+        case "${mode,,}" in
+            string)
+                json.encodeString "$val"
+                ;;
+
+            boolean)
+                json.encodeBoolean "$val"
+                ;;
+
+            integer)
+                json.encodeInteger "$val"
+                ;;
+
+            array)
+                json.encodeArray "${val:1:-1}"
+                ;;
+
+            hash)
+                json.encodeHash "${val:1:-1}"
+                ;;
+
+            json)
+                echo -n '{'"$val"'}'
+                ;;
+
+            *)
+                if [[ "$val" =~ ^true|false$ ]]; then
+                    json.encodeBoolean "$val"
+
+                elif [[ "$val" =~ ^[0-9]+$ ]]; then
+                    json.encodeInteger "$val"
+
+                elif [[ "$val" = '{'*'}' ]]; then
+                    json.encodeHash "${val:1:-1}"
+
+                elif [[ "$val" = '['*']' ]]; then
+                    json.encodeArray "${val:1:-1}"
+
+                elif [[ "$val" = '"'*'":'* ]]; then
+                    echo -n '{'"$val"'}'
+
+                else
+                    json.encodeString "$val"
+                fi
+                ;;
+        esac
     fi
+    return 0
 }
 export -f json.encodeField
-
-fn()
-{
-    local -a 'arraykeys=("${!'"$1"'[@]}")'
-    echo ${arraykeys[*]}
-    echo ${#arraykeys[*]}
-}
 
 #----------------------------------------------------------------------------------------------
 function json.encodeHash()
 {
-    local type=$(typeset -p "$1" | awk '{print $2}')
+    local type=$(typeset -p "${1:?}" | awk '{print $2}')
     if [ "$type" = '--' ]; then
-        local ref="${1:?}"
+        local ref="$1"
         echo -n "$!ref"
         return 0
     fi
 
-    # derefernce the ASSOIATIVE ARRAY reference passed in
+    # dereference the ASSOCIATIVE ARRAY reference passed in
     local -a 'names=("${!'"$1"'[@]}")'
     local -a 'vals=("${'"$1"'[@]}")'
     local -A assoc=()
@@ -102,13 +132,19 @@ function json.encodeHash()
         done
     fi
     echo -n '}'
+    return 0
 }
 
 #----------------------------------------------------------------------------------------------
 function json.encodeInteger()
 {
-    local -ri intVal=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
-    printf '%d' "$intVal"
+    local -r intVal=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
+    if [ "$intVal" = '0' ];then
+        echo '0'
+    else
+        printf '%d' $(expr 0 + $intVal)
+    fi
+    return 0
 }
 
 #----------------------------------------------------------------------------------------------
@@ -116,4 +152,5 @@ function json.encodeString()
 {
     local -r strVal=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
     printf '"%s"' "${strVal//\"/\\\"}"
+    return 0
 }
