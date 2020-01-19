@@ -12,7 +12,7 @@ export http_code
 #----------------------------------------------------------------------------------------------
 function registry.catalog()
 {
-    registry.GET --silent "$(registry.URL)/_catalog" | jq -r '.repositories| sort[]? ' || echo "Failed to get $(registry.URL)/_catalog" >&2
+    registry.GET "$(registry.URL)/_catalog" | jq --compact-output --monochrome-output --raw-output '.repositories| sort[]?' || echo "Failed to get $(registry.URL)/_catalog" >&2
 }
 export -f registry.catalog
 
@@ -26,8 +26,8 @@ function registry.createTime()
 
     local -r manifests="$(registry.manifest "$name" "${tags[0]}")"
     if [ "$manifests" ] && [[ ! $manifests =~ MANIFEST_INVALID ]]; then
-#        local fslayers=$(jq -r 'try [ .fsLayers|length ]' <<< "$manifests")
-        local createTime=$(jq -r 'try [ .history[].v1Compatibility.created | sub("\\.\\d+Z"; "Z") | fromdate] | max | todate' <<< "$manifests")
+#        local fslayers=$(jq --compact-output --monochrome-output --raw-output 'try [ .fsLayers|length ]' <<< "$manifests")
+        local createTime=$(jq --compact-output --monochrome-output --raw-output 'try [ .history[].v1Compatibility.created | sub("\\.\\d+Z"; "Z") | fromdate] | max | todate' <<< "$manifests")
         if [ "$createTime" ]; then
             echo "$createTime"
             return 0
@@ -67,7 +67,7 @@ function registry.deleteImage()
     local -r digest=${2:?}
 
     echo -n "deleting ${name}@$digest  "
-    registry.DELETE --silent --show-error --write-out '%{http_code}\n' "$(registry.URL)/${name}/manifests/$digest" || echo "Failed to delete $name:$digest"
+    registry.DELETE --show-error --write-out '%{http_code}\n' "$(registry.URL)/${name}/manifests/$digest" || echo "Failed to delete $name:$digest"
     echo
 }
 export -f registry.deleteImage
@@ -78,9 +78,8 @@ function registry.digest()
     local -r name=${1:?}
     local -r tag=${2:?}
 
-    local -r digest="$(registry.GET --header "Accept: application/vnd.docker.distribution.manifest.v2+json" \
-                                    --silent \
-                                    --head \
+    local -r digest="$(registry.GET --head \
+                                    --header "Accept: application/vnd.docker.distribution.manifest.v2+json" \
                                     "$(registry.URL)/${name}/manifests/$(tr -d '"' <<< "$tag")" || echo "Failed to get $(registry.URL)/${name}/manifests/$tag" >&2)"
 
     [ -z "$digest" ] || ( awk '{gsub(/\r/,"");if (tolower($1) == "docker-content-digest:") {print $2}}' ) <<< "$digest"
@@ -215,10 +214,15 @@ function registry.io()
     local headers response url
     local -i status=0
     local -A links
-    local -ra credentials=( $(credentials.get registry) )
+    local -a credentials=( $(credentials.get registry) )
+    if [ "${DEBUG:-0}" -eq 0 ]; then
+        credentials+=( '--silent' )
+    else
+        echo "curl $*" >&2
+    fi
 
     headers=$(mktemp)
-    args=( "${credentials[@]}" '--silent' '--dump-header' "$headers" "$@" )
+    args=( "${credentials[@]}" '--dump-header' "$headers" "$@" )
 
     response=$(curl "${args[@]}") && status=$? || status=$?
 
@@ -228,6 +232,7 @@ function registry.io()
         if [ "${http_code:0:1}" -gt 3 ]; then
             status=-1
         else
+            [ "${DEBUG:-0}" -ne 0 ] && (echo '----------'; echo "$response" ; echo '----------'; echo )  >&2
             echo -n "$response"
         fi
     fi
@@ -235,15 +240,15 @@ function registry.io()
     [ "$status" -ne 0 ] || return 0
 
     # an error occurred
-    local -r errors="$(echo "$response" | jq '.errors[]?' 2>/dev/null)"
+    local -r errors="$(echo "$response" | jq --compact-output --monochrome-output '.errors[]?' 2>/dev/null)"
 
     local curl_cmd=( 'curl' '--insecure' "$@" )
     echo
 (   term.log "***ERROR: failure to complete registry request
     command:       $(printf '%s ' "${curl_cmd[@]}")
-    error code:    $(jq '.code?' <<< "$errors")
-    error message: $(jq '.message?' <<< "$errors")
-    error details: $(jq '.detail?' <<< "$errors")
+    error code:    $(jq --compact-output --monochrome-output '.code?' <<< "$errors")
+    error message: $(jq --compact-output --monochrome-output '.message?' <<< "$errors")
+    error details: $(jq --compact-output --monochrome-output '.detail?' <<< "$errors")
     http_code:     ${http_code:-}
     " 'warn' >&2
     )
@@ -261,7 +266,7 @@ function registry.layer()
     local -r name=${1:?}
     local -r digest=${2:?}
 
-    registry.GET --silent "$(registry.URL)/${name}/blobs/${digest}" || echo "Failed to get $(registry.URL)/${name}/blobs/${digest}" >&2
+    registry.GET "$(registry.URL)/${name}/blobs/${digest}" || echo "Failed to get $(registry.URL)/${name}/blobs/${digest}" >&2
 }
 export -f registry.layer
 
@@ -271,7 +276,7 @@ function registry.manifest()
     local -r name=${1:?}
     local -r reference=${2:?}
 
-    registry.GET --silent "$(registry.URL)/${name}/manifests/${reference}" |  jq -c -M '.history[].v1Compatibility|=fromjson' || echo "Failed to get $(registry.URL)/${name}/manifests/${reference}" >&2
+    registry.GET "$(registry.URL)/${name}/manifests/${reference}" |  jq --compact-output --monochrome-output '.history[].v1Compatibility|=fromjson' || echo "Failed to get $(registry.URL)/${name}/manifests/${reference}" >&2
 }
 export -f registry.manifest
 
@@ -323,8 +328,8 @@ function registry.tags()
 {
     local -r name=${1:?}
 
-    local -r json=$(registry.GET --silent "$(registry.URL)/${name}/tags/list" || echo "Failed to get $(registry.URL)/${name}/tags/list" >&2)
-    [ -z "${json:-}" ] || jq -r '.tags[]?' <<< "$json"
+    local -r json=$(registry.GET "$(registry.URL)/${name}/tags/list" || echo "Failed to get $(registry.URL)/${name}/tags/list" >&2)
+    [ -z "${json:-}" ] || jq --compact-output --monochrome-output --raw-output '.tags[]?' <<< "$json"
 }
 export -f registry.tags
 

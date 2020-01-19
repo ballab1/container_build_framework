@@ -54,7 +54,7 @@ export -f environ.hardwarePlatform
 #----------------------------------------------------------------------------------------------
 function environ.hostIp()
 {
-    nslookup "$(hostname -f)" | grep 'Address:' | awk '{if(NR==2){print $2}}'
+    environ.ipAddress
 }
 export -f environ.hostIp
 
@@ -76,7 +76,9 @@ export -f environ.ipAddressAndMask
 #----------------------------------------------------------------------------------------------
 function environ.ipAddress()
 {
-    hostname -i
+#   hostname -i
+#   ip -4 -o addr | grep eth0 | awk '{print $4}'
+    nslookup $(hostname -f) | grep -E '^Address:' | awk 'NR==2 {print $2}'
 }
 export -f environ.ipAddress
 

@@ -1,0 +1,10 @@
+# Created by .gitignore support plugin (hsz.mobi)
+.idea
+.gradle
+*.iml
+*.tgz
+*.zip
+**/*.bak
+*.log
+*.txt
+*.json
