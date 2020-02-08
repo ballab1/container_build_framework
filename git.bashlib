@@ -167,12 +167,12 @@ function git.initWorkspace()
     git config --local credential.helper environ 2>/dev/null || trap.die "Failed to set credential helper"
     [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git config remote.origin.url $repo"'\n' 'grey'
     git config remote.origin.url "$repo" # timeout=10
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git config --add remote.origin.fetch +refs/heads/${refs}:refs/remotes/origin/${refs}\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git config --add remote.origin.fetch +refs/heads/${refs}:refs/remotes/origin/${refs}"'\n' 'grey'
     git config --add remote.origin.fetch "+refs/heads/${refs}:refs/remotes/origin/${refs}" # timeout=10
     [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git config remote.origin.url $repo"'\n' 'grey'
     git config remote.origin.url "$repo" # timeout=10
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git -c core.askpass=true fetch --tags --depth=1 $repo +refs/heads/${refs}:refs/remotes/origin/${refs}"'\n' 'grey'
-    git -c core.askpass=true fetch --tags --depth=1 "$repo" "+refs/heads/${refs}:refs/remotes/origin/${refs}" 2>/dev/null
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git -c core.askpass=true fetch --depth=1 $repo +refs/heads/${refs}:refs/remotes/origin/${refs}"'\n' 'grey'
+    git -c core.askpass=true fetch --depth=1 "$repo" "+refs/heads/${refs}:refs/remotes/origin/${refs}" 2>/dev/null
 }
 export -f git.initWorkspace
 

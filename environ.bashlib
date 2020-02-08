@@ -78,7 +78,11 @@ function environ.ipAddress()
 {
 #   hostname -i
 #   ip -4 -o addr | grep eth0 | awk '{print $4}'
-    nslookup $(hostname -f) | grep -E '^Address:' | awk 'NR==2 {print $2}'
+    local addr=$(nslookup $(hostname -f) | grep -E '^Address:' | awk 'NR==2 {print $2}')
+    [ -z "${addr:-}" ] && addr=$(nslookup $(< /etc/hostname) | grep -E '^Address:' | awk 'NR==2 {print $2}')
+    [ -z "${addr:-}" ] && addr=$(ip -4 -o addr | grep $(ip -4 addr| grep 'state UP' | grep -vE 'qdisc (noqueue|nq)' | awk '{sub(":", "", $2);print $2}') | awk '{sub("/.*$","",$4);print $4}')
+    [ -z "${addr:-}" ] && addr=$(hostname -i)
+    [ -z "${addr:-}" ] || echo "${addr:-}"
 }
 export -f environ.ipAddress
 

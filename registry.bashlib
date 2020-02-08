@@ -37,7 +37,7 @@ function registry.createTime()
     # show error info to stderr
     {
     echo -en '    \e[93m'
-    echo "unable to parse time from manifest returned for $name:${tags[0]}"
+    echo "unable to parse time from manifest returned for $(registry.SERVER)$name:${tags[0]}"
     echo "        digest: $digest"
     if [ "${#tags[*]}" -gt 1 ]; then
         echo '        other tags: '"${tags[1]}"
@@ -46,7 +46,7 @@ function registry.createTime()
             echo '                    '"${tags[$i]}"
         done
     fi
-    echo "    recommend verifying that this image can be downloaded using 'docker pull $name:${tags[0]}'"
+    echo "    recommend verifying that this image can be downloaded using 'docker pull $(registry.SERVER)$name:${tags[0]}'"
     echo '    if this image cannot be downloaded, it should be deleted from the repository'
     echo -e '\e[0m'
     } >&2
