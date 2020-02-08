@@ -1,0 +1,152 @@
+#!/bin/bash
+
+#----------------------------------------------------------------------------------------------
+#
+#  general 'confluence' scripts
+#
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+function confluence.DELETE()
+{
+    confluence.io --request DELETE "$@" || return 1
+}
+export -f confluence.DELETE
+
+#----------------------------------------------------------------------------------------------
+function confluence.GET()
+{
+    confluence.io --request GET "$@" || return 1
+}
+export -f confluence.GET
+
+#----------------------------------------------------------------------------------------------
+function confluence.io()
+{
+    local -a args
+    local headers response url
+    local -i status=0
+    local -A links
+    local -a credentials=( $(credentials.get confluence) )
+    if [ "${DEBUG:-0}" -eq 0 ]; then
+        credentials+=( '--silent' )
+    else
+        echo "curl $*" >&2
+    fi
+
+    headers=$(mktemp)
+    args=( "${credentials[@]}" '--dump-header' "$headers" "$@" )
+
+    response=$(curl "${args[@]}") && status=$? || status=$?
+
+    if [ "$status" -eq 0 ]; then
+        # Status: 200 OK
+        http_code=$(head -1 "$headers" | sed -Ee 's|^\S+\s+(.+)\r?$|\1|')
+        if [ "${http_code:0:1}" -gt 3 ]; then
+            status=-1
+        else
+            [ "${DEBUG:-0}" -ne 0 ] && (echo '----------'; echo "$response" ; echo '----------'; echo )  >&2
+            echo -n "$response"
+        fi
+    fi
+    rm "$headers"
+    [ "$status" -ne 0 ] || return 0
+
+    # an error occurred
+    local -r errors="$(echo "$response" | jq --compact-output --monochrome-output '.errors[]?' 2>/dev/null)"
+
+    local curl_cmd=( 'curl' '--insecure' "$@" )
+    echo
+(   term.log "***ERROR: failure to complete registry request
+    command:       $(printf '%s ' "${curl_cmd[@]}")
+    error code:    $(jq --compact-output --monochrome-output '.code?' <<< "$errors")
+    error message: $(jq --compact-output --monochrome-output '.message?' <<< "$errors")
+    error details: $(jq --compact-output --monochrome-output '.detail?' <<< "$errors")
+    http_code:     ${http_code:-}
+    " 'warn' >&2
+    )
+
+    # check that 'term.log' was successful, otherwise, make sure something is echo'd
+    [ $? -eq 0 ] || echo "command:       $(printf '%s ' "${curl_cmd[@]}")\\n    error code:    $errors" >&2
+
+    return 1
+}
+export -f confluence.io
+
+#----------------------------------------------------------------------------------------------
+function confluence.POST()
+{
+    confluence.io --request POST "$@" || return 1
+}
+export -f confluence.POST
+
+#----------------------------------------------------------------------------------------------
+function confluence.propFile()
+{
+    echo "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/properties/$(basename "${BASH_SOURCE[0]%.*}").properties"
+}
+
+export CONFLUENCE_PROPERTIES_FILE="${CONFLUENCE_PROPERTIES_FILE:=$(confluence.propFile)}"
+
+#----------------------------------------------------------------------------------------------
+function confluence.propertiesFile()
+{
+    echo "${CONFLUENCE_PROPERTIES_FILE:=$(confluence.propFile)}"
+}
+export -f confluence.propertiesFile
+
+#----------------------------------------------------------------------------------------------
+function confluence.PROD()
+{
+    echo "${_CONFLUENCE_PROD:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( confluence.propertiesFile )")}"
+}
+export -f confluence.PROD
+
+#----------------------------------------------------------------------------------------------
+function confluence.PUT()
+{
+    confluence.io --request PUST "$@" || return 1
+}
+export -f confluence.PUT
+
+#----------------------------------------------------------------------------------------------
+function confluence.REST_API()
+{
+    echo "${_CONFLUENCE_RESTAPI:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( confluence.propertiesFile )")}"
+}
+export -f confluence.REST_API
+
+#----------------------------------------------------------------------------------------------
+function confluence.SERVER()
+{
+    echo "${_CONFLUENCE_SERVER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( confluence.propertiesFile )")}"
+}
+export -f confluence.SERVER
+
+#----------------------------------------------------------------------------------------------
+function confluence.TEST()
+{
+    echo "${_CONFLUENCE_TEST:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( confluence.propertiesFile )")}"
+}
+export -f confluence.TEST
+
+#----------------------------------------------------------------------------------------------
+function confluence.URL()
+{
+    echo "${_CONFLUENCE_URL:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( confluence.propertiesFile )")}"
+}
+export -f confluence.URL
+
+#----------------------------------------------------------------------------------------------
+function confluence.USER()
+{
+    echo "${_CONFLUENCE_USER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( confluence.propertiesFile )")}"
+}
+export -f confluence.USER
+
+#----------------------------------------------------------------------------------------------
+function confluence.USERID()
+{
+    echo "${_CONFLUENCE_USERID:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( confluence.propertiesFile )")}"
+}
+export -f confluence.USERID

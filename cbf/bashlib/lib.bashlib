@@ -386,6 +386,7 @@ function lib.updateConfigFromENV()
 {
     local -r env_prefix="${1:?"Input parameter 'env_prefix' must be passed to 'function ${FUNCNAME[0]}()'"}"
     local -r config_file="${2:?"Input parameter 'config_file' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local -r must_exist=${3:-}
     [ -f "$config_file" ] || trap.die 'Property file does not exist'
 
     for key in $(env | grep -E "^$env_prefix"); do
@@ -394,7 +395,7 @@ function lib.updateConfigFromENV()
         key=${key%%=*}
         key=${key,,}
         key=${key//_/.}
-        lib.updatePropertyFile "$key" "$val" "$config_file"
+        lib.updatePropertyFile "$key" "$val" "$config_file" "${must_exist:-}"
     done
 }
 export -f lib.updateConfigFromENV
@@ -411,7 +412,7 @@ function lib.updatePropertyFile()
     if [[ "$val" ]]; then
         if grep -qE "^\s*${key}\s*=" "$config_file" ; then
             sed -i "s|^$key=.*$|$key=$val|" "$config_file"
-        elif [ "$must_exist" ]; then
+        elif [ "${must_exist:-}" ]; then
             echo "$key=$val" >> "$config_file"
         fi
     fi
