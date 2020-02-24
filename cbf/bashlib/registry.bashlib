@@ -115,7 +115,7 @@ function registry.digestsWithTimes()
     for tag in "${tags[@]}"; do
         digest=$(registry.digest "$name" "$tag")
         if [ -z "${digest:-}" ]; then
-            term.log "WARNING:  $name:$tag failed to return a digest" 'warning'
+            term.elog "WARNING:  $name:$tag failed to return a digest" 'warning'
             continue
         fi
         digests["$digest"]="$(echo -en "${tag}\n${digests[$digest]:-}")"

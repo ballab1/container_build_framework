@@ -9,6 +9,27 @@
 #
 
 #----------------------------------------------------------------------------------------------
+function lib.checkAppVersion()
+{
+    local app="${1:?}"
+    local reqver="${2:?}"
+
+    if (type "$app" &>/dev/null); then
+        local -a version
+        mapfile -t version < <(echo "$reqver" | awk '{print $0}' RS='.')
+        local -a appver
+        mapfile -t appver < <("$app" --version | awk '{sub(",","",$3);print $3}' | awk '{print $0}' RS='.')
+        if [ "${#appver[*]}" -gt 2 ]; then
+            if [ "${appver[0]}" -gt "${version[0]}" ] || [[ "${appver[0]}" -eq "${version[0]}" && "${appver[1]}" -ge "${version[1]}" ]]; then
+                return 0
+            fi
+        fi
+    fi
+    trap.die "$app not found. Please ensure v$version or later it is installed and in your path"
+}
+export -f lib.checkAppVersion
+
+#----------------------------------------------------------------------------------------------
 # Check boolean value
 function lib.checkBoolean()
 {
