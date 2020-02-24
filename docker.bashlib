@@ -286,15 +286,6 @@ function docker.repo()
 export -f docker.repo
 
 #----------------------------------------------------------------------------------------------
-function docker.services()
-{
-    local -r dc_yaml="${1:?'no docker-compose.yml specified'}"
-
-    lib.yamlToJson "$dc_yaml" | jq --compact-output --monochrome-output --raw-output '.services|keys[]?'
-}
-export -f docker.services
-
-#----------------------------------------------------------------------------------------------
 function docker.showProcessReport()
 {
     local -r opts=${1:-}
