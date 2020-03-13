@@ -329,8 +329,8 @@ function lib.primaryPid()
     local -r cmdName=${1:?"Input parameter 'cmdName' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     ps -o pid,ppid,comm | \
-    grep "$cmdName" | \
-    grep -v 'grep' | \
+    grep -E " $cmdName"'$' | \
+    grep -vE ' grep$' | \
     awk '{ pids[$1]=$2 } END { for (pid in pids) { id = pids[pid]; if (! pids[id]) { print pid } } }'
 }
 export -f lib.primaryPid
