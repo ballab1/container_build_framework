@@ -28,7 +28,7 @@ export -f jira.DELETE
 #----------------------------------------------------------------------------------------------
 function jira.comments()
 {
-    local issue=${1:-?}
+    local issue=${1:?}
 
     local uri=$(printf 'jira.REST_API)/issue/%s/comment' "$issue")
     jira.GET "$uri"
@@ -103,9 +103,9 @@ export -f jira.io
 #----------------------------------------------------------------------------------------------
 function jira.issue()
 {
-    local issue=${1:-?}
+    local issue=${1:?}
 
-    local uri=$(printf '$(jira.REST_API)/issue/%s' "$issue")
+    local uri=$(printf '%s/issue/%s' "$(jira.REST_API)" "$issue")
     jira.GET "$uri"
 }
 export -f jira.issue
@@ -113,9 +113,9 @@ export -f jira.issue
 #----------------------------------------------------------------------------------------------
 function jira.issueEditMeta()
 {
-    local issue=${1:-?}
+    local issue=${1:?}
 
-    local uri=$(printf '$(jira.REST_API)/issue/%s/editmeta' "$issue")
+    local uri=$(printf '%s/issue/%s/editmeta' "$(jira.REST_API)" "$issue")
     jira.GET "$uri"
 }
 export -f jira.issue
@@ -138,7 +138,7 @@ function jira.projectInfo()
     local project=${1:-MDT};
 
     local -r JIRA_PROJECT_INFO_API='issue/createmeta?projectKeys=%s&issuetypeNames=Bug&expand=projects.issuetypes.fields'
-    local uri=$(printf "$(jira.REST_API)/$JIRA_PROJECT_INFO_API" $project)
+    local uri=$(printf "%s/$JIRA_PROJECT_INFO_API" "$(jira.REST_API)" "$project")
     local response=$(jira.GET $uri)
 
     jq --compact-output --monochrome-output '.projects[]|select(.key=="'${project}'").issuetypes[0].fields|to_entries' <<< "$response"
@@ -169,9 +169,9 @@ export -f jira.PUT
 #----------------------------------------------------------------------------------------------
 function jira.remoteLinks()
 {
-    local issue=${1:-?}
+    local issue=${1:?}
 
-    local uri=$(printf 'jira.REST_API)/issue/%s/remotelink' "$issue")
+    local uri=$(printf '%s/issue/%s/remotelink' "$(jira.REST_API)" "$issue")
     jira.GET "$uri"
 }
 export -f jira.remoteLinks
@@ -253,11 +253,18 @@ function jira.JIRA_PROD()
 export -f jira.JIRA_PROD
 
 #----------------------------------------------------------------------------------------------
-function jira.JIRA_STAGING()
+function jira.JIRA_STAGE1()
 {
-    echo "${_JIRA_STAGING:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
+    echo "${_JIRA_STAGE1:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
 }
-export -f jira.JIRA_STAGING
+export -f jira.JIRA_STAGE1
+
+#----------------------------------------------------------------------------------------------
+function jira.JIRA_STAGE2()
+{
+    echo "${_JIRA_STAGE2:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
+}
+export -f jira.JIRA_STAGE2
 
 #----------------------------------------------------------------------------------------------
 function jira.JIRA_TEST()
