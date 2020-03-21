@@ -71,12 +71,13 @@ function versions.initialize()
     versions.isDirty && return 1
 
     # ensure version info is up-to-date
+    git.fetch --all
     if [ "${commit^^:-}" = 'HEAD' ] || [ -z "${VERSIONS['commit']:-}" ]; then
         git.reset "origin/${VERSIONS['branch']:-master}" --hard
         return 1
     fi
 
-    git.checkout "${VERSIONS['commit']}" --quiet
+    git.reset "${VERSIONS['commit']}" --hard
 
     # return 0 to indicate no change in commit
     return 0
@@ -94,8 +95,7 @@ export -f versions.isDirty
 function versions.lastCommit()
 {
     git.checkout "${VERSIONS['branch']:-master}" &>/dev/null
-    git.reset --hard 'HEAD~1' &>/dev/null
-    git.pull --quiet
+    git.reset --hard 'HEAD' &>/dev/null
     git.HEAD
 }
 export -f versions.lastCommit
