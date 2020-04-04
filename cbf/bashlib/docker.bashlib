@@ -84,9 +84,11 @@ function docker.clean()
 
     # get list of volumes associated with running containers
     collection=()
-    for volume in $(docker ps --all --quiet); do
-        collection+=( $(docker inspect "$volume" | jq --compact-output --monochrome-output --raw-output '.[].Mounts[].Name | select(.)' | sort -u) )
-    done
+#    for volume in $(docker ps --all --quiet); do
+#  original: (has an error : no '.Name' and 'select(.)' has no value unless it means 'select( . != null )'
+#        collection+=( $(docker inspect "$volume" | jq --compact-output --monochrome-output --raw-output '.[].Mounts[].Name | select(.)' | sort -u) )
+#        collection+=( $(docker inspect "$volume" | jq --compact-output --monochrome-output --raw-output '.[].Mounts[].Source' | sort -u) )
+#    done
     [ "${#collection[*]}" -gt 0 ] && printf "Detected %d mounts associated with running containers\n" "${#collection[*]}"
 
 
