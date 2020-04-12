@@ -84,9 +84,11 @@ function docker.clean()
 
     # get list of volumes associated with running containers
     collection=()
-    for volume in $(docker ps --all --quiet); do
-        collection+=( $(docker inspect "$volume" | jq --compact-output --monochrome-output --raw-output '.[].Mounts[].Name | select(.)' | sort -u) )
-    done
+#    for volume in $(docker ps --all --quiet); do
+#  original: (has an error : no '.Name' and 'select(.)' has no value unless it means 'select( . != null )'
+#        collection+=( $(docker inspect "$volume" | jq --compact-output --monochrome-output --raw-output '.[].Mounts[].Name | select(.)' | sort -u) )
+#        collection+=( $(docker inspect "$volume" | jq --compact-output --monochrome-output --raw-output '.[].Mounts[].Source' | sort -u) )
+#    done
     [ "${#collection[*]}" -gt 0 ] && printf "Detected %d mounts associated with running containers\n" "${#collection[*]}"
 
 
@@ -296,9 +298,13 @@ function docker.showProcessReport()
     # show process report
     echo
     mapfile -t containers < <(docker ps --format "$fmt")
-    echo -e "\e[97m${containers[0]}\e[0m"
-    unset containers[0]
-    printf '%s\n' "${containers[@]}" | sort
+    if [ "${#containers[*]}" -eq 0 ]; then
+        echo 'No containers detected'
+    else
+        echo -e "\e[97m${containers[0]}\e[0m"
+        unset containers[0]
+        printf '%s\n' "${containers[@]}" | sort
+    fi
 }
 export -f docker.showProcessReport
 

@@ -24,18 +24,17 @@ function versions.data()
 
     # ensure that our versions repo matches what is specified in provided yaml file (or overridden with provided 'commit')
     (
-        if [ "${VERSIONS['commit']:-}" ] || [ ! -d "${VERSIONS['dir']}" ]; then
+        if [[ "${VERSIONS['commit']:-}" || ! -d "${VERSIONS['dir']}" ]]; then
             (( DEBUG_TRACE-- )) ||:                 # temporarily reduce DEBUG_TRACE to prevent 'git' tracing
             if versions.initialize "$commit"; then
-                commit=$(versions.lastCommit)
-                if [ "$commit" != "${VERSIONS['commit']}" ]; then
-                    sed -E -i 's|commit:.*$|commit: '${commit}'|' "$deploy_yaml"
-                fi
+                # update deploy.yml if git commit has changed
+                [ "$(git.HEAD)" = "${VERSIONS['commit']}" ] ||  sed -E -i 's|commit:.*$|commit: '${commit}'|' "$deploy_yaml"
             fi
             (( DEBUG_TRACE++ )) ||:
         fi
     )
 
+    # load variables from files
     local container_os="$(jq --compact-output --monochrome-output --raw-output 'try .container_os' <<< "$deploy_json" ||:)"
     versions.export "$container_os"
 }
@@ -68,7 +67,7 @@ function versions.initialize()
     VERSIONS['dir']="$(pwd)"
 
     # return if versions directory is dirty
-    versions.isDirty && return 1
+    git.isDirty && return 1
 
     # ensure version info is up-to-date
     git.fetch --all
@@ -83,21 +82,5 @@ function versions.initialize()
     return 0
 }
 export -f versions.initialize
-
-#----------------------------------------------------------------------------------------------
-function versions.isDirty()
-{
-    [[ "$(git describe --tags --always --dirty)" = *-dirty ]]
-}
-export -f versions.isDirty
-
-#----------------------------------------------------------------------------------------------
-function versions.lastCommit()
-{
-    git.checkout "${VERSIONS['branch']:-master}" &>/dev/null
-    git.reset --hard 'HEAD' &>/dev/null
-    git.HEAD
-}
-export -f versions.lastCommit
 
 #----------------------------------------------------------------------------------------------
