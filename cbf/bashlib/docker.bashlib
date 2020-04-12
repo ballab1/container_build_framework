@@ -298,9 +298,13 @@ function docker.showProcessReport()
     # show process report
     echo
     mapfile -t containers < <(docker ps --format "$fmt")
-    echo -e "\e[97m${containers[0]}\e[0m"
-    unset containers[0]
-    printf '%s\n' "${containers[@]}" | sort
+    if [ "${#containers[*]}" -eq 0 ]; then
+        echo 'No containers detected'
+    else
+        echo -e "\e[97m${containers[0]}\e[0m"
+        unset containers[0]
+        printf '%s\n' "${containers[@]}" | sort
+    fi
 }
 export -f docker.showProcessReport
 
