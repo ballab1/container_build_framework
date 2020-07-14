@@ -6,16 +6,16 @@
 #############################################################################
 
 declare -rA BASH_UNIT=(
-    ['version']='v1.6.1'
+    ['version']='v1.7.1'
     ['file']="bash_unit.tar.gz"
-    ['url']="https://github.com/pgrange/bash_unit/archive/v1.6.1.tar.gz"
-    ['sha256']='596c2bcbcebcc5611e3f2e1458b0f4be1adad8f91498b20e97c9f7634416950f'
+    ['url']="https://github.com/pgrange/bash_unit/archive/${BASH_UNIT['version']}.tar.gz"
+    ['sha256']='510927b95faf969c5bcb2c74dc550ed93333029912db2f6a3d76fad60611b9e6'
 )
 
 declare -A test=()
 
 # tests are maintained in the 'test_suites' folder in directory this script is in
-declare -r DIR_OF_TESTS_TO_RUN="$( cd "$( dirname "${BASH_SOURCE[0]}" )/test_suites" && pwd )"
+declare -r DIR_OF_TESTS_TO_RUN="$( readlink -f "${BASH_SOURCE[0]}/test_suites" )"
 
 
 #############################################################################
@@ -127,7 +127,7 @@ function test.main()
 
     # configure where our test framework comes from, and in which dir it resides
     local -r test_dir="${BASH_UNIT_ROOT:-$(test.tmpDir)}"
-    test['BASH_UNIT_DIR']="$( cd "$test_dir" && pwd )"
+    test['BASH_UNIT_DIR']="$( readlink -f "$test_dir" )"
 
     # run tests
     if [ "$BASH_UNIT_ROOT" = "${test['BASH_UNIT_DIR']}" ]; then
