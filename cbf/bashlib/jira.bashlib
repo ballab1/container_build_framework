@@ -19,6 +19,13 @@ export -f jira.propFile
 export JIRA_PROPERTIES_FILE="${JIRA_PROPERTIES_FILE:=$(jira.propFile)}"
 
 #----------------------------------------------------------------------------------------------
+function jira.allfields()
+{
+    jira.GET "$(jira.REST_API)/field"
+}
+export -f jira.allfields
+
+#----------------------------------------------------------------------------------------------
 function jira.DELETE()
 {
     jira.io --request DELETE --show-error --write-out '\n%{http_code}\n' "$@"  || return $?
@@ -28,19 +35,12 @@ export -f jira.DELETE
 #----------------------------------------------------------------------------------------------
 function jira.comments()
 {
-    local issue=${1:?}
+    local issue=${1:-?}
 
-    local uri=$(printf 'jira.REST_API)/issue/%s/comment' "$issue")
+    local uri=$(printf '%s/issue/%s/comment' "$(jira.REST_API)" "$issue")
     jira.GET "$uri"
 }
 export -f jira.comments
-
-#----------------------------------------------------------------------------------------------
-function jira.fields()
-{
-    jira.GET "$(jira.REST_API)/field"
-}
-export -f jira.fields
 
 #----------------------------------------------------------------------------------------------
 function jira.GET()
@@ -103,7 +103,7 @@ export -f jira.io
 #----------------------------------------------------------------------------------------------
 function jira.issue()
 {
-    local issue=${1:?}
+    local issue=${1:-?}
 
     local uri=$(printf '%s/issue/%s' "$(jira.REST_API)" "$issue")
     jira.GET "$uri"
@@ -113,7 +113,7 @@ export -f jira.issue
 #----------------------------------------------------------------------------------------------
 function jira.issueEditMeta()
 {
-    local issue=${1:?}
+    local issue=${1:-?}
 
     local uri=$(printf '%s/issue/%s/editmeta' "$(jira.REST_API)" "$issue")
     jira.GET "$uri"
@@ -135,13 +135,14 @@ export -f jira.jqlSearch
 #----------------------------------------------------------------------------------------------
 function jira.projectInfo()
 {
-    local project=${1:-MDT};
+    local -r project=${1:-MDT};
+    local -r issueType=${2:-Bug};
 
-    local -r JIRA_PROJECT_INFO_API='issue/createmeta?projectKeys=%s&issuetypeNames=Bug&expand=projects.issuetypes.fields'
-    local uri=$(printf "%s/$JIRA_PROJECT_INFO_API" "$(jira.REST_API)" "$project")
+    local -r JIRA_PROJECT_INFO_API='issue/createmeta?projectKeys=%s&issuetypeNames=%s&expand=projects.issuetypes.fields'
+    local uri=$(printf "%s/$JIRA_PROJECT_INFO_API" "$(jira.REST_API)" "$project" "$issueType")
     local response=$(jira.GET $uri)
 
-    jq --compact-output --monochrome-output '.projects[]|select(.key=="'${project}'").issuetypes[0].fields|to_entries' <<< "$response"
+    jq --compact-output --monochrome-output '.projects[]|select(.key=="'${project}'")' <<< "$response"
 }
 export -f jira.projectInfo
 
@@ -169,7 +170,7 @@ export -f jira.PUT
 #----------------------------------------------------------------------------------------------
 function jira.remoteLinks()
 {
-    local issue=${1:?}
+    local issue=${1:-?}
 
     local uri=$(printf '%s/issue/%s/remotelink' "$(jira.REST_API)" "$issue")
     jira.GET "$uri"
@@ -194,27 +195,34 @@ function jira.search()
     local -i count i maxResults startAt endAt status
     local -A fromFields toFields
     local field fieldInfo json newName results
+    local -a fields
 
-    fieldInfo="$(jira.fields)"
+    fieldInfo="$(jira.allfields)"
     # use 'jq' to return bash Associative arrays with the appropriate key/values
-    eval "fromFields=( $(jq --compact-output --monochrome-output --raw-output '.[]|"[\"\(.name)\"]=\"\(.id)\""' <<< "$fieldInfo") )"
-    eval "toFields=( $(jq --compact-output --monochrome-output --raw-output '.[]|"[\"\(.id)\"]=\"\(.name)\""' <<< "$fieldInfo") )"
+    mapfile -t fields < <(jq --compact-output --monochrome-output --raw-output '.[]|"[\"\(.name)\"]=\"\(.id)\""' <<< "$fieldInfo")
+    [ "${#fields[*]}" -gt 0 ] && eval "fromFields=( "${fields[@]}" )"
+
+    mapfile -t fields < <(jq --compact-output --monochrome-output --raw-output '.[]|"[\"\(.id)\"]=\"\(.name)\""' <<< "$fieldInfo")
+    [ "${#fields[*]}" -gt 0 ] && eval "toFields=( "${fields[@]}" )"
 
 
-    maxResults=$(jq --compact-output --monochrome-output --raw-output '.maxResults?' <<< "$jql_json"| awk '{if ($1 != "null"){print $1}else{print "0"}}')
-    startAt=$(jq --compact-output --monochrome-output --raw-output '.startAt?' <<< "$jql_json" | awk '{if ($1 != "null"){print $1}else{print "0"}}')
+    maxResults=$(jq --compact-output --monochrome-output --raw-output '.maxResults // 0' <<< "$jql_json")
+    startAt=$(jq --compact-output --monochrome-output --raw-output '.startAt // 0' <<< "$jql_json")
     count=$( jq --compact-output --monochrome-output --raw-output '.fields|length' <<< "$jql_json")
-    for (( i=0; i<$count; i++ )); do
-        field="$( jq --compact-output --monochrome-output --raw-output '.fields['${i}']' <<< "$jql_json")"
-        newName="${fromFields[${field}]:-}"
-        [ "$newName" ] || continue
-        echo "field: $field -> $newName" >&2
-        jql_json=$(jq --compact-output --monochrome-output '.fields['${i}']|="'${newName}'"' <<< "$jql_json")
-    done
+    if [ "${#fromFields[*]}" -gt 0 ]; then
+        for (( i=0; i<$count; i++ )); do
+            field="$( jq --compact-output --monochrome-output --raw-output '.fields['"$i"']' <<< "$jql_json")"
+            newName="${fromFields[${field}]:-}"
+            [ "$newName" ] || continue
+            echo "field: $field -> $newName" >&2
+            jql_json=$(jq --compact-output --monochrome-output '.fields['"$i"']|="'"$newName"'"' <<< "$jql_json")
+        done
+    fi
     if [ $maxResults -eq 0 ]; then
         jql_json=$(jq --compact-output --monochrome-output '. + {maxResults:1000}' <<< "$jql_json")
         maxResults=1000
     fi
+
 
     status=1
     while true; do
@@ -224,9 +232,9 @@ function jira.search()
         count=$(jq --compact-output --monochrome-output --raw-output '.issues | length' <<< "$results")
         total=$(jq --compact-output --monochrome-output --raw-output '.total' <<< "$results")
         endAt=$(( startAt + count ))
-        echo "found issues $startAt :: $(( endAt - 1 ))" >&2
+        echo "found issues $startAt :: $endAt" >&2
 
-        jq --compact-output --monochrome-output '.issues|.[0:'$(( count - 2 ))'][]' <<< "$results" || status=$?
+        jq --compact-output --monochrome-output '.issues|.[0:'"$count"'][]' <<< "$results" || status=$?
         [[ $status -ne 0 || $endAt -ge ${total:-0} ]] && break
 
         jql_json=$(jq --compact-output --monochrome-output ".startAt|=${endAt}" <<< "$jql_json")
@@ -253,18 +261,11 @@ function jira.JIRA_PROD()
 export -f jira.JIRA_PROD
 
 #----------------------------------------------------------------------------------------------
-function jira.JIRA_STAGE1()
+function jira.JIRA_STAGING()
 {
-    echo "${_JIRA_STAGE1:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
+    echo "${_JIRA_STAGING:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
 }
-export -f jira.JIRA_STAGE1
-
-#----------------------------------------------------------------------------------------------
-function jira.JIRA_STAGE2()
-{
-    echo "${_JIRA_STAGE2:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
-}
-export -f jira.JIRA_STAGE2
+export -f jira.JIRA_STAGING
 
 #----------------------------------------------------------------------------------------------
 function jira.JIRA_TEST()
