@@ -192,8 +192,8 @@ function artifactory.saveCBF()
     # create tgz file with fixed timestamp (so we get consistent sha256)
     tar --exclude='C?F.properties' --create --mtime "$filetime" container_build_framework | gzip -n > "$tarfile"
 
-    artifactory.uploadFile "container_build_framework/${filename}"  "$tarfile" >&2 || return 1
-    artifactory.uploadFile "container_build_framework/latest.tar.gz"  "$tarfile" >&2 || return $?
+    artifactory.uploadFile "container_build_framework/${filename}"  "$tarfile" || return 1
+    artifactory.uploadFile "container_build_framework/latest.tar.gz"  "$tarfile" || return $?
 }
 export -f artifactory.saveCBF
 

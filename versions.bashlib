@@ -28,7 +28,7 @@ function versions.data()
             (( DEBUG_TRACE-- )) ||:                 # temporarily reduce DEBUG_TRACE to prevent 'git' tracing
             if versions.initialize "$commit"; then
                 # update deploy.yml if git commit has changed
-                [ "$(git.HEAD)" = "${VERSIONS['commit']}" ] ||  sed -E -i 's|commit:.*$|commit: '${commit}'|' "$deploy_yaml"
+                [ "$(git.HEAD)" != "${VERSIONS['commit']}" ] &&  sed -E -i 's|commit:.*$|commit: '${commit}'|' "$deploy_yaml"
             fi
             (( DEBUG_TRACE++ )) ||:
         fi
