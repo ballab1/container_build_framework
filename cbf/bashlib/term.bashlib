@@ -28,7 +28,7 @@ function term.codes_ATTR_RESET()
     local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     declare -Ax ATTR_RESET=( ['bold']=21 ['dim']=22 ['underline']=24 ['blink']=25 ['invert']=27 ['hidden']=28 ['all']=0 )
-    echo "${ATTR_RESET[$name]:-}"
+    echo "${ATTR_RESET[$name]:--1}"
 }
 export -f term.codes_ATTR_RESET
 
@@ -38,7 +38,7 @@ function term.codes_ATTR_SETTERS()
     local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     declare -Ax ATTR_SETTERS=( ['bold']=1 ['dim']=2 ['underline']=4 ['blink']=5 ['invert']=7 ['hidden']=8 )
-    echo "${ATTR_SETTERS[$name]:-}"
+    echo "${ATTR_SETTERS[$name]:--1}"
 }
 export -f term.codes_ATTR_SETTERS
 
@@ -48,7 +48,7 @@ function term.codes_BACKGROUND()
     local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     declare -Ax BACKGROUND=( ['default']=49 ['black']=40 ['red']=41 ['green']=42 ['yellow']=43 ['blue']=44 ['magenta']=45 ['cyan']=46 ['gray']=47 ['grey']=47 ['lt_gray']=47 ['lt_grey']=47 ['dk_gray']=100 ['dk_grey']=100 ['lt_red']=101 ['lt_green']=102 ['lt_yellow']=103 ['lt_blue']=104 ['lt_magenta']=105 ['lt_cyan']=106 ['white']=107 )
-    echo "${BACKGROUND[$name]:-}"
+    echo "${BACKGROUND[$name]:--1}"
 }
 export -f term.codes_BACKGROUND
 
@@ -58,7 +58,7 @@ function term.codes_FOREGROUND()
     local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     declare -Ax FOREGROUND=( ['black']=30 ['blue']=34 ['cyan']=36 ['default']=39 ['dk_gray']=90 ['dk_grey']=90 ['gray']=90 ['grey']=90 ['green']=32 ['lt_blue']=94 ['lt_cyan']=96 ['lt_gray']=37 ['lt_grey']=37 ['lt_green']=92 ['lt_magenta']=95 ['lt_red']=91 ['lt_yellow']=93 ['magenta']=35 ['red']=31 ['white']=97 ['yellow']=33 )
-    echo "${FOREGROUND[$name]:-}"
+    echo "${FOREGROUND[$name]:--1}"
 }
 export -f term.codes_FOREGROUND
 
@@ -88,12 +88,12 @@ function term.decode()
      warn|warning)     term.codes 'FOREGROUND' 'lt_yellow';;
             error)     term.codes 'FOREGROUND' 'red';;
             reset)     term.codes 'ATTR_RESET' 'all';;
-                *)     term.codes 'FOREGROUND' ${fg};;
+                *)     term.codes 'FOREGROUND' "${fg}";;
         esac
     else
-        local -r bg_code=$(term.codes 'BACKGROUND' "$bg")
-        local -r fg_code=$(term.codes 'FOREGROUND' "$fg")
-        [ -z "${bg_code:-}" ] || [ -z "${fg_code:-}" ] || printf '\x1b[%d;%dm' "$fg_code" "$bg_code"
+        local -r bg_code=$(term.codes_BACKGROUND "$bg")
+        local -r fg_code=$(term.codes_FOREGROUND "$fg")
+        [ "${bg_code:--1}" -ge 0 ] && [ "${fg_code:--1}" -ge 0 ] && printf '\x1b[%d;%dm' "$fg_code" "$bg_code"
     fi
 }
 export -f term.decode
@@ -137,11 +137,11 @@ function term.log()
 
 #    [ -t 1 ] || unset msg_type
     if [ "${msg_type:-}" ]; then
-        msg_type="$( term.decode $msg_type )"
+        msg_type="$( term.decode "$msg_type" )"
         [ -z "$msg_type" ] || echo -en "$msg_type"
     fi
     echo -en "$msg"
-    [ -z "${msg_type:-}" ] || echo -en $( term.decode 'reset' )
+    [ -z "${msg_type:-}" ] || echo -en "$( term.decode 'reset' )"
 }
 export -f term.log
 
