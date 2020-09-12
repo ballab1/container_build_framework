@@ -14,9 +14,6 @@ declare -rA BASH_UNIT=(
 
 declare -A test=()
 
-# tests are maintained in the 'test_suites' folder in directory this script is in
-declare -r DIR_OF_TESTS_TO_RUN="$( readlink -f "${BASH_SOURCE[0]}/test_suites" )"
-
 
 #############################################################################
 function test.downloadFramework()
@@ -25,6 +22,10 @@ function test.downloadFramework()
 
     if [[ -n "$download_dir" && "$download_dir" != '/' ]]; then
         pushd "$download_dir"
+
+        # remove temp dir if it was created
+        trap "[ -d '$download_dir' ] && rm -rf '$download_dir'" EXIT
+
 
         echo "Downloading unit_test framework:"
         echo "....file:  ${BASH_UNIT['file']}"
@@ -120,7 +121,9 @@ function test.processArgs()
 #############################################################################
 function test.main()
 {
-    cd "$DIR_OF_TESTS_TO_RUN"
+    # tests are maintained in the 'test_suites' folder in directory this script is in
+    declare -r DIR_OF_TESTS_TO_RUN="$(dirname "${BASH_SOURCE[0]}")/test_suites"
+    cd "$DIR_OF_TESTS_TO_RUN" ||:
 
     local -a args=( $(test.processArgs "$@") )
     local -i status=0
@@ -129,17 +132,16 @@ function test.main()
     local -r test_dir="${BASH_UNIT_ROOT:-$(test.tmpDir)}"
     test['BASH_UNIT_DIR']="$( readlink -f "$test_dir" )"
 
+
     # run tests
     if [ "$BASH_UNIT_ROOT" = "${test['BASH_UNIT_DIR']}" ]; then
         test['BASH_UNIT']="${test['BASH_UNIT_DIR']}/bash_unit"
-        ("${test['BASH_UNIT']}" -f tap "${args[@]}") && status=$? || status=$?
+        ("${test['BASH_UNIT']}" -f tap ${args[@]}) && status=$? || status=$?
 
     # download the test framework if needed
     elif test.downloadFramework "${test['BASH_UNIT_DIR']}" ; then
 
-        ("${test['BASH_UNIT']}" -f tap "${args[@]}") && status=$? || status=$?
-        # remove framework that was downloaded
-        rm -rf "${test['BASH_UNIT_DIR']}"
+        ("${test['BASH_UNIT']}" -f tap ${args[@]}) && status=$? || status=$?
     fi
     return $status
 }

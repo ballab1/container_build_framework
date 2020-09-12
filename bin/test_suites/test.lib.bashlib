@@ -527,12 +527,12 @@ test.lib.updatePropertyFile_FAIL_noFile() {
 # verify error returned when properties file does not exist
 test.lib.updatePropertyFile_FAIL_fileNotExists() {
     export -f lib.updatePropertyFile
-    assert_status_code 1 'lib.updatePropertyFile "akey" "aval"'
+    assert_status_code 1 'lib.updatePropertyFile "akey" "aval" "filenotexists"'
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when property does not exist
-test.lib.updatePropertyFile_FAIL_propNotExists() {
+skip.test.lib.updatePropertyFile_FAIL_propNotExists() {
     local -r propFile="$(__test_lib_bashlib.mktemp)"
     local -r key='AKEY'
     local -r expected=''
@@ -559,7 +559,7 @@ AKEY2=someval
 EOF
     lib.updatePropertyFile "$key" "$expected" "$propFile" 'must_exist'
     actual="$(grep -E "^${key}=" "$propFile" | awk -F '=' '{print $2}')"
-    assert_not_equals "$expected" "$actual"
+    assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
@@ -612,7 +612,7 @@ EOF
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-test.lib.updatePropertyFile_OK_lastprop() {
+test.lib.updatePropertyFile_OK_lastprop2() {
     local -r propFile="$(__test_lib_bashlib.mktemp)"
     local -r key='AKEY'
     local -r expected='aval'
