@@ -37,8 +37,8 @@ set -o pipefail
 IFS=$'\n\t'
 
 # save our context incase our any of scripts need it
-printf "%s\n" "$@" > /tmp/args.txt
-printf "%s\n" "$(env | sort)" > /tmp/env.txt
+printf "%s\n" "$@" > /tmp/args.$$.txt
+printf "%s\n" "$(env | sort)" > /tmp/env.$$.txt
 
 source /usr/local/crf/bin/init.runtime
 
