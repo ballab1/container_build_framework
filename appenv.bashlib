@@ -1,17 +1,143 @@
-#!/bin/bash
+#!/bin/echo 'This script cannot be executabled directly. Please source from another script'
 
 #----------------------------------------------------------------------------------------------
 #
 #   appenv.bashlib; basic functions to load our libraries
 #
 #----------------------------------------------------------------------------------------------
+function appenv.cmdLineArgs()
+{
+    local -a optsJSON=()
+    local -i status=0
 
-declare TOP
+    [ ${DEBUG:-0} -ne 0 ] && OPTS['debug']=$DEBUG
+
+    while [ "${1:-}" ]; do
+        case "${1,,}" in
+            help|-h|--help)
+                if [ "${OPTS['cmd']:-}" ]; then
+                    while [ $# -gt 0 ]; do
+                        shift
+                    done
+                else
+                    shift
+                fi
+                [ $# -ge 1 ] && ARGS=( "$@" )
+                appenv.usage
+                return 0;;
+
+            -c|--credentials)
+                [[ $# -le 2 || $2 = -* ]] && trap.die 'no credentials file specified!'
+                OPTS['credentials']="$2"
+                shift 2;;
+
+            --debug)
+                OPTS['debug']=1
+                shift;;
+
+            -u|--user)
+                [[ $# -le 2 || $2 = -* ]] && trap.die 'no user specified'
+                OPTS['user']="$2"
+                shift 2;;
+
+            -q|-quiet|--quiet)
+                OPTS['quiet']=1
+                shift;;
+
+            *)
+                if [ "${1:0:1}" != '-' ]; then
+                    local optsFile="${PROGRAM_DIR}/help.${LIB_NAME}/cmdOptions.json"
+                    if [ -s "$optsFile" ] && [ "${#optsJSON[*]}" -eq 0 ]; then
+                        mapfile -t optsJSON < <(jq -ser '.[]|select(.name|ascii_downcase == "'"${1,,}"'")?|to_entries[]|@sh "OPTS[\(.key)]=\(.value)"' "$optsFile")
+                        if [ $? -eq 0 ]; then
+                            for opt in "${optsJSON[@]}";do
+                                eval $opt
+                            done
+                            if [ "${OPTS['shift']:-0}" -gt 0 ];then
+                                shift "${OPTS['shift']}"
+                                unset OPTS['shift']
+                                continue
+                            fi
+                        fi
+                    fi
+                fi
+                if [ "${OPTS['cmd']:-}" ] && [ "$(type -t "${LIB_NAME}.cmdLineArgs")" ]; then
+                    "${LIB_NAME}.cmdLineArgs" "$@" && status=$? || status=$?
+                    [ "$status" -ne 0 ] && [ -z "${OPTS['cmd']:-}" ] && trap.die 'invalid option/argument'
+                    if [ "${OPTS['shift']:-0}" -gt 0 ]; then
+                        shift "${OPTS['shift']}"
+                        unset OPTS['shift']
+                        continue
+                    fi
+                fi
+                ARGS+=( "$1" )
+                shift;;
+
+        esac
+    done
+
+    [ -z "${OPTS['cmd']:-}" ] && appenv.usage
+
+    [ "${OPTS['credentials']:-}" ] && __SECRETS_FILE="${OPTS['credentials']}"
+    DEBUG=${OPTS['debug']:-0}
+    export DEBUG
+
+
+    # put args into our global
+    [ $# -ge 1 ] && ARGS=( "$@" )
+
+    if [ "${argsCondition:-}" ]; then
+        eval "[[ $argsCondition ]]" || trap.die 'invalid arguments!'
+    fi
+
+    [ "${OPTS['cmd']:-}" ] || trap.die 'invalid arguments' 
+
+    return 0
+}
+
+#----------------------------------------------------------------------------------------------
+function appenv.elapsedTime()
+{
+    local -i elapsed=$(( $(date '+%s') - $START_TIME ))
+    if [ $elapsed -gt 2 ];then
+        timer.fmtElapsed "$elapsed"
+    fi
+}
+
+#----------------------------------------------------------------------------------------------
+function appenv.initialize()
+{
+    OUTDIR='.'
+    TMP_DIR="$(mktemp)"
+
+    appenv.loader "${LIB_NAME}.main"
+    trap appenv.onExit EXIT
+    
+    [ -e "${PROGRAM_DIR}/${LIB_NAME}.bashlib" ] && source "${PROGRAM_DIR}/${LIB_NAME}.bashlib"
+    [ "$(type -t "${LIB_NAME}.initialize")" ] && "${LIB_NAME}.initialize"
+
+    # check our we have correct support
+
+    #lib.checkAppVersion 'docker-compose' '1.18.0'
+    #lib.checkAppVersion 'docker' '17.12.0'
+    #lib.checkAppVersion 'jq' '1.5'
+    #lib.checkAppVersion 'curl' '7.40.0'
+
+    appenv.cmdLineArgs "$@"
+}
 
 #----------------------------------------------------------------------------------------------
 function appenv.loader()
 {
+    readonly START_TIME="$(date '+%s')"
+
     local fn="${1:?}"
+
+    local v
+    for v in 'PROGRAM_DIR' 'PROGRAM_NAME' 'LOGFILE'; do
+        export "$v"
+        readonly "$v"
+    done
 
     local top="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
     if [ "$(env | grep -c "BASH_FUNC_${fn}%%")" -ne 0 ]; then
@@ -40,27 +166,101 @@ function appenv.loader()
         done
     fi
 
-    echo '***ERROR unable to locate libraries'
-    exit 1
+    trap.die 'unable to locate libraries'
+}
+
+#---------------------------------------------------------------------------------------------- 
+function appenv.onExit()
+{
+    [ "$(type -t "${LIB_NAME}.onExit")" ] && "${LIB_NAME}.onExit"
+
+    local base="$(basename "$LOGFILE")"
+    local -r logfile="${OUTDIR}/${base//.log}.$(date '+%g%m%d%H%M%S').log"
+
+    if [ "${OUTDIR:-}" ]; then
+        # save a copy of our log in our o/p folder
+        [ -e "$LOGFILE" ] && mv "$LOGFILE" "$logfile"
+    fi
+
+    # remove our temp stuff    
+    [ "${TMP_DIR:-}" ] && [ "${TMP_DIR:-}" != '/' ] && [ -e "${TMP_DIR:-}" ] && rm -rf "${TMP_DIR:-}"
+
+
+    local elapsed="$(appenv.elapsedTime)"
+    [ -z "${elapsed:-}" ] || echo -e '\nElapsed time: '"$elapsed" | tee -a "$logfile" >&2
+
+    return 0
 }
 
 #----------------------------------------------------------------------------------------------
-function appenv.results()
+function appenv.run()
 {
-    local val
-    if [ ${#opts[*]} -gt 0 ]; then
-        local -i i=0
-        for val in "${!opts[@]}"; do
-            [ $(( i++ )) -gt 0 ] && echo -n ' '
-            printf '['\''%s'\'']='\''%s'\' "$val" "${opts[$val]}"
-        done
-        echo
-    else
-        echo "['dummy']=0"
-    fi
-    if [ $# -gt 0 ]; then
-        for val in "$@"; do
-            echo "$val"
-        done
-    fi
+    [ "${OPTS['quiet']:-0}" -eq 0 ] && term.elog "$(printf '%s ' "$@")"'\n' 'grey'
+    eval $@ > /dev/null
 }
+
+#----------------------------------------------------------------------------------------------
+function appenv.showArgs()
+{
+    # show args
+    {
+        if [ "${OPTS['quiet']:-0}" -ne 0 ]; then
+            echo
+            echo "Starting process $$ at $(TZ=America/New_York date)"
+            if [ "${OPTS['user']:-}" ]; then
+                echo "user:               ${OPTS['user']}"
+            else
+                echo "user:               ${USERNAME:-${USER:-}}"
+            fi
+
+            # perform what was asked
+            case ${OPTS['debug']:-0} in
+                1)
+                    echo
+                    echo "cmd:    ${OPTS['cmd']:-}"
+                    echo "oper:   ${OPTS['oper']:-}"
+                    echo "action: ${OPTS['action']:-}"
+                    ;;
+                
+                2)
+                    echo
+                    echo 'options:'
+                    local i
+                    for i in "${!OPTS[@]}"; do
+                       printf '    [%s]: %s\n' $i "${OPTS[$i]}"
+                    done
+                    echo 'args:'
+                    for i in "${ARGS[@]}"; do
+                       printf '    %s\n' "$i"
+                    done
+                    echo
+                    ;;
+            
+            esac
+        fi
+    } >&2
+}
+
+#----------------------------------------------------------------------------------------------
+function appenv.usage()
+{
+    local context="${OPTS['cmd']:-}"
+    if [[ "${OPTS['cmd']:-}" = *.catalogIterator ]]; then
+        context="${OPTS['oper']:-}"
+    fi
+    [ -z "${context:-}" ] && context='usage'
+    context="${context##*.}"
+
+    local -r helpdir="${PROGRAM_DIR}/help.${LIB_NAME}"
+    local contextHelp="${helpdir}/${context}.txt"
+    [ -s "$contextHelp" ] || contextHelp="${helpdir}/${context,,}.txt"
+    [ -s "$contextHelp" ] || contextHelp="${helpdir}/usage.txt"
+    [ -s "$contextHelp" ] || trap.die 'unable to locate usage information: '"$contextHelp"
+
+    # show context sensitive help
+    envsubst < "$contextHelp"
+    trap - ERR
+    exit 127
+}
+
+#---------------------------------------------------------------------------------------------- 

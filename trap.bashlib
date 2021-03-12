@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/echo 'This script cannot be executabled directly. Please source from another script'
 
 #----------------------------------------------------------------------------
 #

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/echo 'This script cannot be executabled directly. Please source from another script'
 
 #----------------------------------------------------------------------------------------------
 #
@@ -57,6 +57,7 @@ function jira.io()
     local -i status=0
     local -A links
     local -a credentials=( $(credentials.get jira) )
+
     if [ "${DEBUG:-0}" -eq 0 ]; then
         credentials+=( '--silent' )
     else
@@ -121,6 +122,14 @@ function jira.issueEditMeta()
 export -f jira.issue
 
 #----------------------------------------------------------------------------------------------
+function jira.issueTypeScheme()
+{
+    local uri=$(printf '%s/issuetypescheme' "$(jira.REST_API)")
+    jira.GET "$uri"
+}
+export -f jira.issueTypeScheme
+
+#----------------------------------------------------------------------------------------------
 # This function will search for artifacts using JQL  (JIRA Query Language) - json query
 # eg:
 # jqlSearch jql file
@@ -131,6 +140,18 @@ function jira.jqlSearch()
     jira.POST --data "$jql_json" "$(jira.REST_API)/search"
 }
 export -f jira.jqlSearch
+
+#----------------------------------------------------------------------------------------------
+function jira.listProjects()
+{
+    local expand=${1:-};
+
+    [ "$expand" ] && expand="?$(echo expand=$expand)"
+
+    local uri=$(printf "%s/project%s" "$(jira.REST_API)" "$expand")
+    jira.GET "$uri"
+}
+export -f jira.listProjects
 
 #----------------------------------------------------------------------------------------------
 function jira.projectInfo()
@@ -145,6 +166,19 @@ function jira.projectInfo()
     jq --compact-output --monochrome-output '.projects[]|select(.key=="'${project}'")' <<< "$response"
 }
 export -f jira.projectInfo
+
+#----------------------------------------------------------------------------------------------
+function jira.projectTypes()
+{
+    local -r project=${1:-MDT};
+
+    local -r JIRA_PROJECT_INFO_API='issue/createmeta?projectKeys=%s&expand=projects.issuetypes'
+    local uri=$(printf "%s/$JIRA_PROJECT_INFO_API" "$(jira.REST_API)" "$project")
+    local response=$(jira.GET "$uri")
+
+    jq --compact-output --monochrome-output '.projects[]' <<< "$response"
+}
+export -f jira.projectTypes
 
 #----------------------------------------------------------------------------------------------
 function jira.propertiesFile()
