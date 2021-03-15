@@ -22,10 +22,24 @@ declare -ra dirs=( bin
                    var
                    www )
 
+declare base="$( cbf.BASE )"
+[ -z "${base:-}" ] && base=/tmp
+
+declare dir file fdir
 for dir in "${dirs[@]}" ; do
-    declare custom_folder="$( cbf.BASE )/$dir"
+    declare custom_folder="${base}/$dir"
     if [ -d "$custom_folder" ]; then
-        term.dlog "    updating ${dir} from ${custom_folder}"'\n' 'info'
-        cp -r "${custom_folder}/". "/${dir}/"
+        echo "    updating /${dir} from ${custom_folder}"
+        cd "${custom_folder}" ||:
+        while read -r file; do
+            fdir="$(dirname "$file")"
+            [ -e "/${dir}/$fdir" ] || mkdir -p "/${dir}/$fdir"
+            if [ -d "/${dir}/$fdir" ]; then
+                echo "cp '$file' '/${dir}/$fdir'"
+                cp "$file" "/${dir}/${fdir}/"
+            else
+                echo "unable to copy '$file' to '/${dir}/$fdir'"
+            fi
+        done < <(find . -type f)
     fi
 done
