@@ -422,6 +422,30 @@ function lib.updateConfigFromENV()
 export -f lib.updateConfigFromENV
 
 #----------------------------------------------------------------------------------------------
+function lib.updateFile()
+{
+    local -r tmp_file=${1:?}
+    local -r org_file=${2:?}
+
+    # if there are no changes, delete tmp file
+    if [ "$(lib.fileSha256 "$org_file")" = "$(lib.fileSha256 "$tmp_file")" ]; then
+        rm "$tmp_file"
+        return 0   # no updates
+    fi
+
+    # otherwise rename 'org_file' to ~org_file.YYYYMMDDhhmmss.bak and rename tmp_file to 'org_file'
+    # create backup of org_file before we update it
+    term.log "INFO: updating ${org_file}"'\n' 'white'
+    if [ -f "$org_file" ]; then
+        local backup="${org_file%.*}.$(date +"%Y%m%d%H%M%S").${org_file##*.}.bak"
+        backup="$(dirname "$backup")/~$(basename "$backup")"
+        mv "$org_file" "$backup"
+    fi
+    mv "$tmp_file" "$org_file"   # file updated
+    return 0
+}
+
+#----------------------------------------------------------------------------------------------
 function lib.updatePropertyFile()
 {
     local -r key="${1:?"Input parameter 'key' must be passed to 'function ${FUNCNAME[0]}()'"}"
