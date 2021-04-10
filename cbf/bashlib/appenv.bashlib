@@ -48,7 +48,7 @@ function appenv.cmdLineArgs()
                 if [ "${1:0:1}" != '-' ]; then
                     local optsFile="${PROGRAM_DIR}/help.${LIB_NAME}/cmdOptions.json"
                     if [ -s "$optsFile" ] && [ "${#optsJSON[*]}" -eq 0 ]; then
-                        mapfile -t optsJSON < <(jq -ser '.[]|select(.name|ascii_downcase == "'"${1,,}"'")?|to_entries[]|@sh "OPTS[\(.key)]=\(.value)"' "$optsFile")
+                        mapfile -t optsJSON < <(jq -ser '.[]|select(.name|ascii_downcase == "'"${1,,}"'")?|to_entries[]|@sh "OPTS[\(.key)]=\(.value)"' "$optsFile" ||:)
                         if [ $? -eq 0 ]; then
                             for opt in "${optsJSON[@]}";do
                                 eval $opt
@@ -76,7 +76,11 @@ function appenv.cmdLineArgs()
         esac
     done
 
-    [ -z "${OPTS['cmd']:-}" ] && appenv.usage
+    if [ -z "${OPTS['cmd']:-}" ]; then
+        [ "${#ARGS[*]}" -gt 0 ] && term.elog "***ERROR: '${ARGS[0]}' invalid command line action provided\n" 'error'
+        appenv.usage
+        exit 0
+    fi
 
     [ "${OPTS['credentials']:-}" ] && __SECRETS_FILE="${OPTS['credentials']}"
     DEBUG=${OPTS['debug']:-0}
@@ -172,6 +176,8 @@ function appenv.loader()
 #---------------------------------------------------------------------------------------------- 
 function appenv.onExit()
 {
+    local status=$?
+
     [ "$(type -t "${LIB_NAME}.onExit")" ] && "${LIB_NAME}.onExit"
 
     local base="$(basename "$LOGFILE")"
@@ -189,7 +195,7 @@ function appenv.onExit()
     local elapsed="$(appenv.elapsedTime)"
     [ -z "${elapsed:-}" ] || echo -e '\nElapsed time: '"$elapsed" | tee -a "$logfile" >&2
 
-    return 0
+    return "$status"
 }
 
 #----------------------------------------------------------------------------------------------
