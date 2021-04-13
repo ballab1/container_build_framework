@@ -31,6 +31,7 @@ CRF_BASE=${cbf_base}/cbf
 CRF_BIN=${crf_base}/bin
 CRT_BASE=${crf_base:-/usr/local/crf}
 EOF
+
        [ "${DEBUG_TRACE:-0}" == 0 ] || cat "$CBF_PROPERTIES_FILE"
 
        #now parse some info from our Dockerfile
@@ -127,7 +128,7 @@ function cbf.buildContainer()
         [ ! -e /etc/TZ ] || export TZ="$(< /etc/TZ )"
     else
         export TZ="$timezone"
-        crf.updateRuntimeEnvironment 'TZ'
+        crf.updateRuntimeEnvironment "TZ=$TZ"
         package.installTimezone "$timezone"
     fi
 
@@ -135,7 +136,7 @@ function cbf.buildContainer()
     for dir in $( printf '%s\n' "${!steps[@]}" | sort ); do
         [ "$dir" != '08.cleanup' ] || [ "${DEBUG_TRACE:-0}" = 0 ] || continue
 
-        local last_notice=''
+        local last_notice=''  #  this is used indirectly by 'cbf.showActionNotice' to prevent duplicates
         if [ "$dir" = '00.bashlib' ]; then
             cbf.showActionNotice 'last_notice' "$dir"
             cbf.initFramework
@@ -190,7 +191,8 @@ function cbf.initFramework()
     cd "$( cbf.CRF_BASE )" || return
 
     # check Dockerfile to determine what is needed
-    cbf.parseDockerfile
+    local -A dockerParams
+    eval "dockerParams=( $(cbf.parseDockerfile) )"
 
     # ensure crf directories exist
     [ -e "$( cbf.CRT_BASE )/bashlib" ] || mkdir -p "$( cbf.CRT_BASE )/bashlib"
@@ -269,7 +271,7 @@ fi
 source "$file"
 EOF
 
-    cd /tmp
+    cd /tmp ||:
     chmod a+xr "$file" "$tmpScript"
 
     local -i status
@@ -292,11 +294,11 @@ function cbf.parseDockerfile()
         local val
         while IFS='=' read -r key val; do
             case "$key" in
-                ENTRYPOINT) local entrypoint="$val";;
-                CMD)        local cmd="$val";;
-                VOLUMES)    local volumes="$val";;
-                USER)       local user="$val";;
-                WORKDIR)    local workdir="$val";;
+                ENTRYPOINT) echo "[entrypoint]='$val'";;
+                CMD)        echo "[cmd]='$val'";;
+                VOLUMES)    echo "[volumes]='$val'";;
+                USER)       echo "[user]='$val'";;
+                WORKDIR)    echo "[workdir]='$val'";;
             esac
         done < "$props"
     fi
@@ -320,7 +322,7 @@ function cbf.runScripts()
     for file in "${files[@]}"; do
         local name="$( basename "$file" )"
         local _name="${name//./_}"
-        [[ "${ahash[$_name]:-}"  &&  "${ahash[$_name]:-}" =~ */action.templates/* ]] && continue
+        [[ "${ahash[$_name]:-}"  && "${ahash[$_name]:-}" = */action.templates/* ]] && continue
         ahash[$_name]="$file"
     done
 
@@ -332,7 +334,7 @@ function cbf.runScripts()
         cbf.makeScript "$file"
         (( isdone++ )) || :
     done
-    if [ $todo -ne $isdone ]; then
+    if [ "$todo" -ne "$isdone" ]; then
         echo "count before: $todo.  count after: $isdone.  hash: ${ahash[*]}"
         trap.die "failed to execute all scripts"
     fi
@@ -346,8 +348,8 @@ function cbf.showActionNotice()
     local -r dir=${2:?"Input parameter 'dir' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     [ "$dir" ] || return 0
-    [ "$dir" != "${!last}" ] || return 0
-    eval "$last"="'${dir}'"
+    [ "$dir" != "${!last}" ] || return 0   # do not output same consecutive notice
+    eval "$last='${dir}'"
 
     # get .info file, & read for 'notice'
     local info="$( cbf.ACTION )/${dir}/.info"

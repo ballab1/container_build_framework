@@ -29,12 +29,16 @@ ENV=${crf_base}/environment
 LIB=${crf_base}/bashlib
 STARTUP=${crf_base}/startup
 EOF
-
-        [ "${DEBUG_TRACE:-0}" = 0 ] || cat "$CRF_PROPERTIES_FILE"
-        [ -e "$(crf.propertiesFile)" ] || term.log "runtime initialized\n"
     fi
+
+    # ensure the CBF_VERSION is in CRF.properties
+    [ -z "${CBF_VERSION:-}" ] || lib.updatePropertyFile 'CBF_VERSION' "$CBF_VERSION" "$CRF_PROPERTIES_FILE" 'must_exist'
+
+    [ "${DEBUG_TRACE:-0}" = 0 ] || cat "$CRF_PROPERTIES_FILE"
 #    term.__init
 #    trap.__init
+
+    [ -e "$(crf.propertiesFile)" ] || term.log "runtime initialized\n"
 }
 export -f crf.__init
 

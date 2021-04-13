@@ -270,6 +270,7 @@ function lib.isActionFile()
         centos)        [ "$os_id" = "$_extension" ];;
         fedora)        [ "$os_id" = "$_extension" ];;
         ubuntu)        [ "$os_id" = "$_extension" ];;
+        i386-ubuntu)   [ "$os_id" = 'ubuntu' ];;
         windows)       [ "$os_id" = "$_extension" ];;
         *)                                     true;;
     esac
