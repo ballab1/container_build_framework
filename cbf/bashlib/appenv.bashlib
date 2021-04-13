@@ -5,6 +5,18 @@
 #   appenv.bashlib; basic functions to load our libraries
 #
 #----------------------------------------------------------------------------------------------
+function appenv.cmdError()
+{
+        local msg="${1:'ERROR: invalid command options'}"
+
+        OPTS['quiet']=1
+        OPTS['debug']=2
+        appenv.showArgs
+        term.elog '\n'"$msg"'\n' 'error'
+        exit 1
+}
+
+#----------------------------------------------------------------------------------------------
 function appenv.cmdLineArgs()
 {
     local -a optsJSON=()
@@ -230,12 +242,12 @@ function appenv.showArgs()
                 
                 2)
                     echo
-                    echo 'options:'
+                    echo "${#OPTS[*]} options:"
                     local i
                     for i in "${!OPTS[@]}"; do
                        printf '    [%s]: %s\n' $i "${OPTS[$i]}"
                     done
-                    echo 'args:'
+                    echo "${#ARGS[*]} args:"
                     for i in "${ARGS[@]}"; do
                        printf '    %s\n' "$i"
                     done
