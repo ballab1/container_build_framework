@@ -13,6 +13,13 @@ osname() {
     fi
 }
 
+newCbfVersion() {
+    [ "${CBF_VERSION:-}" ] || return 1
+    [ -e "/usr/local/crf/CRF.properties" ] || return 0
+    grep -qs "CBF_VERSION=$CBF_VERSION" "/usr/local/crf/CRF.properties" || return 0
+    return 1
+}
+
 echo '= Environment ======================================='
 printf '    %s\n' $(env | sort)
 echo '= Commandline Params ================================'
@@ -58,7 +65,7 @@ if [ -d "$cbf_dir" ]; then
     echo "Using local build version of CBF"
     find /tmp -name 'C?F.properties' -delete
 
-elif [ "$CBF_VERSION" ]; then
+elif newCbfVersion ; then
     # since no CBF directory located, attempt to download CBF based on specified verion
     CBF_TGZ=/tmp/cbf.tar.gz
     CBF_URL="https://github.com/ballab1/container_build_framework/archive/${CBF_VERSION}.tar.gz"
