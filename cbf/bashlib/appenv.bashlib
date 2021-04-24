@@ -5,6 +5,14 @@
 #   appenv.bashlib; basic functions to load our libraries
 #
 #----------------------------------------------------------------------------------------------
+function appenv.capture()
+{
+  file="${1:-"/tmp/$(basename "${BASH_SOURCE[0]}")"}"
+  :> "$file"
+  exec 2> >(tee -ai "$file" >&2) > >(tee -ai "$file")
+}
+
+#----------------------------------------------------------------------------------------------
 function appenv.cmdError()
 {
         local msg="${1:'ERROR: invalid command options'}"
@@ -189,6 +197,13 @@ function appenv.loader()
 function appenv.onExit()
 {
     local status=$?
+
+    set +o errexit
+    set +o nounset
+    trap - EXIT
+    trap - ERR
+    trap - INT
+    trap - PIPE 
 
     [ "$(type -t "${LIB_NAME}.onExit")" ] && "${LIB_NAME}.onExit"
 
