@@ -56,7 +56,7 @@ function git.checkout()
     shift
     local -r flags=( "$@" )
 
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git checkout ${flags[*]:-} $commit"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git checkout $(echo ${flags[*]:-}) $commit"'\n' 'grey'
     git checkout ${flags[*]:-} "$commit"
 }
 export -f git.checkout
@@ -69,7 +69,7 @@ function git.clone()
     shift 2
     local -r flags=( "$@" )
 
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git clone ${flags[*]:-} -- $repo ${dir:-}"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git clone $(echo ${flags[*]:-}) -- $repo ${dir:-}"'\n' 'grey'
     git clone ${flags[*]:-} -- "$repo" ${dir:-}
 }
 export -f git.clone
@@ -138,6 +138,15 @@ function git.cryptUnlock()
 export -f git.cryptUnlock
 
 #----------------------------------------------------------------------------------------------
+function git.describe()
+{
+    local -r flags=( "$@" )
+
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git describe $(echo ${flags[*]:-})"'\n' 'grey'
+    git describe ${flags[*]:-}
+}
+
+#----------------------------------------------------------------------------------------------
 function git.fetch()
 {
     [ $# -eq 0 ] && return 1
@@ -182,8 +191,8 @@ export -f git.initWorkspace
 #
 function git.isDirty()
 {
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git describe --tags --always --dirty\n' 'grey'
-    [[ "$(git describe --tags --always --dirty)" = *-dirty ]]
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "$(git.describe --tags --always --dirty)"'\n' 'grey'
+    [[ "$(git.describe --tags --always --dirty)" = *-dirty ]]
 }
 export -f git.isDirty
 
@@ -217,7 +226,7 @@ function git.lsTree()
     shift 2
     local -r flags=( "$@" )
 
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git ls-tree ${flags[*]:-} -- $tree_ish $path"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git ls-tree $(echo ${flags[*]:-}) -- $tree_ish $path"'\n' 'grey'
     git ls-tree ${flags[*]:-} -- "$tree_ish" "$path"
 }
 export -f git.lsTree
@@ -228,8 +237,8 @@ function git.origin()
     local -r dir=${1:-.}
 
     cd "$dir"
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git describe --tags --dirty --always\n' 'grey'
-    local version=$(git describe --tags --dirty --always)
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "$(git.describe --tags --always --dirty)"'\n' 'grey'
+    local version="$(git.describe --tags --always --dirty)"
 
     [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git ls-files --others --exclude-standard\n' 'grey'
     local -i untracked=$(git ls-files --others --exclude-standard | wc -l)
@@ -263,7 +272,7 @@ function git.pull()
 {
     local -r flags=( "$@" )
 
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git pull ${flags[*]:-}"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git pull $(echo ${flags[*]:-})"'\n' 'grey'
     git pull ${flags[*]:-}
 }
 export -f git.pull
@@ -310,7 +319,7 @@ function git.reset()
     shift
     local -r flags=( "$@" )
 
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git reset ${flags[*]:-} $commit"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git reset $(echo ${flags[*]:-}) $commit"'\n' 'grey'
     git reset ${flags[*]:-} "$commit"
 }
 export -f git.reset
