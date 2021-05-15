@@ -27,11 +27,10 @@ function docker.clean()
     local dockerRootDir="$(docker system info 2>/dev/null | grep 'Docker Root Dir:' | sed -E 's|^.+:\s+||')"
 
     local -a collection
-    local -i blocksUsedBefore="$(df "${dockerRootDir}/volumes" | awk '{if (NR==2) {print $3}}')"
+    local -i blocksUsedBefore="$(df "${dockerRootDir}" | awk '{if (NR==2) {print $3}}')"
 
     # remove all containers which are stopped along with their associated volumes
-    collection=()
-    collection+=( $(docker ps --all --quiet --filter "status=dead" --format "{{.Names}}") )
+    mapfile -t collection < <(docker ps --all --quiet --filter "status=dead" --format "{{.Names}}")
     collection+=( $(docker ps --all --quiet --filter "status=exited" --format "{{.Names}}") )
     if [ "${#collection[*]}" -gt 0 ]; then
         printf "Deleting %d exited containers\n" "${#collection[*]}"
@@ -104,10 +103,12 @@ function docker.clean()
         [ $deletions -gt 0 ] && printf "Deleted %d directories associated with volumes no longer in use\n" $deletions
     fi
 
+    # remove orphaned volumes
+    docker volume prune -f
 
     # show results
     (
-        local -i blocksUsedAfter="$(df "${dockerRootDir}/volumes" | awk '{if (NR==2) {print $3}}')"
+        local -i blocksUsedAfter="$(df "${dockerRootDir}" | awk '{if (NR==2) {print $3}}')"
         local -i recovered=$(( blocksUsedBefore - blocksUsedAfter ))
         [ $recovered -le 0 ] || printf "Recovered %d kb\n" $recovered
         echo
