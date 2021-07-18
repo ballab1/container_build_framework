@@ -261,13 +261,19 @@ function jira.search()
     status=1
     while true; do
         results="$(jira.jqlSearch "$jql_json")" && status=$? || status=$?
-        [ $status -ne 0 ] && break
+        [[ $status -ne 0  ||  -z "${results:-}" ]] && break
+        if [ "$(jq -e 'has("errorMessages")' <<<"$results")" = 'true' ];then
+            term.elog '    errorMessages:\n' 'red'
+            printf '        %s\n' $(jq --raw-output '.errorMessages[]' <<<"$results") >&2
+            break
+        fi
 
         count=$(jq --compact-output --monochrome-output --raw-output '.issues | length' <<< "$results")
         total=$(jq --compact-output --monochrome-output --raw-output '.total' <<< "$results")
         endAt=$(( startAt + count ))
-        echo "found issues $startAt :: $endAt" >&2
+        [ $(( startAt + endAt )) -eq 0 ] && break
 
+        echo "found issues $startAt :: $endAt" >&2
         jq --compact-output --monochrome-output '.issues|.[0:'"$count"'][]' <<< "$results" || status=$?
         [[ $status -ne 0 || $endAt -ge ${total:-0} ]] && break
 

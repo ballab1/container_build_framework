@@ -52,17 +52,19 @@ function package.install()
 
     package.checkPackages "${PKGS[@]}"
 
-    : ${OPTS:=''}
+    [ -z "${BUILD[*]:-}" ] && local -a BUILD=()
     case "$( environ.OSid )" in
         alpine)
-            apk add --no-cache ${OPTS[*]} ${PKGS[*]}
+            # add dummy '.buildDependencies' module which depends on all BUILD modules so we just have to delete '.buildDependencies'
+            [ ${#BUILD[*]} -gt 0 ] && apk add --no-cache "${BUILD[@]}"  '--virtual' '.buildDependencies'
+            apk add --no-cache "${PKGS[@]}"
             ;;
         centos|fedora)
-            yum install -y ${OPTS[*]} ${PKGS[*]}
+            yum install -y "${BUILD[@]}" "${PKGS[@]}" 
             yum clean all
             ;;
         ubuntu)
-            apt-get install --yes ${OPTS[*]} ${PKGS[*]}
+            apt-get install --yes "${BUILD[@]}" "${PKGS[@]}"
             ;;
     esac
 }
