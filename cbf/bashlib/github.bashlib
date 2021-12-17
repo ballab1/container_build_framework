@@ -23,35 +23,22 @@ function github.GET()
 export -f github.GET
 
 #----------------------------------------------------------------------------------------------
-function github.GITHUB_PROD()
-{
-    echo "${_GITHUB_PROD:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( github.propertiesFile )")}"
-}
-export -f github.GITHUB_PROD
-
-#----------------------------------------------------------------------------------------------
-function github.GITHUB_TEST()
-{
-    echo "${_GITHUB_TEST:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( github.propertiesFile )")}"
-}
-export -f github.GITHUB_TEST
-
-#----------------------------------------------------------------------------------------------
 function github.io()
 {
     local -a args
     local headers response url
     local -i status=0
     local -A links
-    local -a credentials=( $(credentials.get github) )
+    local -a credentials
+    mapfile -t credentials < <(credentials.get github)
     if [ "${DEBUG:-0}" -eq 0 ]; then
         credentials+=( '--silent' )
     else
         echo "curl $*" >&2
     fi
 
-    headers=$(mktemp)
-    args=( "${credentials[@]}" '--dump-header' "$headers" "$@" )
+    headers=$(mktemp --tmpdir="${TMP_DIR:-/tmp}")
+    args=( ${credentials[@]} '--dump-header' "$headers" "$@" )
     response=$(curl "${args[@]}") && status=$? || status=$?
     unset args[$[${#args[*]}-1]]
 
@@ -72,7 +59,7 @@ function github.io()
 
         response=$(curl "${args[@]}" "$url") && status=$? || status=$?
     done
-    rm "$headers"
+    [ "${TMP_DIR:-}" ] || rm "$headers"
     [ "$status" -ne 0 ] || return 0
 
 
@@ -165,18 +152,59 @@ function github.repoCollaborators()
 export -f github.repoCollaborators
 
 #----------------------------------------------------------------------------------------------
+function github.HOST()
+{
+    if [ "${OPTS['host']:-}" ]; then
+         echo "${OPTS['host']}"
+    else
+        echo "${_GITHUB_HOST:=$(lib.getHost "$( github.SERVER )" )}"
+    fi
+}
+export -f github.HOST
+
+#----------------------------------------------------------------------------------------------
+function github.PROD()
+{
+    if [ "${OPTS['prod']:-}" ]; then
+         echo "${OPTS['prod']}"
+    else
+        echo "${_GITHUB_PROD:=$(lib.getProperty 'PROD' "$( github.propertiesFile )")}"
+    fi
+}
+export -f github.PROD
+
+#----------------------------------------------------------------------------------------------
 function github.REST_API()
 {
-    echo "${_GITHUB_REST_API:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( github.propertiesFile )")}"
+    if [ "${OPTS['rest_api']:-}" ]; then
+         echo "${OPTS['rest_api']}"
+    else
+         echo "${_GITHUB_REST_API:=$(lib.getProperty 'REST_API' "$( github.propertiesFile )")}"
+    fi
 }
 export -f github.REST_API
 
 #----------------------------------------------------------------------------------------------
 function github.SERVER()
 {
-    echo "${_GITHUB_SERVER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( github.propertiesFile )")}"
+    if [ "${OPTS['server']:-}" ]; then
+         echo "${OPTS['server']}"
+    else
+        echo "${_GITHUB_SERVER:=$(lib.getProperty 'SERVER' "$( github.propertiesFile )")}"
+    fi
 }
 export -f github.SERVER
+
+#----------------------------------------------------------------------------------------------
+function github.TEST()
+{
+    if [ "${OPTS['test']:-}" ]; then
+         echo "${OPTS['test']}"
+    else
+        echo "${_GITHUB_TEST:=$(lib.getProperty 'TEST' "$( github.propertiesFile )")}"
+    fi
+}
+export -f github.TEST
 
 #----------------------------------------------------------------------------------------------
 function github.splitLinks()
@@ -208,9 +236,20 @@ export -f github.teamRepos
 #----------------------------------------------------------------------------------------------
 function github.USER()
 {
-    echo "${_GITHUB_USER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( github.propertiesFile )")}"
+    if [ "${OPTS['user']:-}" ]; then
+         echo "${OPTS['user']}"
+    else
+        echo "${_GITHUB_USER:=$(lib.getProperty 'USER' "$( github.propertiesFile )")}"
+    fi
 }
 export -f github.USER
+
+#----------------------------------------------------------------------------------------------
+function github.USERID()
+{
+    github.USER
+}
+export -f github.USERID
 
 #----------------------------------------------------------------------------------------------
 function github.userInfo()

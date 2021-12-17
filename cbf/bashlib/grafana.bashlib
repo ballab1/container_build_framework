@@ -1,0 +1,505 @@
+#!/bin/echo 'This script cannot be executabled directly. Please source from another script'
+
+#----------------------------------------------------------------------------------------------
+#
+#  general 'grafana' scripts
+#
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+function grafana.compareDashboardVersions()
+{
+    grafana.POST "$(grafana.REST_API)/dashboards/calculate-diff" || return 1
+}
+export -f grafana.compareDashboardVersions
+
+#----------------------------------------------------------------------------------------------
+function grafana.createApiKey()
+{
+    local -r data="${1:?}"
+
+    grafana.POST '--data' "$data" "$(grafana.REST_API)/auth/keys" || return 1
+}
+export -f grafana.createApiKey
+
+#----------------------------------------------------------------------------------------------
+function grafana.createFolder()
+{
+    local -r data="${1:?}"
+
+    grafana.POST '--data' "$data" "$(grafana.REST_API)/folders" || return 1
+}
+export -f grafana.createFolder
+
+#----------------------------------------------------------------------------------------------
+function grafana.createOrUpdateDashboard()
+{
+    local -r data="${1:?}"
+
+    grafana.POST '--data' "$data" "$(grafana.REST_API)/dashboards/db" || return 1
+}
+export -f grafana.createOrUpdateDashboard
+
+#----------------------------------------------------------------------------------------------
+function grafana.createDataSource()
+{
+    local -r data="${1:?}"
+
+    grafana.POST '--data' "$data" "$(grafana.REST_API)/datasources" || return 1
+}
+export -f grafana.createDataSource
+
+#----------------------------------------------------------------------------------------------
+function grafana.deleteDashboardByUid()
+{
+    local -r uid="${1:?}"
+
+    grafana.DELETE "$(grafana.REST_API)/dashboards/uid/$uid" || return 1
+}
+export -f grafana.deleteDashboardByUid
+
+#----------------------------------------------------------------------------------------------
+function grafana.deleteExistingDataSourceByName
+{
+    local -r dataSourceName="${1:?}"
+
+    grafana.DELETE "$(grafana.REST_API)/datasources/name/$dataSourceName" || return 1
+}
+export -f grafana.deleteExistingDataSourceByName
+
+#----------------------------------------------------------------------------------------------
+function grafana.deleteExistingDataSourceById()
+{
+    local -r dataSourceId="${1:?}"
+
+    grafana.DELETE "$(grafana.REST_API)/datasources/$dataSourceId" || return 1
+}
+export -f grafana.deleteExistingDataSourceById
+
+#----------------------------------------------------------------------------------------------
+function grafana.deleteExistingDataSourceByUid()
+{
+    local -r uid="${1:?}"
+
+    grafana.DELETE "$(grafana.REST_API)/datasources/uid/$uid" || return 1
+}
+export -f grafana.deleteExistingDataSourceByUid
+
+#----------------------------------------------------------------------------------------------
+function grafana.deleteFolder()
+{
+    local -r uid="${1:?}"
+
+    grafana.DELETE "$(grafana.REST_API)/folders/$uid" || return 1
+}
+export -f grafana.deleteFolder
+
+#----------------------------------------------------------------------------------------------
+function grafana.getAllDataSources()
+{
+    grafana.GET "$(grafana.REST_API)/datasources" || return 1
+}
+export -f grafana.getAllDataSources
+
+#----------------------------------------------------------------------------------------------
+function grafana.getAllFolders()
+{
+    grafana.GET "$(grafana.REST_API)/folders" || return 1
+}
+export -f grafana.getAllFolders
+
+#----------------------------------------------------------------------------------------------
+function grafana.getCatalog() {
+
+    grafana.GET "$(grafana.REST_API)/search?query=%"
+}
+export -f grafana.getCatalog
+
+#----------------------------------------------------------------------------------------------
+function grafana.getDashboard()
+{
+    local -r uid="${1:?}"
+
+    grafana.GET "$(grafana.REST_API)/dashboards/uid/$uid" || return 1
+}
+export -f grafana.getDashboard
+
+#----------------------------------------------------------------------------------------------
+function grafana.getDashboardVersion()
+{
+    local -r dashBoardId="${1:?}"
+    local -r id="${2:?}"
+
+    grafana.GET "$(grafana.REST_API)/dashboards/id/$dashBoardId/versions/$id" || return 1
+}
+export -f grafana.getDashboardVersion
+
+#----------------------------------------------------------------------------------------------
+function grafana.getDataSourceIdByName()
+{
+    local -r name="${1:?}"
+
+    grafana.GET "$(grafana.REST_API)/datasources/id/$name" || return 1
+}
+export -f grafana.getDataSourceIdByName
+
+#----------------------------------------------------------------------------------------------
+function grafana.getFolderById()
+{
+    local -r id="${1:?}"
+
+    grafana.GET "$(grafana.REST_API)/folders/id/$id" || return 1
+}
+export -f grafana.getFolderById
+
+#----------------------------------------------------------------------------------------------
+function grafana.getFolderByUid()
+{
+    local -r uid="${1:?}"
+
+    grafana.GET "$(grafana.REST_API)/folders/$uid" || return 1
+}
+export -f grafana.getFolderByUid
+
+#----------------------------------------------------------------------------------------------
+function grafana.getHomeDashboard()
+{
+    grafana.GET "$(grafana.REST_API)/dashboards/home" || return 1
+}
+export -f grafana.getHomeDashboard
+
+#----------------------------------------------------------------------------------------------
+function grafana.getSettings()
+{
+    # Admin API
+    grafana.GET "$(grafana.REST_API)/admin/settings" || return 1
+}
+export -f grafana.getSettings
+
+#----------------------------------------------------------------------------------------------
+function grafana.getSingleDataSourceById()
+{
+    local -r dataSourceId="${1:?}"
+
+    grafana.GET "$(grafana.REST_API)/datasources/$dataSourceId" || return 1
+}
+export -f grafana.getSingleDataSourceById
+
+#----------------------------------------------------------------------------------------------
+function grafana.getSingleDataSourceByName()
+{
+    local -r name="${1:?}"
+
+    grafana.GET "$(grafana.REST_API)/datasources/name/$name" || return 1
+}
+export -f grafana.getSingleDataSourceByName
+
+#----------------------------------------------------------------------------------------------
+function grafana.getSingleDataSourceByUid()
+{
+    local -r uid="${1:?}"
+
+    grafana.GET "$(grafana.REST_API)/datasources/uid/$uid" || return 1
+}
+export -f grafana.getSingleDataSourceByUid
+
+#----------------------------------------------------------------------------------------------
+function grafana.getStats()
+{
+    # Admin API
+    grafana.GET "$(grafana.REST_API)/admin/stats" || return 1
+}
+export -f grafana.getStats
+
+#----------------------------------------------------------------------------------------------
+function grafana.getStatus()
+{
+    # Fine-grained access control API
+    grafana.GET "$(grafana.REST_API)/access-control/status" || return 1
+}
+export -f grafana.getStatus
+
+#----------------------------------------------------------------------------------------------
+function grafana.healthInformation()
+{
+    grafana.GET "$(grafana.REST_API)/health" || return 1
+}
+export -f grafana.healthInformation
+
+#-------------------------------------------------------------------------------
+function grafana.putDatasource() {
+    local file="${1:?}"
+
+    if [ ! -e "$file" ]; then
+        [ "$(echo "$file" | grep -cs "${BASE}")" -eq 0 ] && file="${BASE}/$file"
+        if [ ! -e "$file" ]; then
+            echo "Unable to find: '$file'"
+            return 0
+        fi
+    fi
+
+    echo -n "Datasource: $(basename "$file")   "
+    local -i status=0
+    local -a args=( $(grafana.headers) '--insecure' '--silent' '--request' 'POST' --data "$(datasourceJson "$file")"  "$(grafana.api)/datasources" )
+    local response=$(curl "${args[@]}") && status=$? || status=$?
+    if [ "$status" -ne 0 ]; then
+        echo "Error:  $response" >&2
+    else
+        echo "$response"
+    fi
+    return "$status"
+}
+export -f grafana.putDatasource
+
+#----------------------------------------------------------------------------------------------
+function grafana.queryDataSourceById()
+{
+    local -r data="${1:?}"
+
+    # Data source API : run backend 'SELECT' and return data
+    grafana.POST "$(grafana.REST_API)/tsdb/query" "$data" || return 1
+}
+export -f grafana.queryDataSourceById
+
+#----------------------------------------------------------------------------------------------
+function grafana.restoreDashboard()
+{
+    local -r dashBoardId="${1:?}"
+
+    grafana.POST "$(grafana.REST_API)/dashboards/id/$dashBoardId/restore" || return 1
+}
+export -f grafana.restoreDashboard
+
+#----------------------------------------------------------------------------------------------
+function grafana.searchFoldersAndDashboards()
+{
+#    local -r query="$ – Search Query
+#    local -r tag – List of tags to search for
+#    local -r type – Type to search for, dash-folder or dash-db
+#    local -r dashboardIds – List of dashboard id’s to search for
+#    local -r folderIds – List of folder id’s to search in for dashboards
+#    local -r starred – Flag indicating if only starred Dashboards should be returned
+#    local -r limit – Limit the number of returned results (max 5000)
+#    local -r page – Use this parameter to access hits beyond limit. Numbering starts at 1. limit param acts as page size. Only available in Grafana v6.2+.
+
+    local -r searchParams="${1:?}"
+
+    # Folder/Dashboard Search API
+    grafana.GET "$(grafana.REST_API)/search?$searchParams" || return 1
+}
+export -f grafana.searchFoldersAndDashboards
+
+#----------------------------------------------------------------------------------------------
+function grafana.tagsForDashboard()
+{
+    grafana.GET "$(grafana.REST_API)/dashboards/tags" || return 1
+}
+export -f grafana.tagsForDashboard
+
+#----------------------------------------------------------------------------------------------
+function grafana.updateExistingDataSource()
+{
+    local -r dataSourceId="${1:?}"
+    local -r data="${2:?}"
+
+    grafana.PUT "$(grafana.REST_API)/datasources/$dataSourceId" "$data" || return 1
+}
+export -f grafana.updateExistingDataSource
+
+#----------------------------------------------------------------------------------------------
+function grafana.updateFolder()
+{
+    local -r uid="${1:?}"
+    local -r data="${2:?}"
+
+    grafana.PUT "$(grafana.REST_API)/folders/$uid" "$data" || return 1
+}
+export -f grafana.updateFolder
+
+#----------------------------------------------------------------------------------------------
+function grafana.DELETE()
+{
+    grafana.io --request DELETE "$@" || return 1
+}
+export -f grafana.DELETE
+
+#----------------------------------------------------------------------------------------------
+function grafana.GET()
+{
+    grafana.io --request GET "$@" || return 1
+}
+export -f grafana.GET
+
+#----------------------------------------------------------------------------------------------
+function grafana.io()
+{
+    local -a args
+    local headers response
+    local -i status=0
+    local -a credentials
+    mapfile -t credentials < <(credentials.get grafana)
+    if [ "${DEBUG:-0}" -eq 0 ]; then
+        credentials+=( '--silent' )
+    else
+        echo "curl $*" >&2
+    fi
+
+    headers=$(mktemp --tmpdir="${TMP_DIR:-/tmp}")
+    args=( '--header' 'Content-Type: application/json;charset=UTF-8'
+           '--header' 'Accept: application/json'
+           ${credentials[@]}
+           '--dump-header' "$headers" "$@" )
+
+    response=$(curl "${args[@]}") && status=$? || status=$?
+
+    if [ "$status" -eq 0 ]; then
+        # Status: 200 OK
+        http_code=$(head -1 "$headers" | sed -Ee 's|^\S+\s+(.+)\r?$|\1|')
+        if [ "${http_code:0:1}" -gt 3 ]; then
+            status=-1
+        else
+            [ "${DEBUG:-0}" -ne 0 ] && (echo '----------'; echo "$response" ; echo '----------'; echo )  >&2
+            echo -n "$response"
+        fi
+    fi
+    [ "${TMP_DIR:-}" ] || rm "$headers"
+    [ "$status" -ne 0 ] || return 0
+
+    # an error occurred
+    local curl_cmd=( 'curl' '--insecure' "$@" )
+    echo
+    if (jq -e '.' <<<"$response" 2>/dev/null); then
+        (   term.log "***ERROR: failure to complete grafana request
+    command:       $(printf '%s ' "${curl_cmd[@]}")
+    error code:    $(jq --compact-output --monochrome-output -r '.status?' <<< "$response")
+    error message: $(jq --compact-output --monochrome-output -r '.message?' <<< "$response")
+    http_code:     ${http_code:-}
+"   'warn' >&2
+        )
+    else
+        (   term.log "***ERROR: failure to complete grafana request
+    command:       $(printf '%s ' "${curl_cmd[@]}")
+    http_code:     ${http_code:-}
+"   'warn' >&2
+        )
+    fi
+
+    # check that 'term.log' was successful, otherwise, make sure something is echo'd
+    [ $? -eq 0 ] || echo "command:       $(printf '%s ' "${curl_cmd[@]}")\\n    error code:    $response" >&2
+
+    return 1
+}
+export -f grafana.io
+
+#----------------------------------------------------------------------------------------------
+function grafana.POST()
+{
+    grafana.io --request POST "$@" || return 1
+}
+export -f grafana.POST
+
+#----------------------------------------------------------------------------------------------
+function grafana.propFile()
+{
+    echo "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/properties/$(basename "${BASH_SOURCE[0]%.*}").properties"
+}
+
+export GRAFANA_PROPERTIES_FILE="${GRAFANA_PROPERTIES_FILE:=$(grafana.propFile)}"
+
+#----------------------------------------------------------------------------------------------
+function grafana.propertiesFile()
+{
+    echo "${GRAFANA_PROPERTIES_FILE:=$(grafana.propFile)}"
+}
+export -f grafana.propertiesFile
+
+#----------------------------------------------------------------------------------------------
+function grafana.HOST()
+{
+    if [ "${OPTS['host']:-}" ]; then
+         echo "${OPTS['host']}"
+    else
+         echo "${_GRAFANA_HOST:=$(lib.getHost "$( grafana.SERVER )")}"
+    fi
+}
+export -f grafana.HOST
+
+#----------------------------------------------------------------------------------------------
+function grafana.PROD()
+{
+    if [ "${OPTS['prod']:-}" ]; then
+         echo "${OPTS['prod']}"
+    else
+        echo "${_GRAFANA_PROD:=$(lib.getProperty 'PROD' "$( grafana.propertiesFile )")}"
+    fi
+}
+export -f grafana.PROD
+
+#----------------------------------------------------------------------------------------------
+function grafana.PUT()
+{
+    grafana.io --request PUST "$@" || return 1
+}
+export -f grafana.PUT
+
+#----------------------------------------------------------------------------------------------
+function grafana.REST_API()
+{
+    if [ "${OPTS['rest_api']:-}" ]; then
+         echo "${OPTS['rest_api']}"
+    else
+        echo "${_GRAFANA_RESTAPI:=$(lib.getProperty 'REST_API' "$( grafana.propertiesFile )")}"
+    fi
+}
+export -f grafana.REST_API
+
+#----------------------------------------------------------------------------------------------
+function grafana.SERVER()
+{
+    if [ "${OPTS['server']:-}" ]; then
+         echo "${OPTS['server']}"
+    else
+        echo "${_GRAFANA_SERVER:=$(lib.getProperty 'SERVER' "$( grafana.propertiesFile )")}"
+    fi
+}
+export -f grafana.SERVER
+
+#----------------------------------------------------------------------------------------------
+function grafana.TEST()
+{
+    if [ "${OPTS['test']:-}" ]; then
+         echo "${OPTS['test']}"
+    else
+         echo "${_GRAFANA_TEST:=$(lib.getProperty 'TEST' "$( grafana.propertiesFile )")}"
+    fi
+}
+export -f grafana.TEST
+
+#----------------------------------------------------------------------------------------------
+function grafana.URL()
+{
+    if [ "${OPTS['url']:-}" ]; then
+         echo "${OPTS['url']}"
+    else
+        echo "${_GRAFANA_URL:=$(lib.getProperty 'URL' "$( grafana.propertiesFile )")}"
+    fi
+}
+export -f grafana.URL
+
+#----------------------------------------------------------------------------------------------
+function grafana.USER()
+{
+    if [ "${OPTS['user']:-}" ]; then
+         echo "${OPTS['user']}"
+    else
+        echo "${_GRAFANA_USER:=$(lib.getProperty 'USER' "$( grafana.propertiesFile )")}"
+    fi
+}
+export -f grafana.USER
+
+#----------------------------------------------------------------------------------------------
+function grafana.USERID()
+{
+    grafana.USER
+}
+export -f grafana.USERID

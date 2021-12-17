@@ -27,15 +27,16 @@ function jenkins.io()
     local headers response url
     local -i status=0
     local -A links
-    local -a credentials=( $(credentials.get jenkins) )
+    local -a credentials
+    mapfile -t credentials < <(credentials.get jenkins)
     if [ "${DEBUG:-0}" -eq 0 ]; then
         credentials+=( '--silent' )
     else
         echo "curl $*" >&2
     fi
 
-    headers=$(mktemp)
-    args=( "${credentials[@]}" '--dump-header' "$headers" "$@" )
+    headers=$(mktemp --tmpdir="${TMP_DIR:-/tmp}")
+    args=( ${credentials[@]} '--dump-header' "$headers" "$@" )
 
     response=$(curl "${args[@]}") && status=$? || status=$?
 
@@ -49,7 +50,7 @@ function jenkins.io()
             echo -n "$response"
         fi
     fi
-    rm "$headers"
+    [ "${TMP_DIR:-}" ] || rm "$headers"
     [ "$status" -ne 0 ] || return 0
 
     # an error occurred
@@ -96,13 +97,6 @@ function jenkins.propertiesFile()
 export -f jenkins.propertiesFile
 
 #----------------------------------------------------------------------------------------------
-function jenkins.PROD()
-{
-    echo "${_JENKINS_PROD:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jenkins.propertiesFile )")}"
-}
-export -f jenkins.PROD
-
-#----------------------------------------------------------------------------------------------
 function jenkins.PUT()
 {
     jenkins.io --request PUST "$@" || return 1
@@ -110,43 +104,85 @@ function jenkins.PUT()
 export -f jenkins.PUT
 
 #----------------------------------------------------------------------------------------------
+function jenkins.HOST()
+{
+    if [ "${OPTS['host']:-}" ]; then
+         echo "${OPTS['host']}"
+    else
+        echo "${_JENKINS_HOST:=$(lib.getHost "$( jenkins.SERVER )")}"
+    fi
+}
+export -f jenkins.HOST
+
+#----------------------------------------------------------------------------------------------
+function jenkins.PROD()
+{
+    if [ "${OPTS['prod']:-}" ]; then
+         echo "${OPTS['prod']}"
+    else
+         echo "${_JENKINS_PROD:=$(lib.getProperty 'PROD' "$( jenkins.propertiesFile )")}"
+    fi
+}
+export -f jenkins.PROD
+
+#----------------------------------------------------------------------------------------------
 function jenkins.REST_API()
 {
-    echo "${_JENKINS_RESTAPI:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jenkins.propertiesFile )")}"
+    if [ "${OPTS['rest_api']:-}" ]; then
+         echo "${OPTS['rest_api']}"
+    else
+        echo "${_JENKINS_RESTAPI:=$(lib.getProperty 'REST_API' "$( jenkins.propertiesFile )")}"
+    fi
 }
 export -f jenkins.REST_API
 
 #----------------------------------------------------------------------------------------------
 function jenkins.SERVER()
 {
-    echo "${_JENKINS_SERVER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jenkins.propertiesFile )")}"
+    if [ "${OPTS['server']:-}" ]; then
+         echo "${OPTS['server']}"
+    else
+        echo "${_JENKINS_SERVER:=$(lib.getProperty 'SERVER' "$( jenkins.propertiesFile )")}"
+    fi
 }
 export -f jenkins.SERVER
 
 #----------------------------------------------------------------------------------------------
 function jenkins.TEST()
 {
-    echo "${_JENKINS_TEST:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jenkins.propertiesFile )")}"
+    if [ "${OPTS['test']:-}" ]; then
+         echo "${OPTS['test']}"
+    else
+        echo "${_JENKINS_TEST:=$(lib.getProperty 'TEST' "$( jenkins.propertiesFile )")}"
+    fi
 }
 export -f jenkins.TEST
 
 #----------------------------------------------------------------------------------------------
 function jenkins.URL()
 {
-    echo "${_JENKINS_URL:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jenkins.propertiesFile )")}"
+    if [ "${OPTS['url']:-}" ]; then
+         echo "${OPTS['url']}"
+    else
+        echo "${_JENKINS_URL:=$(lib.getProperty 'URL' "$( jenkins.propertiesFile )")}"
+    fi
 }
 export -f jenkins.URL
 
 #----------------------------------------------------------------------------------------------
 function jenkins.USER()
 {
-    echo "${_JENKINS_USER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jenkins.propertiesFile )")}"
+    if [ "${OPTS['user']:-}" ]; then
+         echo "${OPTS['user']}"
+    else
+         echo "${_JENKINS_USER:=$(lib.getProperty 'USER' "$( jenkins.propertiesFile )")}"
+    fi
 }
 export -f jenkins.USER
 
 #----------------------------------------------------------------------------------------------
 function jenkins.USERID()
 {
-    echo "${_JENKINS_USERID:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jenkins.propertiesFile )")}"
+    jenkins.USER
 }
 export -f jenkins.USERID

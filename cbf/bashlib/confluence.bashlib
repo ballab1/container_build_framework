@@ -27,15 +27,16 @@ function confluence.io()
     local headers response url
     local -i status=0
     local -A links
-    local -a credentials=( $(credentials.get confluence) )
+    local -a credentials
+    mapfile -t credentials < <(credentials.get confluence)
     if [ "${DEBUG:-0}" -eq 0 ]; then
         credentials+=( '--silent' )
     else
         echo "curl $*" >&2
     fi
 
-    headers=$(mktemp)
-    args=( "${credentials[@]}" '--dump-header' "$headers" "$@" )
+    headers=$(mktemp --tmpdir="${TMP_DIR:-/tmp}")
+    args=( ${credentials[@]} '--dump-header' "$headers" "$@" )
 
     response=$(curl "${args[@]}") && status=$? || status=$?
 
@@ -49,7 +50,7 @@ function confluence.io()
             echo -n "$response"
         fi
     fi
-    rm "$headers"
+    [ "${TMP_DIR:-}" ] || rm "$headers"
     [ "$status" -ne 0 ] || return 0
 
     # an error occurred
@@ -96,9 +97,24 @@ function confluence.propertiesFile()
 export -f confluence.propertiesFile
 
 #----------------------------------------------------------------------------------------------
+function confluence.HOST()
+{
+    if [ "${OPTS['host']:-}" ]; then
+         echo "${OPTS['host']}"
+    else
+        echo "${_CONFLUENCE_HOST:=$(lib.getHost "$( confluence.SERVER )")}"
+    fi
+}
+export -f confluence.HOST
+
+#----------------------------------------------------------------------------------------------
 function confluence.PROD()
 {
-    echo "${_CONFLUENCE_PROD:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( confluence.propertiesFile )")}"
+    if [ "${OPTS['prod']:-}" ]; then
+         echo "${OPTS['prod']}"
+    else
+        echo "${_CONFLUENCE_PROD:=$(lib.getProperty 'PROD' "$( confluence.propertiesFile )")}"
+    fi
 }
 export -f confluence.PROD
 
@@ -112,41 +128,61 @@ export -f confluence.PUT
 #----------------------------------------------------------------------------------------------
 function confluence.REST_API()
 {
-    echo "${_CONFLUENCE_RESTAPI:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( confluence.propertiesFile )")}"
+    if [ "${OPTS['rest_api']:-}" ]; then
+         echo "${OPTS['rest_api']}"
+    else
+        echo "${_CONFLUENCE_RESTAPI:=$(lib.getProperty 'REST_API' "$( confluence.propertiesFile )")}"
+    fi
 }
 export -f confluence.REST_API
 
 #----------------------------------------------------------------------------------------------
 function confluence.SERVER()
 {
-    echo "${_CONFLUENCE_SERVER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( confluence.propertiesFile )")}"
+    if [ "${OPTS['server']:-}" ]; then
+         echo "${OPTS['server']}"
+    else
+        echo "${_CONFLUENCE_SERVER:=$(lib.getProperty 'SERVER' "$( confluence.propertiesFile )")}"
+    fi
 }
 export -f confluence.SERVER
 
 #----------------------------------------------------------------------------------------------
 function confluence.TEST()
 {
-    echo "${_CONFLUENCE_TEST:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( confluence.propertiesFile )")}"
+    if [ "${OPTS['test']:-}" ]; then
+         echo "${OPTS['test']}"
+    else
+        echo "${_CONFLUENCE_TEST:=$(lib.getProperty 'TEST' "$( confluence.propertiesFile )")}"
+    fi
 }
 export -f confluence.TEST
 
 #----------------------------------------------------------------------------------------------
 function confluence.URL()
 {
-    echo "${_CONFLUENCE_URL:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( confluence.propertiesFile )")}"
+    if [ "${OPTS['url']:-}" ]; then
+         echo "${OPTS['url']}"
+    else
+        echo "${_CONFLUENCE_URL:=$(lib.getProperty 'URL' "$( confluence.propertiesFile )")}"
+    fi
 }
 export -f confluence.URL
 
 #----------------------------------------------------------------------------------------------
 function confluence.USER()
 {
-    echo "${_CONFLUENCE_USER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( confluence.propertiesFile )")}"
+    if [ "${OPTS['user']:-}" ]; then
+         echo "${OPTS['user']}"
+    else
+        echo "${_CONFLUENCE_USER:=$(lib.getProperty 'USER' "$( confluence.propertiesFile )")}"
+    fi
 }
 export -f confluence.USER
 
 #----------------------------------------------------------------------------------------------
 function confluence.USERID()
 {
-    echo "${_CONFLUENCE_USERID:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( confluence.propertiesFile )")}"
+    confluence.USER
 }
 export -f confluence.USERID

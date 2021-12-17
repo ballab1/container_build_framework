@@ -312,14 +312,33 @@ export -f registry.PUT
 #----------------------------------------------------------------------------------------------
 function registry.REGISTRY()
 {
-    echo "${_REGISTRY_SERVER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( registry.propertiesFile )")}"
+    if [ "${OPTS['registry']:-}" ]; then
+         echo "${OPTS['registry']}"
+    else
+        echo "${_REGISTRY_SERVER:=$(lib.getProperty 'REGISTRY' "$( registry.propertiesFile )")}"
+    fi
 }
 export -f registry.REGISTRY
 
 #----------------------------------------------------------------------------------------------
+function registry.HOST()
+{
+    if [ "${OPTS['host']:-}" ]; then
+         echo "${OPTS['host']}"
+    else
+        echo "${_REGISTRY_HOST:=$(lib.getHost "$( registry.SERVER )")}"
+    fi
+}
+export -f registry.HOST
+
+#----------------------------------------------------------------------------------------------
 function registry.SERVER()
 {
-    echo "${_REGISTRY_SERVER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( registry.propertiesFile )")}"
+    if [ "${OPTS['server']:-}" ]; then
+         echo "${OPTS['server']}"
+    else
+        echo "${_REGISTRY_SERVER:=$(lib.getProperty 'SERVER' "$( registry.propertiesFile )")}"
+     fi
 }
 export -f registry.SERVER
 
@@ -336,13 +355,28 @@ export -f registry.tags
 #----------------------------------------------------------------------------------------------
 function registry.URL()
 {
-    echo "${_REGISTRY_URL:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( registry.propertiesFile )")}"
+    if [ "${OPTS['url']:-}" ]; then
+         echo "${OPTS['url']}"
+    else
+        echo "${_REGISTRY_URL:=$(lib.getProperty 'URL' "$( registry.propertiesFile )")}"
+    fi
 }
 export -f registry.URL
 
 #----------------------------------------------------------------------------------------------
 function registry.USER()
 {
-    echo "${_REGISTRY_USER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( registry.propertiesFile )")}"
+    if [ "${OPTS['user']:-}" ]; then
+         echo "${OPTS['user']}"
+    else
+         echo "${_REGISTRY_USER:=$(lib.getProperty 'USER' "$( registry.propertiesFile )")}"
+    fi
 }
 export -f registry.USER
+
+#----------------------------------------------------------------------------------------------
+function registry.USERID()
+{
+    registry.USER
+}
+export -f registry.USERID

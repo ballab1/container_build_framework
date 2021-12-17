@@ -100,15 +100,16 @@ function artifactory.io()
     local headers response url
     local -i status=0
     local -A links
-    local -a credentials=( $(credentials.get artifactory) )
+    local -a credentials
+    mapfile -t credentials < <(credentials.get artifactory)
     if [ "${DEBUG:-0}" -eq 0 ]; then
         credentials+=( '--silent' )
     else
         echo "curl $*" >&2
     fi
 
-    headers=$(mktemp)
-    args=( "${credentials[@]}" '--dump-header' "$headers" "$@" )
+    headers=$(mktemp --tmpdir="${TMP_DIR:-/tmp}")
+    args=( ${credentials[@]} '--dump-header' "$headers" "$@" )
     response=$(curl "${args[@]}") && status=$? || status=$?
 
     if [ "$status" -eq 0 ]; then
@@ -122,7 +123,7 @@ function artifactory.io()
         fi
     fi
 
-    rm "$headers"
+    [ "${TMP_DIR:-}" ] || rm "$headers"
     [ "$status" -ne 0 ] || return 0
 
     # an error occurred
@@ -249,57 +250,96 @@ function artifactory.uploadFile()
 export -f artifactory.uploadFile
 
 #----------------------------------------------------------------------------------------------
-function artifactory.ARTIFACTORY_PROD()
+function artifactory.HOST()
 {
-    echo "${_ARTIFACTORY_PROD:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( artifactory.propertiesFile )")}"
+    if [ "${OPTS['host']:-}" ]; then
+         echo "${OPTS['host']}"
+    else
+        echo "${_ARTIFACTORY_HOST:=$(lib.getHost "$( artifactory.SERVER )")}"
+    fi
 }
-export -f artifactory.ARTIFACTORY_PROD
+export -f artifactory.HOST
 
 #----------------------------------------------------------------------------------------------
-function artifactory.ARTIFACTORY_TEST()
+function artifactory.PROD()
 {
-    echo "${_ARTIFACTORY_TEST:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( artifactory.propertiesFile )")}"
+    if [ "${OPTS['prod']:-}" ]; then
+         echo "${OPTS['prod']}"
+    else
+        echo "${_ARTIFACTORY_PROD:=$(lib.getProperty 'PROD' "$( artifactory.propertiesFile )")}"
+    fi
 }
-export -f artifactory.ARTIFACTORY_TEST
+export -f artifactory.PROD
 
 #----------------------------------------------------------------------------------------------
 function artifactory.REST_API()
 {
-    echo "${_ARTIFACTORY_REST_API:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( artifactory.propertiesFile )")}"
+    if [ "${OPTS['rest_api']:-}" ]; then
+         echo "${OPTS['rest_api']}"
+    else
+        echo "${_ARTIFACTORY_REST_API:=$(lib.getProperty 'REST_API' "$( artifactory.propertiesFile )")}"
+    fi
 }
 export -f artifactory.REST_API
 
 #----------------------------------------------------------------------------------------------
 function artifactory.ROUSER()
 {
-    echo "${_ARTIFACTORY_ROUSER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( artifactory.propertiesFile )")}"
+    if [ "${OPTS['rouser']:-}" ]; then
+         echo "${OPTS['rouser']}"
+    else
+        echo "${_ARTIFACTORY_ROUSER:=$(lib.getProperty 'ROUSER' "$( artifactory.propertiesFile )")}"
+    fi
 }
 export -f artifactory.ROUSER
 
 #----------------------------------------------------------------------------------------------
 function artifactory.SERVER()
 {
-    echo "${_ARTIFACTORY_SERVER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( artifactory.propertiesFile )")}"
+    if [ "${OPTS['server']:-}" ]; then
+         echo "${OPTS['server']}"
+    else
+        echo "${_ARTIFACTORY_SERVER:=$(lib.getProperty 'SERVER' "$( artifactory.propertiesFile )")}"
+    fi
 }
 export -f artifactory.SERVER
 
 #----------------------------------------------------------------------------------------------
+function artifactory.TEST()
+{
+    if [ "${OPTS['test']:-}" ]; then
+         echo "${OPTS['test']}"
+    else
+        echo "${_ARTIFACTORY_TEST:=$(lib.getProperty 'TEST' "$( artifactory.propertiesFile )")}"
+    fi
+}
+export -f artifactory.TEST
+
+#----------------------------------------------------------------------------------------------
 function artifactory.URL()
 {
-    echo "${_ARTIFACTORY_URL:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( artifactory.propertiesFile )")}"
+    if [ "${OPTS['url']:-}" ]; then
+         echo "${OPTS['url']}"
+    else
+        echo "${_ARTIFACTORY_URL:=$(lib.getProperty 'URL' "$( artifactory.propertiesFile )")}"
+    fi
 }
 export -f artifactory.URL
 
 #----------------------------------------------------------------------------------------------
 function artifactory.USER()
 {
-    echo "${_ARTIFACTORY_USER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( artifactory.propertiesFile )")}"
+    if [ "${OPTS['user']:-}" ]; then
+         echo "${OPTS['user']}"
+    else
+        echo "${_ARTIFACTORY_USER:=$(lib.getProperty 'USER' "$( artifactory.propertiesFile )")}"
+    fi
 }
 export -f artifactory.USER
 
 #----------------------------------------------------------------------------------------------
 function artifactory.USERID()
 {
-    echo "${_ARTIFACTORY_USERID:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( artifactory.propertiesFile )")}"
+    artifactory.USER
 }
 export -f artifactory.USERID

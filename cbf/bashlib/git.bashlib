@@ -124,6 +124,14 @@ function git.commitSummary()
 export -f git.commitSummary
 
 #----------------------------------------------------------------------------------------------
+function git.config()
+{
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "$(printf '%s ' 'git' 'config' "$@")"'\n' 'grey'
+    git config "$@"
+}
+export -f git.config
+
+#----------------------------------------------------------------------------------------------
 function git.cryptUnlock()
 {
     local -r key=${1:-}
@@ -364,8 +372,14 @@ export -f git.urlCommit
 #----------------------------------------------------------------------------------------------
 function git.user()
 {
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git config --get adsk.github.account\n' 'grey'
-    git config --get adsk.github.account 2>/dev/null || :
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git config --get credential.username\n' 'grey'
+    local user="$(git config --get credential.username 2>/dev/null)" || :
+    if [ "$user" ]; then
+        echo "$user"
+    else
+        [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git config --get adsk.github.account\n' 'grey'
+        git config --get adsk.github.account 2>/dev/null || :
+    fi
 }
 export -f git.user
 

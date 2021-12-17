@@ -30,7 +30,8 @@ function appenv.cmdLineArgs()
     local -a optsJSON=()
     local -i status=0
 
-    [ ${DEBUG:-0} -ne 0 ] && OPTS['debug']=$DEBUG
+    [ "${DEBUG:-0}" -ne 0 ] && OPTS['debug']=$DEBUG
+    [ -z "$(set +o|grep 'set -o xtrace')" ] || OPTS['debug']=1
 
     while [ "${1:-}" ]; do
         case "${1,,}" in
@@ -41,9 +42,10 @@ function appenv.cmdLineArgs()
                     done
                 else
                     shift
+                    [ $# -ge 1 ] && ARGS=( "$@" )
                 fi
-                [ $# -ge 1 ] && ARGS=( "$@" )
                 appenv.usage
+                OPTS['cmd']='appenv.usage'
                 return 0;;
 
             -c|--credentials)
@@ -55,14 +57,18 @@ function appenv.cmdLineArgs()
                 OPTS['debug']=1
                 shift;;
 
-            -u|--user)
-                [[ $# -le 2 || $2 = -* ]] && trap.die 'no user specified'
-                OPTS['user']="$2"
-                shift 2;;
+            -n|--nocache)
+                OPTS['cached']=1
+                shift;;
 
             -q|-quiet|--quiet)
                 OPTS['quiet']=1
                 shift;;
+
+            -u|--user)
+                [[ $# -le 2 || $2 = -* ]] && trap.die 'no user specified'
+                OPTS['user']="$2"
+                shift 2;;
 
             *)
                 if [ "${1:0:1}" != '-' ]; then
@@ -71,7 +77,7 @@ function appenv.cmdLineArgs()
                         mapfile -t optsJSON < <(jq -ser '.[]|select(.name|ascii_downcase == "'"${1,,}"'")?|to_entries[]|@sh "OPTS[\(.key)]=\(.value)"' "$optsFile" ||:)
                         if [ $? -eq 0 ]; then
                             for opt in "${optsJSON[@]}";do
-                                eval $opt
+                                eval "$opt"
                             done
                             if [ "${OPTS['shift']:-0}" -gt 0 ];then
                                 shift "${OPTS['shift']}"
@@ -80,8 +86,7 @@ function appenv.cmdLineArgs()
                             fi
                         fi
                     fi
-                fi
-                if [ "${OPTS['cmd']:-}" ] && [ "$(type -t "${LIB_NAME}.cmdLineArgs")" ]; then
+                elif [ "$(type -t "${LIB_NAME}.cmdLineArgs")" ]; then
                     "${LIB_NAME}.cmdLineArgs" "$@" && status=$? || status=$?
                     [ "$status" -ne 0 ] && [ -z "${OPTS['cmd']:-}" ] && trap.die 'invalid option/argument'
                     if [ "${OPTS['shift']:-0}" -gt 0 ]; then
@@ -102,9 +107,9 @@ function appenv.cmdLineArgs()
         exit 0
     fi
 
-    [ "${OPTS['credentials']:-}" ] && __SECRETS_FILE="${OPTS['credentials']}"
-    DEBUG=${OPTS['debug']:-0}
-    export DEBUG
+    [ "${OPTS['credentials']:-}" ] && export __SECRETS_FILE="${OPTS['credentials']}"
+    [ ${OPTS['debug']:-0} != 0 ] && export DEBUG=${OPTS['debug']:-0}
+    
 
 
     # put args into our global
@@ -114,15 +119,15 @@ function appenv.cmdLineArgs()
         eval "[[ $argsCondition ]]" || trap.die 'invalid arguments!'
     fi
 
-    [ "${OPTS['cmd']:-}" ] || trap.die 'invalid arguments' 
+    [ "${OPTS['cmd']:-}" ] || trap.die 'invalid arguments'
 
     return 0
 }
 
-#----------------------------------------------------------------------------------------------
+#/----------------------------------------------------------------------------------------------
 function appenv.elapsedTime()
 {
-    local -i elapsed=$(( $(date '+%s') - $START_TIME ))
+    local -i elapsed=$(( $(date '+%s') - START_TIME ))
     if [ $elapsed -gt 2 ];then
         timer.fmtElapsed "$elapsed"
     fi
@@ -131,12 +136,12 @@ function appenv.elapsedTime()
 #----------------------------------------------------------------------------------------------
 function appenv.initialize()
 {
-    OUTDIR='.'
-    TMP_DIR="$(mktemp)"
+    OUTDIR="$(readlink -f "$(pwd)")"
+    TMP_DIR="$(mktemp -d)"
 
     appenv.loader "${LIB_NAME}.main"
     trap appenv.onExit EXIT
-    
+
     [ -e "${PROGRAM_DIR}/${LIB_NAME}.bashlib" ] && source "${PROGRAM_DIR}/${LIB_NAME}.bashlib"
     [ "$(type -t "${LIB_NAME}.initialize")" ] && "${LIB_NAME}.initialize"
 
@@ -148,6 +153,18 @@ function appenv.initialize()
     #lib.checkAppVersion 'curl' '7.40.0'
 
     appenv.cmdLineArgs "$@"
+
+    # order is to optimize resolution dependencies
+    if [ "${OPTS['cached']:-0}" = 0 ]; then
+        [ "$(type -t "${LIB_NAME%%-*}.PROD")" ]     && OPTS['prod']="$("${LIB_NAME%%-*}.PROD")"
+        [ "$(type -t "${LIB_NAME%%-*}.SERVER")" ]   && OPTS['server']="$("${LIB_NAME%%-*}.SERVER")"
+        [ "$(type -t "${LIB_NAME%%-*}.URL")" ]      && OPTS['url']="$("${LIB_NAME%%-*}.URL")"
+        [ "$(type -t "${LIB_NAME%%-*}.HOST")" ]     && OPTS['host']="$("${LIB_NAME%%-*}.HOST")"
+        [ "$(type -t "${LIB_NAME%%-*}.REST_API")" ] && OPTS['rest_api']="$("${LIB_NAME%%-*}.REST_API")"
+        [ "$(type -t "${LIB_NAME%%-*}.USER")" ]     && OPTS['user']="$("${LIB_NAME%%-*}.USER")"
+        [ "$(type -t "${LIB_NAME%%-*}.TEST")" ]     && OPTS['test']="$("${LIB_NAME%%-*}.TEST")"
+    fi
+    return 0
 }
 
 #----------------------------------------------------------------------------------------------
@@ -157,43 +174,42 @@ function appenv.loader()
 
     local fn="${1:?}"
 
-    local v
-    for v in 'PROGRAM_DIR' 'PROGRAM_NAME' 'LOGFILE'; do
-        export "$v"
-        readonly "$v"
-    done
+    export PROGRAM_DIR; readonly PROGRAM_DIR
+    export PROGRAM_NAME; readonly PROGRAM_NAME
+    export LOGFILE; readonly LOGFILE
 
     local top="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+    # is specified function already defined? : if it is, then libraries are already loaded
     if [ "$(env | grep -c "BASH_FUNC_${fn}%%")" -ne 0 ]; then
         TOP=/opt
 
+    # look for libraries in common folders
     elif [ "$top" = '/usr/local/bin' ] && [ -e /usr/local/crf/bin/loadLibraries.sh ]; then
         source /usr/local/crf/bin/loadLibraries.sh
         TOP="$(pwd)"
 
     else
+        # look for libraries in current folder
         local dir
         for dir in '.' 'bin' 'bashlib' 'bin/bashlb'; do
             local libs="${top}/${dir}/loadLibraries.sh"
             if [ -e "$libs" ]; then
                 source "$libs"
                 case "$dir" in
-                    bin|bashlib)
-                        TOP="$(readlink -f "${top}/..")";;
-                    bin/bashlib)
-                        TOP="$(readlink -f "${top}/../..")";;
-                    *)
-                        TOP="$top";;
+                    bin|bashlib)     TOP="$(readlink -f "${top}/..")";;
+                    bin/bashlib)     TOP="$(readlink -f "${top}/../..")";;
+                    *)               TOP="$top";;
                 esac
                 return
             fi
         done
     fi
+    export TOP
 
     trap.die 'unable to locate libraries'
 }
 
-#---------------------------------------------------------------------------------------------- 
+#----------------------------------------------------------------------------------------------
 function appenv.onExit()
 {
     local status=$?
@@ -203,7 +219,7 @@ function appenv.onExit()
     trap - EXIT
     trap - ERR
     trap - INT
-    trap - PIPE 
+    trap - PIPE
 
     [ "$(type -t "${LIB_NAME}.onExit")" ] && "${LIB_NAME}.onExit"
 
@@ -215,12 +231,12 @@ function appenv.onExit()
         [ -e "$LOGFILE" ] && mv "$LOGFILE" "$logfile"
     fi
 
-    # remove our temp stuff    
+    # remove our temp stuff
     [ "${TMP_DIR:-}" ] && [ "${TMP_DIR:-}" != '/' ] && [ -e "${TMP_DIR:-}" ] && rm -rf "${TMP_DIR:-}"
 
 
     local elapsed="$(appenv.elapsedTime)"
-    [ -z "${elapsed:-}" ] || echo -e '\nElapsed time: '"$elapsed" | tee -a "$logfile" >&2
+    [ -z "${elapsed:-}" ] || (echo -e '\nElapsed time: '"$elapsed" | tee -a "$logfile") >&2
 
     return "$status"
 }
@@ -254,13 +270,13 @@ function appenv.showArgs()
                     echo "oper:   ${OPTS['oper']:-}"
                     echo "action: ${OPTS['action']:-}"
                     ;;
-                
+
                 2)
                     echo
                     echo "${#OPTS[*]} options:"
                     local i
                     for i in "${!OPTS[@]}"; do
-                       printf '    [%s]: %s\n' $i "${OPTS[$i]}"
+                       printf '    [%s]: %s\n' "$i" "${OPTS[$i]}"
                     done
                     echo "${#ARGS[*]} args:"
                     for i in "${ARGS[@]}"; do
@@ -268,7 +284,7 @@ function appenv.showArgs()
                     done
                     echo
                     ;;
-            
+
             esac
         fi
     } >&2
@@ -284,16 +300,74 @@ function appenv.usage()
     [ -z "${context:-}" ] && context='usage'
     context="${context##*.}"
 
+
     local -r helpdir="${PROGRAM_DIR}/help.${LIB_NAME}"
     local contextHelp="${helpdir}/${context}.txt"
     [ -s "$contextHelp" ] || contextHelp="${helpdir}/${context,,}.txt"
     [ -s "$contextHelp" ] || contextHelp="${helpdir}/usage.txt"
-    [ -s "$contextHelp" ] || trap.die 'unable to locate usage information: '"$contextHelp"
+
 
     # show context sensitive help
-    envsubst < "$contextHelp"
+    echo
+    local optsFile="${PROGRAM_DIR}/help.${LIB_NAME}/cmdOptions.json"
+    if [ "$contextHelp" = "${helpdir}/usage.txt" ] && [ -f "$optsFile" ]; then
+
+        local -i program_name_len="${#PROGRAM_NAME}"
+        echo "Usage:"
+        local line="    ${PROGRAM_NAME} [ help"
+        echo "$line"
+
+
+        local -a lines=()
+        local result opt
+        while read -r result; do
+            local -A params=()
+            eval "params=( $result )"
+            if [ "${params['longOpts']:-null}" != 'null' ]; then
+                opt="${params['longOpts']//,/ }"
+                local -a results
+                mapfile -t results < <(echo "${params['longOpts']}" | sed -e 's|,|\n|g')
+                for opt in "${results[@]}"; do
+                    params['name']="${params['name']} --${opt//:/}"
+                    [ ${opt: -1} = ':'  ] && params['name']="${params['name']} <arg>"
+                done
+            fi
+            [ "${params['arg']:-null}" != 'null' ] && params['name']="${params['name']} ${params['arg']}"
+            [ "${params['message']:-null}" = 'null' ] && params['message']=''
+            lines+=( "$(printf '%s\n' "${params['name']}" "${params['message']}")" )
+        done < <(jq -ser '.[]|"['"'"'name'"'"']='"'"'\(.name)'"'"' ['"'"'message'"'"']='"'"'\(.message)'"'"' ['"'"'longOpts'"'"']='"'"'\(.longOpts?)'"'"' ['"'"'arg'"'"']='"'"'\(.arg?)'"'"'"' "$optsFile")
+
+
+        local name message
+        local -i offset="$(( program_name_len + 5 ))"
+        local space='                                                                                 '
+
+        local -i max_param_len=0
+        for result in "${lines[@]}"; do
+            local -a results
+            mapfile -t results < <(echo "$result")
+            [ "$max_param_len" -lt "${#results[0]}" ] && max_param_len="${#results[0]}"
+        done
+        [ "$max_param_len" -lt 30 ] && max_param_len=30
+
+        for result in "${lines[@]}"; do
+            local -a results
+            mapfile -t results < <(echo "$result")
+            local len="$(( max_param_len - ${#results[0]} ))"
+            printf '%s %s %s %s\n' " ${space::$offset}|" "${results[0]}" "${space::$len}" "$(eval "echo ${results[1]:-}")"
+        done
+        echo "${space::$offset}]"
+
+        [ -s "$contextHelp" ] && envsubst < "$contextHelp"
+    else
+        [ -s "$contextHelp" ] || trap.die 'unable to locate usage information: '"$contextHelp"
+        [ -f "$optsFile" ] && (jq -ser '.[]|select(.name|ascii_downcase == "'"${context,,}"'").message' "$optsFile" 2>/dev/null ||:)
+        envsubst < "$contextHelp"
+    fi
+    echo
+
     trap - ERR
     exit 127
 }
 
-#---------------------------------------------------------------------------------------------- 
+#----------------------------------------------------------------------------------------------
