@@ -154,3 +154,34 @@ function json.encodeString()
     printf '"%s"' "${strVal//\"/\\\"}"
     return 0
 }
+
+#----------------------------------------------------------------------------------------------
+function json.toYaml()
+{
+    local -r json="${1:?"Input parameter 'json' must be passed to 'function ${FUNCNAME[0]}()'"}"
+    local indent="${2:-}"
+
+    local key val
+    for key in $(jq -r 'keys[]' <<< "$json"); do
+        case "$(jq -r ".$key"'|type' <<< "$json")" in
+            array)
+                printf '%s%s:\n' "$indent" "$key"
+                local idx len="$(jq ".${key}|length" <<< "$json")"
+                for (( idx=0; idx<$len; idx++ )); do 
+                    json.toYaml "$(jq ".${key}[${idx}]" <<< "$json")" "${indent}- "
+                done
+                ;;
+            object)
+                printf '%s%s:\n' "$indent" "$key"
+                val="$(jq ".$key" <<< "$json")"
+                json.toYaml "$val" "${indent}  "
+                ;;
+            *)
+                val="$(jq ".$key" <<< "$json")"
+                printf '%s%s: %s\n' "$indent" "$key" "$val"
+                ;;
+        esac
+        indent="${indent//-/ }"
+    done
+    return 0
+}

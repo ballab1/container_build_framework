@@ -38,6 +38,69 @@ function environ.fqdName()
 export -f environ.fqdName
 
 #----------------------------------------------------------------------------------------------
+function environ.getHostIp()
+{
+    local -r name=${1:-}
+
+    if [ -z "${name:-}" ]; then
+        return environ.hostIp
+    fi
+
+    ( environ.validateIpAddress "$name" ) && return 0
+
+    local ip
+    if [ "$(which host)" ]; then
+        ip="$(host "$name" | awk '/has address/ { print $4 ; exit }' ||:)"
+        ( environ.validateIpAddress "$ip" ) && return 0
+    fi
+
+    if [ "$(which nslookup)" ]; then
+        ip=$(nslookup "$name" | awk '/^Address: / { print $2 ; exit }' ||:)
+        ( environ.validateIpAddress "$ip" ) && return 0
+    fi
+
+    if [ "$(which dig)" ]; then
+        ip="$(dig +short "$name" | awk '{ print ; exit }' ||:)"
+        ( environ.validateIpAddress "$ip" ) && return 0
+        ip="$(dig "$name" | awk '/^;; ANSWER SECTION:$/ { getline ; print $5 ; exit }' ||:)"
+        ( environ.validateIpAddress "$ip" ) && return 0
+    fi
+
+    if [ "$(which getent)" ]; then
+        ip="$(getent hosts "$name" | awk '{ print $1 ; exit }' ||:)"
+        ( environ.validateIpAddress "$ip" ) && return 0
+    fi
+}
+export -f environ.getHostIp
+
+#----------------------------------------------------------------------------------------------
+function environ.getHostName()
+{
+    local -r ip=${1:-}
+
+    local name
+    if [ -z "${ip:-}" ]; then
+        environ.fqdName
+    fi
+
+    if [ "$(which getent)" ]; then
+        name=$(getent host "$ip" | awk '{ print $2 ; exit }' ||:)
+        [[ "${name:-}" ]] && echo "$name" && return 0
+    fi
+
+    if [ "$(which host)" ]; then
+        name=$(host "$ip" | awk '/domain name pointer/ { print substr($5,1,length($5)-1) ; exit }' ||:)
+        [[ "${name:-}" ]] && echo "$name" && return 0
+    fi
+
+    if [ "$(which nslookup)" ]; then
+        name=$(nslookup "$ip" | awk '/name = / {print substr($4,1,length($4)-1) ; exit}' ||:)
+        [[ "${name:-}" ]] && echo "$name" && return 0
+    fi
+}
+export -f environ.getHostName
+
+#----------------------------------------------------------------------------------------------
 function environ.hardwareName()
 {
     uname -m
@@ -68,7 +131,7 @@ export -f environ.hostName
 #----------------------------------------------------------------------------------------------
 function environ.ipAddressAndMask()
 {
-    local -r iface="${1:-eth0}"
+    local -r iface=${1:-eth0}
     ip -4 -o addr | grep "$iface" | awk '{print $4}'
 }
 export -f environ.ipAddressAndMask
@@ -76,13 +139,21 @@ export -f environ.ipAddressAndMask
 #----------------------------------------------------------------------------------------------
 function environ.ipAddress()
 {
-#   hostname -i
-#   ip -4 -o addr | grep eth0 | awk '{print $4}'
-    local addr=$(nslookup $(hostname -f) | grep -E '^Address:' | awk 'NR==2 {print $2}')
-    [ -z "${addr:-}" ] && addr=$(nslookup $(< /etc/hostname) | grep -E '^Address:' | awk 'NR==2 {print $2}')
-    [ -z "${addr:-}" ] && addr=$(ip -4 -o addr | grep $(ip -4 addr| grep 'state UP' | grep -vE 'qdisc (noqueue|nq)' | awk '{sub(":", "", $2);print $2}') | awk '{sub("/.*$","",$4);print $4}')
-    [ -z "${addr:-}" ] && addr=$(hostname -i)
-    [ -z "${addr:-}" ] || echo "${addr:-}"
+    local ip
+    if [ "$(which nslookup)" ]; then
+        ip=$(nslookup $(hostname -f) | awk '/^Address: / { print $2 ; exit }' ||:)
+        ( environ.validateIpAddress "$ip" ) && return 0
+        ip=$(nslookup $(< /etc/hostname) | awk '/^Address: / { print $2 ; exit }' ||:)
+        ( environ.validateIpAddress "$ip" ) && return 0
+    fi
+    if [ "$(which ip)" ]; then
+        ip=$(ip -4 -o addr | grep $(ip -4 addr| grep 'state UP' | grep -vE 'qdisc (noqueue|nq)' | awk '{sub(":", "", $2);print $2}') | awk '{sub("/.*$","",$4);print $4}' ||:)
+        ( environ.validateIpAddress "$ip" ) && return 0
+    fi
+    if [ "$(which hostname)" ]; then
+        ip=$(hostname -i ||:)
+        ( environ.validateIpAddress "$ip" ) && return 0
+    fi
 }
 export -f environ.ipAddress
 
@@ -167,5 +238,15 @@ function environ.systemDateTime()
     date +"%F %T%:::z"
 }
 export -f environ.systemDateTime
+
+#----------------------------------------------------------------------------------------------
+function environ.validateIpAddress()
+{
+    local -r ip="${1:-}"
+
+    [ -z "${ip}" ] && return 1
+    echo "$ip" | grep -E '^([1-2]?[0-9]{0,2}\.){3,3}[1-2]?[0-9]{0,2}$'
+}
+export -f environ.validateIpAddress
 
 #----------------------------------------------------------------------------------------------

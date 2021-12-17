@@ -43,6 +43,16 @@ function jira.comments()
 export -f jira.comments
 
 #----------------------------------------------------------------------------------------------
+function jira.delete()
+{
+    local issue=${1:-?}
+
+    local uri=$(printf '%s/issue/%s' "$(jira.REST_API)" "$issue")
+    jira.DELETE "$uri"
+}
+export -f jira.delete
+
+#----------------------------------------------------------------------------------------------
 function jira.GET()
 {
     jira.io --request GET "$@" || return $?
@@ -56,7 +66,7 @@ function jira.io()
     local headers response url
     local -i status=0
     local -A links
-    local -a credentials=( $(credentials.get jira) )
+    local -a credentials=( $(credentials.get jira "$(grafana.HOST)") )
 
     if [ "${DEBUG:-0}" -eq 0 ]; then
         credentials+=( '--silent' )
@@ -64,7 +74,7 @@ function jira.io()
         echo "curl $*" >&2
     fi
 
-    headers=$(mktemp)
+    headers=$(mktemp --tmpdir="${TMP_DIR:-/tmp}")
     args=( "${credentials[@]}" '--header' 'Content-Type: application/json' '--dump-header' "$headers" "$@" )
     response=$(curl "${args[@]}") && status=$? || status=$?
 
@@ -79,17 +89,22 @@ function jira.io()
             echo -n "$response"
         fi
     fi
-    rm "$headers"
+    [ "${TMP_DIR:-}" ] || rm "$headers"
     [ "$status" -ne 0 ] || return 0
 
     # an error occurred
-#    local -r errors="$(echo "$response" | jq --compact-output --monochrome-output '.errors[]?' 2>/dev/null)"
-    local -r errors="$(echo "$response" | grep '<title>' | sed -E 's|^.*<title>(.+)</title>.*$|\1|')"
+    response="$(echo "$response" | head -1)"
+    local errors="$(echo "$response" | grep '<title>' | sed -E 's|^.*<title>(.+)</title>.*$|\1|')"
+    [ -z "$errors" ] && errors="$(echo "$response" | jq --compact-output --monochrome-output '.errors[]?' 2>/dev/null)"
+    [ -z "$errors" ] && errors="$(echo "$response" | jq --compact-output --monochrome-output '.errorMessages[]?' 2>/dev/null)"
 
-    local curl_cmd=( 'curl' '--insecure' "$@" )
+    local -a curl_cmd=( 'curl' '--insecure' )
+    for cmd in "$@";do
+        curl_cmd+=( "$(echo "$cmd" | sed 's|\\n| |g')" )
+    done
     (
         term.log '***ERROR: failure to complete JIRA API request\n' 'warn'
-        term.log "    error message: $errors"'\n' 'warn'
+        term.log "    error message: $errors"'\n' 'error'
         term.log "    command:       $(printf '%s ' "${curl_cmd[@]}")"'\n' 'warn'
         echo
     ) >&2
@@ -294,50 +309,85 @@ function jira.supportMaterialsPath()
 export -f jira.supportMaterialsPath
 
 #----------------------------------------------------------------------------------------------
-function jira.JIRA_PROD()
+function jira.HOST()
 {
-    echo "${_JIRA_PROD:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
+    if [ "${OPTS['host']:-}" ]; then
+         echo "${OPTS['host']}"
+    else
+        echo "${_JIRA_HOST:=$(lib.getHost"$( jira.SERVER )")}"
+    fi
 }
-export -f jira.JIRA_PROD
+export -f jira.HOST
 
 #----------------------------------------------------------------------------------------------
-function jira.JIRA_STAGING()
+function jira.PROD()
 {
-    echo "${_JIRA_STAGING:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
+    if [ "${OPTS['prod']:-}" ]; then
+         echo "${OPTS['prod']}"
+    else
+        echo "${_JIRA_PROD:=$(lib.getProperty 'PROD' "$( jira.propertiesFile )")}"
+    fi
 }
-export -f jira.JIRA_STAGING
+export -f jira.PROD
 
 #----------------------------------------------------------------------------------------------
-function jira.JIRA_TEST()
+function jira.STAGING()
 {
-    echo "${_JIRA_TEST:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
+    if [ "${OPTS['staging']:-}" ]; then
+         echo "${OPTS['staging']}"
+    else
+         echo "${_JIRA_STAGING:=$(lib.getProperty 'STAGING' "$( jira.propertiesFile )")}"
+    fi
 }
-export -f jira.JIRA_TEST
+export -f jira.STAGING
+
+#----------------------------------------------------------------------------------------------
+function jira.TEST()
+{
+    if [ "${OPTS['test']:-}" ]; then
+         echo "${OPTS['test']}"
+    else
+         echo "${_JIRA_TEST:=$(lib.getProperty 'TEST' "$( jira.propertiesFile )")}"
+    fi
+}
+export -f jira.TEST
 
 #----------------------------------------------------------------------------------------------
 function jira.REST_API()
 {
-    echo "${_JIRA_REST_API:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
+    if [ "${OPTS['rest_api']:-}" ]; then
+         echo "${OPTS['rest_api']}"
+    else
+        echo "${_JIRA_REST_API:=$(lib.getProperty 'REST_API' "$( jira.propertiesFile )")}"
+    fi
 }
 export -f jira.REST_API
 
 #----------------------------------------------------------------------------------------------
 function jira.SERVER()
 {
-    echo "${_JIRA_SERVER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
+    if [ "${OPTS['server']:-}" ]; then
+         echo "${OPTS['server']}"
+    else
+         echo "${_JIRA_SERVER:=$(lib.getProperty 'SERVER' "$( jira.propertiesFile )")}"
+    fi
 }
 export -f jira.SERVER
 
 #----------------------------------------------------------------------------------------------
 function jira.USER()
 {
-    echo "${_JIRA_USER:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
+    if [ "${OPTS['user']:-}" ]; then
+         echo "${OPTS['user']}"
+    else
+         echo "${_JIRA_USER:=$(lib.getProperty 'USER' "$( jira.propertiesFile )")}"
+    fi
 }
 export -f jira.USER
 
 #----------------------------------------------------------------------------------------------
 function jira.USERID()
 {
-    echo "${_JIRA_USERID:=$(lib.getProperty "${FUNCNAME[0]##*.}" "$( jira.propertiesFile )")}"
+    jira.USER
 }
 export -f jira.USERID

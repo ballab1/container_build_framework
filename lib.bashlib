@@ -25,7 +25,7 @@ function lib.checkAppVersion()
             fi
         fi
     fi
-    trap.die "$app not found. Please ensure v$version or later it is installed and in your path"
+    trap.die "$app not found. Please ensure v${version[*]} or later it is installed and in your path"
 }
 export -f lib.checkAppVersion
 
@@ -41,7 +41,7 @@ function lib.checkBoolean()
             echo 0
             return 1;;
     esac
-    return -1
+    return 255
 }
 export -f lib.checkBoolean
 
@@ -100,9 +100,9 @@ function lib.functions()
 
     [ "$op" = 'unset' ] || op='export'
     local f
-    for f in $(grep -E '^function ' "${libdir}"/*.bashlib | sed -re 's|^.*function (.+)\s*\(.+$|\1|'); do
-       $op -f "$f"
-    done
+    while read -r f; do
+       "$op" -f "$f"
+    done < <(grep -E '^function ' "${libdir}"/*.bashlib | sed -re 's|^.*function (.+)\s*\(.+$|\1|')
 }
 export -f lib.functions
 
@@ -128,7 +128,7 @@ function lib.getFiles()
     # ignore hidden files and ~files
     for file in $(find "$dir" -maxdepth 1 -and ! -name '.*' -and ! -name '~*' -and \( -type f -or -type l \) | sort); do
         if [ "$filter" ]; then
-            "$filter" "$file" && echo "$file" ||:
+            ("$filter" "$file" && echo "$file") ||:
         else
             echo "$file"
         fi
@@ -172,6 +172,30 @@ function lib.getGID()
     local -r group=${1:-$(lib.getGroupNameOfUser)}
 
     lib.lookupId "$group" 'group'
+}
+export -f lib.getGID
+
+#----------------------------------------------------------------------------------------------
+function lib.getHost()
+{
+    local -r server=${1:?"Input parameter 'server' must be passed to 'function ${FUNCNAME[0]}()'"}
+
+    # from:  https://stackoverflow.com/questions/6174220/parse-url-in-shell-script
+    local -r URI_REGEX='^(([^:/?#]+):)?(//((([^:/?#]+)@)?([^:/?#]+)(:([0-9]+))?))?((/|$)([^?#]*))(\?([^#]*))?(#(.*))?$'
+    #                    ||            |  |||            |         | |            ||    |        |  |        | |
+    #                    ||            |  |||            |         | |            ||    |        |  |        | |
+    #                    |2 scheme     |  ||6 userinfo   7 host    | 9 port       ||    12 rpath |  14 query | 16 fragment
+    #                    1 scheme:     |  |5 userinfo@             8 :...         ||             13 ?...     15 #...
+    #                                  |  4 authority                             |11 / or end-of-string
+    #                                  3  //...                                   10 path
+    if [[ "$server" =~ $URI_REGEX ]]; then
+        echo "${BASH_REMATCH[7]}"
+
+    elif grep -Eq '^[^ :/?#]+$' <<< "$server"; then
+        echo "$server"
+
+    fi
+    return 0
 }
 export -f lib.getGID
 
@@ -507,8 +531,8 @@ function lib.urlencode()
 function lib.yamlToJson()
 {
     local -r yamlFile=${1:?}
-    local python="$(which python)"
-    [ "$python" ] || python="$(which python3)"
+    local python="$(which python ||:)"
+    [ "$python" ] || python="$(which python3 ||:)"
     local -ar YAML_TO_JSON=( "$python" '-c' 'import sys, yaml, json; json.dump(yaml.safe_load(sys.stdin), sys.stdout)' )
 
     if [ -e "$yamlFile"  ]; then
