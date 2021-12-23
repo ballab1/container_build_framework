@@ -143,7 +143,7 @@ function registry.digestsWithTimes()
         tags=( ${digests[$digest]} )
         tag="${tags[0]}"
         for i in ${!tags[@]}; do
-             [ $i -ne 0 ] || continue
+             [ "$i" -ne 0 ] || continue
              if [ "${#tag}" -gt "${#tags[i]}" ]; then
                  echo -n '"'"${tag}"'",'
                  tag="${tags[i]}"
@@ -187,7 +187,7 @@ function registry.digestsWithoutTimes()
         tags=( ${digests[$digest]} )
         tag="${tags[0]}"
         for i in ${!tags[@]}; do
-             [ $i -ne 0 ] || continue
+             [ "$i" -ne 0 ] || continue
              if [ "${#tag}" -gt "${#tags[i]}" ]; then
                  echo -n '"'"${tag}"'",'
                  tag="${tags[i]}"
@@ -223,20 +223,27 @@ function registry.io()
 
     headers=$(mktemp)
     args=( "${credentials[@]}" '--dump-header' "$headers" "$@" )
-
     response=$(curl "${args[@]}") && status=$? || status=$?
+    unset args[$((${#args[*]}-1))]
 
-    if [ "$status" -eq 0 ]; then
+    while [ "$status" -eq 0 ]; do
         # Status: 200 OK
         http_code=$(head -1 "$headers" | sed -Ee 's|^\S+\s+(.+)\r?$|\1|')
         if [ "${http_code:0:1}" -gt 3 ]; then
             status=-1
-        else
-            [ "${DEBUG:-0}" -ne 0 ] && (echo '----------'; echo "$response" ; echo '----------'; echo )  >&2
-            echo -n "$response"
+            continue
         fi
-    fi
-    rm "$headers"
+        [ "${DEBUG:-0}" -ne 0 ] && (echo '----------'; echo "$response" ; echo '----------'; echo )  >&2
+        echo -n "$response"
+
+        #  Link: </v2/_catalog?last=thirdparty%2Fapm-server&n=100>; rel="next"
+        eval links=( $(registry.splitLinks "$headers") )
+        url="${links['next']:-}"
+        [ "${url:-}" ] || break
+
+        response=$(curl "${args[@]}" "$(registry.URL)$url") && status=$? || status=$?
+    done
+    [ "${TMP_DIR:-}" ] || rm "$headers"
     [ "$status" -ne 0 ] || return 0
 
     # an error occurred
@@ -254,7 +261,7 @@ function registry.io()
     )
 
     # check that 'term.log' was successful, otherwise, make sure something is echo'd
-    [ $? -eq 0 ] || echo "command:       $(printf '%s ' "${curl_cmd[@]}")\\n    error code:    $errors" >&2
+    [ $? -eq 0 ] || printf '%s:      %s \n    %s:    %s' 'command' "${curl_cmd[@]}" 'error code' "$errors" >&2
 
     return 1
 }
@@ -279,6 +286,15 @@ function registry.manifest()
     registry.GET "$(registry.URL)/${name}/manifests/${reference}" |  jq --compact-output --monochrome-output '.history[].v1Compatibility|=fromjson' || echo "Failed to get $(registry.URL)/${name}/manifests/${reference}" >&2
 }
 export -f registry.manifest
+
+#----------------------------------------------------------------------------------------------
+function registry.splitLinks()
+{
+    local -r headerFile=${1:?}
+
+    grep -E '^Link:' "$headerFile" | sed -E 's|^Link:||'| awk '{print $0}' RS=','| sed -E -e 's| </v2|"|' -e 's|^(.*)>; rel=(.)(.*)\"\s*$|[\3]=\1\2|'
+}
+export -f registry.splitLinks
 
 #----------------------------------------------------------------------------------------------
 function registry.POST()

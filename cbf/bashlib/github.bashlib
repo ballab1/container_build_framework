@@ -40,7 +40,7 @@ function github.io()
     headers=$(mktemp --tmpdir="${TMP_DIR:-/tmp}")
     args=( ${credentials[@]} '--dump-header' "$headers" "$@" )
     response=$(curl "${args[@]}") && status=$? || status=$?
-    unset args[$[${#args[*]}-1]]
+    unset args[$((${#args[*]}-1))]
 
     while [ "$status" -eq 0 ]; do
         # Status: 200 OK
@@ -53,7 +53,7 @@ function github.io()
         echo -n "$response"
 
         #  Link: <https://api.github.com/search/code?q=addClass+user%3Amozilla&page=2>; rel="next", <https://api.github.com/search/code?q=addClass+user%3Amozilla&page=34>; rel="last"
-        eval links=( $(github.splitLinks "$headers") )
+        eval 'links=( $(github.splitLinks "$headers") )'
         url="${links['next']:-}"
         [ "${url:-}" ] || break
 
@@ -78,7 +78,7 @@ function github.io()
     )
 
     # check that 'term.log' was successful, otherwise, make sure something is echo'd
-    [ $? -eq 0 ] || echo "command:       $(printf '%s ' "${curl_cmd[@]}")\\n    error code:    $errors" >&2
+    [ $? -eq 0 ] || printg '%s:       %s \n    %s:    %s' 'command' "${curl_cmd[@]}" 'error code' "$errors" >&2
 
     return 1
 }
