@@ -23,6 +23,17 @@ function github.GET()
 export -f github.GET
 
 #----------------------------------------------------------------------------------------------
+function github.HOST()
+{
+    if [ "${OPTS['host']:-}" ]; then
+         echo "${OPTS['host']}"
+    else
+        echo "${_GITHUB_HOST:=$(lib.getHost "$( github.SERVER )" )}"
+    fi
+}
+export -f github.HOST
+
+#----------------------------------------------------------------------------------------------
 function github.io()
 {
     local -a args
@@ -30,6 +41,7 @@ function github.io()
     local -i status=0
     local -A links
     local -a credentials
+
     mapfile -t credentials < <(credentials.get github)
     if [ "${DEBUG:-0}" -eq 0 ]; then
         credentials+=( '--silent' )
@@ -87,8 +99,8 @@ export -f github.io
 #----------------------------------------------------------------------------------------------
 function github.orgRepoInfo()
 {
-    local org=${1:?}
-    local repo=${2:?}
+    local -r org=${1:?}
+    local -r repo=${2:?}
 
     github.GET "$(github.REST_API)/repos/${org}/${repo}" || return 1
 }
@@ -97,7 +109,7 @@ export -f github.orgRepoInfo
 #----------------------------------------------------------------------------------------------
 function github.orgRepos()
 {
-    local org=${1:?}
+    local -r org=${1:?}
 
     github.GET "$(github.REST_API)/orgs/${org}/repos" || return 1
 }
@@ -106,18 +118,22 @@ export -f github.orgRepos
 #----------------------------------------------------------------------------------------------
 function github.orgTeams()
 {
-    local org=${1:?}
+    local -r org=${1:?}
 
     github.GET "$(github.REST_API)/orgs/${org}/teams" || return 1
 }
 export -f github.orgTeams
 
 #----------------------------------------------------------------------------------------------
-function github.POST()
+function github.PROD()
 {
-    github.io --request POST "$@" || return 1
+    if [ "${OPTS['prod']:-}" ]; then
+         echo "${OPTS['prod']}"
+    else
+        echo "${_GITHUB_PROD:=$(lib.getProperty 'PROD' "$( github.propertiesFile )")}"
+    fi
 }
-export -f github.POST
+export -f github.PROD
 
 #----------------------------------------------------------------------------------------------
 function github.propFile()
@@ -135,6 +151,13 @@ function github.propertiesFile()
 export -f github.propertiesFile
 
 #----------------------------------------------------------------------------------------------
+function github.POST()
+{
+    github.io --request POST "$@" || return 1
+}
+export -f github.POST
+
+#----------------------------------------------------------------------------------------------
 function github.PUT()
 {
     github.io --request PUST "$@" || return 1
@@ -144,34 +167,12 @@ export -f github.PUT
 #----------------------------------------------------------------------------------------------
 function github.repoCollaborators()
 {
-    local org=${1:?}
-    local repo=${2:?}
+    local -r org=${1:?}
+    local -r repo=${2:?}
 
     github.GET "$(github.REST_API)/repos/${org}/${repo}/collaborators" || return 1
 }
 export -f github.repoCollaborators
-
-#----------------------------------------------------------------------------------------------
-function github.HOST()
-{
-    if [ "${OPTS['host']:-}" ]; then
-         echo "${OPTS['host']}"
-    else
-        echo "${_GITHUB_HOST:=$(lib.getHost "$( github.SERVER )" )}"
-    fi
-}
-export -f github.HOST
-
-#----------------------------------------------------------------------------------------------
-function github.PROD()
-{
-    if [ "${OPTS['prod']:-}" ]; then
-         echo "${OPTS['prod']}"
-    else
-        echo "${_GITHUB_PROD:=$(lib.getProperty 'PROD' "$( github.propertiesFile )")}"
-    fi
-}
-export -f github.PROD
 
 #----------------------------------------------------------------------------------------------
 function github.REST_API()
@@ -196,17 +197,6 @@ function github.SERVER()
 export -f github.SERVER
 
 #----------------------------------------------------------------------------------------------
-function github.TEST()
-{
-    if [ "${OPTS['test']:-}" ]; then
-         echo "${OPTS['test']}"
-    else
-        echo "${_GITHUB_TEST:=$(lib.getProperty 'TEST' "$( github.propertiesFile )")}"
-    fi
-}
-export -f github.TEST
-
-#----------------------------------------------------------------------------------------------
 function github.splitLinks()
 {
     local -r headerFile=${1:?}
@@ -227,11 +217,22 @@ export -f github.teamMembers
 #----------------------------------------------------------------------------------------------
 function github.teamRepos()
 {
-    local -i teamid=${1:?}
+    local -ir teamid=${1:?}
 
     github.GET "$(github.REST_API)/teams/${teamid}/repos" || return 1
 }
 export -f github.teamRepos
+
+#----------------------------------------------------------------------------------------------
+function github.TEST()
+{
+    if [ "${OPTS['test']:-}" ]; then
+         echo "${OPTS['test']}"
+    else
+        echo "${_GITHUB_TEST:=$(lib.getProperty 'TEST' "$( github.propertiesFile )")}"
+    fi
+}
+export -f github.TEST
 
 #----------------------------------------------------------------------------------------------
 function github.USER()
@@ -254,7 +255,7 @@ export -f github.USERID
 #----------------------------------------------------------------------------------------------
 function github.userInfo()
 {
-    local user=${1:?}
+    local -r user=${1:?}
 
     github.GET "$(github.REST_API)/users/${user}" || return 1
 }
