@@ -343,6 +343,16 @@ function git.status()
 export -f git.status
 
 #----------------------------------------------------------------------------------------------
+function git.submodules()
+{
+    local -r dir="${1:?}"
+    
+    cd "$dir"
+    git submodule | awk '{print "[" $1 "]=\"" $2 "\""}'
+}
+export -f git.submodules
+
+#----------------------------------------------------------------------------------------------
 function git.toHTTPS()
 {
     local remote=${1:?"Input parameter 'remote' must be passed to 'function ${FUNCNAME[0]}()'"}
