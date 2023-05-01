@@ -72,7 +72,7 @@ function versions.initialize()
     # ensure version info is up-to-date
     git.fetch --all
     if [ "${commit^^:-}" = 'HEAD' ] || [ -z "${VERSIONS['commit']:-}" ]; then
-        git.reset "origin/${VERSIONS['branch']:-master}" --hard
+        git.reset "origin/${VERSIONS['branch']:-main}" --hard
         return 1
     fi
 
