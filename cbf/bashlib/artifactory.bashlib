@@ -130,6 +130,7 @@ function artifactory.io()
 
     local curl_cmd=( 'curl' '--insecure' "$@" )
     (
+        [ "$status" -gt 0 ] && term.log "cURL returned error code: $status" 'warn'
         echo
         term.log "***ERROR: failure to complete artifactory request
     command:       $(printf '%s ' "${curl_cmd[@]}")
