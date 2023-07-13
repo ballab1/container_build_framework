@@ -105,7 +105,7 @@ export -f photoprism.PROD
 #----------------------------------------------------------------------------------------------
 function photoprism.PUT()
 {
-    photoprism.io --request PUST "$@" || return 1
+    photoprism.io --request PUT "$@" || return 1
 }
 export -f photoprism.PUT
 

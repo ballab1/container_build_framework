@@ -160,7 +160,7 @@ export -f github.POST
 #----------------------------------------------------------------------------------------------
 function github.PUT()
 {
-    github.io --request PUST "$@" || return 1
+    github.io --request PUT "$@" || return 1
 }
 export -f github.PUT
 

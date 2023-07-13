@@ -1,4 +1,5 @@
 #!/bin/echo 'This script cannot be executabled directly. Please source from another script'
+# -*- coding: utf-8 -*-
 
 #----------------------------------------------------------------------------------------------
 #
@@ -26,8 +27,11 @@ export -f grafana.createApiKey
 function grafana.createFolder()
 {
     local -r data="${1:?}"
+    local temp_file=$(mktemp)
+    echo "$data" > "$temp_file"
+    grafana.POST '--data-binary' "@$temp_file" "$(grafana.REST_API)/dashboards/db" || return 1
+    rm "$temp_file"
 
-    grafana.POST '--data' "$data" "$(grafana.REST_API)/folders" || return 1
 }
 export -f grafana.createFolder
 
@@ -59,31 +63,31 @@ function grafana.deleteDashboardByUid()
 export -f grafana.deleteDashboardByUid
 
 #----------------------------------------------------------------------------------------------
-function grafana.deleteExistingDataSourceByName
+function grafana.deleteDataSourceByName
 {
     local -r dataSourceName="${1:?}"
 
     grafana.DELETE "$(grafana.REST_API)/datasources/name/$dataSourceName" || return 1
 }
-export -f grafana.deleteExistingDataSourceByName
+export -f grafana.deleteDataSourceByName
 
 #----------------------------------------------------------------------------------------------
-function grafana.deleteExistingDataSourceById()
+function grafana.deleteDataSourceById()
 {
     local -r dataSourceId="${1:?}"
 
     grafana.DELETE "$(grafana.REST_API)/datasources/$dataSourceId" || return 1
 }
-export -f grafana.deleteExistingDataSourceById
+export -f grafana.deleteDataSourceById
 
 #----------------------------------------------------------------------------------------------
-function grafana.deleteExistingDataSourceByUid()
+function grafana.deleteDataSourceByUid()
 {
     local -r uid="${1:?}"
 
     grafana.DELETE "$(grafana.REST_API)/datasources/uid/$uid" || return 1
 }
-export -f grafana.deleteExistingDataSourceByUid
+export -f grafana.deleteDataSourceByUid
 
 #----------------------------------------------------------------------------------------------
 function grafana.deleteFolder()
@@ -240,7 +244,8 @@ function grafana.putDatasource() {
 
     echo -n "Datasource: $(basename "$file")   "
     local -i status=0
-    local -a args=( $(grafana.headers) '--insecure' '--silent' '--request' 'POST' --data "$(datasourceJson "$file")"  "$(grafana.api)/datasources" )
+    # shellcheck disable=SC2207
+    local -a args=( $(grafana.headers) '--insecure' '--silent' '--request' 'POST' '--data' "$(< "$file")"  "$(grafana.api)/datasources" )
     local response=$(curl "${args[@]}") && status=$? || status=$?
     if [ "$status" -ne 0 ]; then
         echo "Error:  $response" >&2
@@ -273,14 +278,14 @@ export -f grafana.restoreDashboard
 #----------------------------------------------------------------------------------------------
 function grafana.searchFoldersAndDashboards()
 {
-#    local -r query="$ – Search Query
-#    local -r tag – List of tags to search for
-#    local -r type – Type to search for, dash-folder or dash-db
-#    local -r dashboardIds – List of dashboard id’s to search for
-#    local -r folderIds – List of folder id’s to search in for dashboards
-#    local -r starred – Flag indicating if only starred Dashboards should be returned
-#    local -r limit – Limit the number of returned results (max 5000)
-#    local -r page – Use this parameter to access hits beyond limit. Numbering starts at 1. limit param acts as page size. Only available in Grafana v6.2+.
+#    local -r query="$ - Search Query
+#    local -r tag - List of tags to search for
+#    local -r type - Type to search for, dash-folder or dash-db
+#    local -r dashboardIds - List of dashboard id's to search for
+#    local -r folderIds - List of folder id's to search in for dashboards
+#    local -r starred - Flag indicating if only starred Dashboards should be returned
+#    local -r limit - Limit the number of returned results (max 5000)
+#    local -r page - Use this parameter to access hits beyond limit. Numbering starts at 1. limit param acts as page size. Only available in Grafana v6.2+.
 
     local -r searchParams="${1:?}"
 
@@ -297,14 +302,14 @@ function grafana.tagsForDashboard()
 export -f grafana.tagsForDashboard
 
 #----------------------------------------------------------------------------------------------
-function grafana.updateExistingDataSource()
+function grafana.updateDataSource()
 {
-    local -r dataSourceId="${1:?}"
+    local -r dataSourceUid="${1:?}"
     local -r data="${2:?}"
 
-    grafana.PUT "$(grafana.REST_API)/datasources/$dataSourceId" "$data" || return 1
+    grafana.PUT "$(grafana.REST_API)/datasources/uid/$dataSourceUid" '--data' "$data" || return 1
 }
-export -f grafana.updateExistingDataSource
+export -f grafana.updateDataSource
 
 #----------------------------------------------------------------------------------------------
 function grafana.updateFolder()
@@ -312,7 +317,7 @@ function grafana.updateFolder()
     local -r uid="${1:?}"
     local -r data="${2:?}"
 
-    grafana.PUT "$(grafana.REST_API)/folders/$uid" "$data" || return 1
+    grafana.PUT "$(grafana.REST_API)/folders/$uid" '--data' "$data" || return 1
 }
 export -f grafana.updateFolder
 
@@ -345,6 +350,7 @@ function grafana.io()
     fi
 
     headers=$(mktemp --tmpdir="${TMP_DIR:-/tmp}")
+    # shellcheck disable=SC2206
     args=( '--header' 'Content-Type: application/json;charset=UTF-8'
            '--header' 'Accept: application/json'
            ${credentials[@]}
@@ -385,7 +391,8 @@ function grafana.io()
     fi
 
     # check that 'term.log' was successful, otherwise, make sure something is echo'd
-    [ $? -eq 0 ] || echo "command:       $(printf '%s ' "${curl_cmd[@]}")\\n    error code:    $response" >&2
+    # shellcheck disable=SC2181
+    [ $? -eq 0 ] || echo "command:       $(printf '%s\n    error code:    %s ' "${curl_cmd[@]}")" "$response" >&2
 
     return 1
 }
@@ -438,7 +445,7 @@ export -f grafana.PROD
 #----------------------------------------------------------------------------------------------
 function grafana.PUT()
 {
-    grafana.io --request PUST "$@" || return 1
+    grafana.io --request PUT "$@" || return 1
 }
 export -f grafana.PUT
 

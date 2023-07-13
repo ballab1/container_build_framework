@@ -121,7 +121,7 @@ export -f confluence.PROD
 #----------------------------------------------------------------------------------------------
 function confluence.PUT()
 {
-    confluence.io --request PUST "$@" || return 1
+    confluence.io --request PUT "$@" || return 1
 }
 export -f confluence.PUT
 
