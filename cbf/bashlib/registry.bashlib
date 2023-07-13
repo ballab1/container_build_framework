@@ -321,7 +321,7 @@ export -f registry.propertiesFile
 #----------------------------------------------------------------------------------------------
 function registry.PUT()
 {
-    registry.io --request PUST "$@" || return 1
+    registry.io --request PUT "$@" || return 1
 }
 export -f registry.PUT
 

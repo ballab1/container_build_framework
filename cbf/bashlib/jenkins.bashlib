@@ -99,7 +99,7 @@ export -f jenkins.propertiesFile
 #----------------------------------------------------------------------------------------------
 function jenkins.PUT()
 {
-    jenkins.io --request PUST "$@" || return 1
+    jenkins.io --request PUT "$@" || return 1
 }
 export -f jenkins.PUT
 
