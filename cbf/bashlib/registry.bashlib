@@ -17,50 +17,6 @@ function registry.catalog()
 export -f registry.catalog
 
 #----------------------------------------------------------------------------------------------
-function registry.createTime()
-{
-    local -r name=${1:?}
-    local -r digest=${2:?}
-    shift 2
-    local -ra tags=( "$@" )
-
-    local -r manifests="$(registry.manifest "$name" "${tags[0]}")"
-    if [ "$manifests" ] && [[ ! $manifests =~ MANIFEST_INVALID ]]; then
-#        local fslayers=$(jq --compact-output --monochrome-output --raw-output 'try [ .fsLayers|length ]' <<< "$manifests")
-        local createTime=$(jq --compact-output --monochrome-output --raw-output 'try [ .history[].v1Compatibility.created | sub("\\.\\d+Z"; "Z") | fromdate] | max | todate' <<< "$manifests")
-        if [ "$createTime" ]; then
-            echo "$createTime"
-            return 0
-        fi
-    fi
-
-    # show error info to stderr
-    {
-    echo -en '    \e[93m'
-    echo "unable to parse time from manifest returned for $(registry.SERVER)$name:${tags[0]}"
-    echo "        digest: $digest"
-    if [ "${#tags[*]}" -gt 1 ]; then
-        echo '        other tags: '"${tags[1]}"
-        local -i i=2
-        while [ $i -lt "${#tags[*]}" ]; do
-            echo '                    '"${tags[$i]}"
-        done
-    fi
-    echo "    recommend verifying that this image can be downloaded using 'docker pull $(registry.SERVER)$name:${tags[0]}'"
-    echo '    if this image cannot be downloaded, it should be deleted from the repository'
-    echo -e '\e[0m'
-    } >&2
-}
-export -f registry.createTime
-
-#----------------------------------------------------------------------------------------------
-function registry.DELETE()
-{
-    registry.io --request DELETE "$@" || return 1
-}
-export -f registry.DELETE
-
-#----------------------------------------------------------------------------------------------
 function registry.deleteImage()
 {
     local -r name=${1:?}
@@ -105,27 +61,28 @@ function registry.digestsWithTimes()
 {
     local -r name=${1:?}
 
-    local -a tags=()
-    mapfile -t tags < <(registry.tags "$name")
+    local -a tags
+    mapfile -t tags < <( registry.tags "$name" )
     [ "${#tags[*]}" -gt 0 ] || return 0
 
 
     local tag digest
     local -A digests=()
     for tag in "${tags[@]}"; do
-        digest=$(registry.digest "$name" "$tag")
-        if [ -z "${digest:-}" ]; then
+        digest="$(registry.digest "$name" "$tag")"
+        if [ "${digest:-}" ]; then
+            digests["$digest"]="$(echo -en "${tag}\\n${digests[$digest]:-}")"
+        else
             term.elog "WARNING:  $name:$tag failed to return a digest" 'warning'
-            continue
         fi
-        digests["$digest"]="$(echo -en "${tag}\n${digests[$digest]:-}")"
     done
 
 
     local -A times=()
     for digest in "${!digests[@]}"; do
+        # shellcheck disable=SC2206
         tags=( ${digests[$digest]} )
-        createTime="$(registry.createTime "$name" "$digest" "${tags[@]}" )"
+        createTime="$(registry.getCreateTime "$name" "$digest" "${tags[@]}" )"
         [ "${createTime:-}" ] || continue
         [ "${times[$createTime]:-}" ] || times[$createTime]="$digest"
     done
@@ -140,9 +97,10 @@ function registry.digestsWithTimes()
         echo -n '"digest":"'"$digest"'",'
         echo -n '"createTime":"'"$createTime"'",'
         echo -n '"tags":['
+        # shellcheck disable=SC2206
         tags=( ${digests[$digest]} )
         tag="${tags[0]}"
-        for i in ${!tags[@]}; do
+        for i in "${!tags[@]}"; do
              [ "$i" -ne 0 ] || continue
              if [ "${#tag}" -gt "${#tags[i]}" ]; then
                  echo -n '"'"${tag}"'",'
@@ -161,7 +119,7 @@ function registry.digestsWithoutTimes()
 {
     local -r name=${1:?}
 
-    local -a tags=()
+    local -a tags
     mapfile -t tags < <(registry.tags "$name")
     [ "${#tags[*]}" -gt 0 ] || return 0
 
@@ -174,19 +132,20 @@ function registry.digestsWithoutTimes()
             term.elog "WARNING:  $name:$tag failed to return a digest" 'warning'
             continue
         fi
-        digests["$digest"]="$(echo -en "${tag}\n${digests[$digest]:-}")"
+        digests["$digest"]="$(echo -en "${tag}\\n${digests[$digest]:-}")"
     done
 
     echo -n '['
     local -i x=0
-    for digest in ${!digests[@]}; do
+    for digest in "${!digests[@]}"; do
         (( x++ )) && echo -n ','
         echo -n '{'
         echo -n '"digest":"'"$digest"'",'
         echo -n '"tags":['
+        # shellcheck disable=SC2206
         tags=( ${digests[$digest]} )
         tag="${tags[0]}"
-        for i in ${!tags[@]}; do
+        for i in "${!tags[@]}"; do
              [ "$i" -ne 0 ] || continue
              if [ "${#tag}" -gt "${#tags[i]}" ]; then
                  echo -n '"'"${tag}"'",'
@@ -201,20 +160,61 @@ function registry.digestsWithoutTimes()
 }
 
 #----------------------------------------------------------------------------------------------
-function registry.GET()
+function registry.getCreateTime()
 {
-    registry.io --request GET "$@" || return 1
+    local -r name=${1:?}
+    local -r digest=${2:?}
+    shift 2
+    local -ra tags=( "$@" )
+
+    local -r manifests="$(registry.manifest "$name" "${tags[0]}")"
+    if [ "$manifests" ] && [[ ! $manifests =~ MANIFEST_INVALID ]]; then
+        local createTime=$(jq --compact-output --monochrome-output --raw-output 'try [ .history[].v1Compatibility.created | sub("\\.\\d+.*$"; "Z") | fromdate] | max | todate' <<< "$manifests")
+        if [ "$createTime" ]; then
+            echo "$createTime"
+            return 0
+        fi
+    fi
+
+    # show error info to stderr
+    {
+    echo -en '    \e[93m'
+    echo "unable to parse time from manifest returned for $(registry.SERVER)$name:${tags[0]}"
+    echo "        digest: $digest"
+    if [ "${#tags[*]}" -gt 1 ]; then
+        echo '        other tags: '"${tags[1]}"
+        local -i i="${#tags[*]}"
+        while [ "$i" -gt 2 ]; do
+            i="$(( i - 1 ))"
+            echo '                    '"${tags[$i]}"    
+        done
+    fi
+    echo "    recommend verifying that this image can be downloaded using 'docker pull $(registry.SERVER)$name:${tags[0]}'"
+    echo '    if this image cannot be downloaded, it should be deleted from the repository'
+    echo -e '\e[0m'
+    } >&2
 }
-export -f registry.GET
+export -f registry.getCreateTime
+
+#----------------------------------------------------------------------------------------------
+function registry.getLinks()
+{
+    # headers:   'Link: </v2/_catalog?last=alpine%2Fphpmyadmin%2F5.0.2&n=100>; rel="next"'
+    local -r headers=${1:?}
+
+    sed -E -e 's|^Link:\s*</v2/(.*)>;\s*rel="(.+)".*$|["\2"]="/\1"|' <<< "$headers"
+}
+export -f registry.getLinks
 
 #----------------------------------------------------------------------------------------------
 function registry.io()
 {
     local -a args
-    local headers response url
+    local headers response text url
     local -i status=0
     local -A links
-    local -a credentials=( $(credentials.get registry) )
+    local -a credentials
+    mapfile -t credentials < <(credentials.get registry)
     if [ "${DEBUG:-0}" -eq 0 ]; then
         credentials+=( '--silent' )
     else
@@ -237,7 +237,9 @@ function registry.io()
         echo -n "$response"
 
         #  Link: </v2/_catalog?last=thirdparty%2Fapm-server&n=100>; rel="next"
-        eval links=( $(registry.splitLinks "$headers") )
+        text="$(grep -E '^Link:' "$headers")"
+        [ "${text:-}" ]  || break
+        eval links=( $(registry.getLinks "$text") )
         url="${links['next']:-}"
         [ "${url:-}" ] || break
 
@@ -261,6 +263,7 @@ function registry.io()
     )
 
     # check that 'term.log' was successful, otherwise, make sure something is echo'd
+    # shellcheck disable=SC2181
     [ $? -eq 0 ] || printf '%s:      %s \n    %s:    %s' 'command' "${curl_cmd[@]}" 'error code' "$errors" >&2
 
     return 1
@@ -288,13 +291,54 @@ function registry.manifest()
 export -f registry.manifest
 
 #----------------------------------------------------------------------------------------------
-function registry.splitLinks()
+function registry.propFile()
 {
-    local -r headerFile=${1:?}
-
-    grep -E '^Link:' "$headerFile" | sed -E 's|^Link:||'| awk '{print $0}' RS=','| sed -E -e 's| </v2|"|' -e 's|^(.*)>; rel=(.)(.*)\"\s*$|[\3]=\1\2|'
+    echo "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/properties/$(basename "${BASH_SOURCE[0]%.*}").properties"
 }
-export -f registry.splitLinks
+
+export REGISTRY_PROPERTIES_FILE="${REGISTRY_PROPERTIES_FILE:="$(registry.propFile)"}"
+
+#----------------------------------------------------------------------------------------------
+function registry.propertiesFile()
+{
+    echo "${REGISTRY_PROPERTIES_FILE:="$(registry.propFile)"}"
+}
+export -f registry.propertiesFile
+
+#----------------------------------------------------------------------------------------------
+function registry.tags()
+{
+    local -r name=${1:?}
+
+    local -r json=$(registry.GET "$(registry.URL)/${name}/tags/list" || echo "Failed to get $(registry.URL)/${name}/tags/list" >&2)
+    [ -z "${json:-}" ] || jq --compact-output --monochrome-output --raw-output '.tags[]?' <<< "$json"
+}
+export -f registry.tags
+
+#----------------------------------------------------------------------------------------------
+function registry.DELETE()
+{
+    registry.io --request DELETE "$@" || return 1
+}
+export -f registry.DELETE
+
+#----------------------------------------------------------------------------------------------
+function registry.GET()
+{
+    registry.io --request GET "$@" || return 1
+}
+export -f registry.GET
+
+#----------------------------------------------------------------------------------------------
+function registry.HOST()
+{
+    if [ "${OPTS['host']:-}" ]; then
+         echo "${OPTS['host']}"
+    else
+        echo "${_REGISTRY_HOST:="$(lib.getHost "$( registry.SERVER )")"}"
+    fi
+}
+export -f registry.HOST
 
 #----------------------------------------------------------------------------------------------
 function registry.POST()
@@ -302,21 +346,6 @@ function registry.POST()
     registry.io --request POST "$@" || return 1
 }
 export -f registry.POST
-
-#----------------------------------------------------------------------------------------------
-function registry.propFile()
-{
-    echo "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/properties/$(basename "${BASH_SOURCE[0]%.*}").properties"
-}
-
-export REGISTRY_PROPERTIES_FILE="${REGISTRY_PROPERTIES_FILE:=$(registry.propFile)}"
-
-#----------------------------------------------------------------------------------------------
-function registry.propertiesFile()
-{
-    echo "${REGISTRY_PROPERTIES_FILE:=$(registry.propFile)}"
-}
-export -f registry.propertiesFile
 
 #----------------------------------------------------------------------------------------------
 function registry.PUT()
@@ -331,21 +360,10 @@ function registry.REGISTRY()
     if [ "${OPTS['registry']:-}" ]; then
          echo "${OPTS['registry']}"
     else
-        echo "${_REGISTRY_SERVER:=$(lib.getProperty 'REGISTRY' "$( registry.propertiesFile )")}"
+        echo "${_REGISTRY_SERVER:="$(lib.getProperty 'REGISTRY' "$( registry.propertiesFile )")"}"
     fi
 }
 export -f registry.REGISTRY
-
-#----------------------------------------------------------------------------------------------
-function registry.HOST()
-{
-    if [ "${OPTS['host']:-}" ]; then
-         echo "${OPTS['host']}"
-    else
-        echo "${_REGISTRY_HOST:=$(lib.getHost "$( registry.SERVER )")}"
-    fi
-}
-export -f registry.HOST
 
 #----------------------------------------------------------------------------------------------
 function registry.SERVER()
@@ -353,20 +371,10 @@ function registry.SERVER()
     if [ "${OPTS['server']:-}" ]; then
          echo "${OPTS['server']}"
     else
-        echo "${_REGISTRY_SERVER:=$(lib.getProperty 'SERVER' "$( registry.propertiesFile )")}"
+        echo "${_REGISTRY_SERVER:="$(lib.getProperty 'SERVER' "$( registry.propertiesFile )")"}"
      fi
 }
 export -f registry.SERVER
-
-#----------------------------------------------------------------------------------------------
-function registry.tags()
-{
-    local -r name=${1:?}
-
-    local -r json=$(registry.GET "$(registry.URL)/${name}/tags/list" || echo "Failed to get $(registry.URL)/${name}/tags/list" >&2)
-    [ -z "${json:-}" ] || jq --compact-output --monochrome-output --raw-output '.tags[]?' <<< "$json"
-}
-export -f registry.tags
 
 #----------------------------------------------------------------------------------------------
 function registry.URL()
@@ -374,7 +382,7 @@ function registry.URL()
     if [ "${OPTS['url']:-}" ]; then
          echo "${OPTS['url']}"
     else
-        echo "${_REGISTRY_URL:=$(lib.getProperty 'URL' "$( registry.propertiesFile )")}"
+        echo "${_REGISTRY_URL:="$(lib.getProperty 'URL' "$( registry.propertiesFile )")"}"
     fi
 }
 export -f registry.URL
@@ -385,7 +393,9 @@ function registry.USER()
     if [ "${OPTS['user']:-}" ]; then
          echo "${OPTS['user']}"
     else
-         echo "${_REGISTRY_USER:=$(lib.getProperty 'USER' "$( registry.propertiesFile )")}"
+        local user="${_REGISTRY_USER:="$(lib.getProperty 'USER' "$( registry.propertiesFile )")"}"
+        [ "${user:-}" ] || user="${USERNAME:-${USER:-}}"
+         echo "$user"
     fi
 }
 export -f registry.USER
