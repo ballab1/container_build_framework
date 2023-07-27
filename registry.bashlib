@@ -62,10 +62,13 @@ function registry.digestsWithTimes()
     local -r name=${1:?}
 
     local -a tags
+
+    # get all the tags for current repo: "$name" 
     mapfile -t tags < <( registry.tags "$name" )
     [ "${#tags[*]}" -gt 0 ] || return 0
 
 
+    # get all the digests by tag for repo: "$name" 
     local tag digest
     local -A digests=()
     for tag in "${tags[@]}"; do
@@ -78,38 +81,45 @@ function registry.digestsWithTimes()
     done
 
 
-    local -A times=()
+    # get the times of each digest for repo: "$name" 
+    local -A times
     for digest in "${!digests[@]}"; do
         # shellcheck disable=SC2206
         tags=( ${digests[$digest]} )
         createTime="$(registry.getCreateTime "$name" "$digest" "${tags[@]}" )"
         [ "${createTime:-}" ] || continue
-        [ "${times[$createTime]:-}" ] || times[$createTime]="$digest"
+#        [ "${times[$createTime]:-}" ] && echo "repo: ${name} contains multiple digests with the same timestamp: ${createTime}" >&2
+        times["$createTime"]="$(echo -en "${digest}\\n${times[$createTime]:-}")"
     done
 
+
+    # print out JSON for digests, createTime and tags for repo: "$name"
     echo -n '['
     local -i x=0
+    local -a td
     for createTime in $(printf '%s\n' "${!times[@]}" | sort); do
-        (( x++ )) && echo -n ','
-        digest=${times[$createTime]}
-
-        echo -n '{'
-        echo -n '"digest":"'"$digest"'",'
-        echo -n '"createTime":"'"$createTime"'",'
-        echo -n '"tags":['
         # shellcheck disable=SC2206
-        tags=( ${digests[$digest]} )
-        tag="${tags[0]}"
-        for i in "${!tags[@]}"; do
-             [ "$i" -ne 0 ] || continue
-             if [ "${#tag}" -gt "${#tags[i]}" ]; then
-                 echo -n '"'"${tag}"'",'
-                 tag="${tags[i]}"
-             else
-                 echo -n '"'"${tags[i]}"'",'
-             fi
+        td=( ${times[$createTime]} )
+        for digest in "${td[@]}"; do
+            (( x++ )) && echo -n ','
+            echo -n '{'
+            echo -n '"digest":"'"$digest"'",'
+            echo -n '"createTime":"'"$createTime"'",'
+            echo -n '"tags":['
+            # shellcheck disable=SC2206
+            tags=( ${digests[$digest]} )
+            tag="${tags[0]}"
+            for i in "${!tags[@]}"; do
+                 [ "$i" -ne 0 ] || continue
+                 if [ "${#tag}" -gt "${#tags[i]}" ]; then
+                     echo -n '"'"${tag}"'",'
+                     tag="${tags[i]}"
+                 else
+                     echo -n '"'"${tags[i]}"'",'
+                 fi
+            done
+            echo -n '"'"${tag}"'"]}'
         done
-        echo -n '"'"${tag}"'"]}'
     done
     echo -n ']'
 }
