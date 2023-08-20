@@ -17,7 +17,9 @@ function appenv.cmdError()
 {
         local msg="${1:'ERROR: invalid command options'}"
 
+        # shellcheck disable=SC2154
         OPTS['quiet']=1
+        # shellcheck disable=SC2154
         OPTS['debug']=2
         appenv.showArgs
         term.elog '\n'"$msg"'\n' 'error'
@@ -31,6 +33,7 @@ function appenv.cmdLineArgs()
     local -i status=0
 
     [ "${DEBUG:-0}" -ne 0 ] && OPTS['debug']=$DEBUG
+    # shellcheck disable=SC2143
     [ -z "$(set +o|grep 'set -o xtrace')" ] || OPTS['debug']=1
 
     while [ "${1:-}" ]; do
@@ -50,6 +53,7 @@ function appenv.cmdLineArgs()
 
             -c|--credentials)
                 [[ $# -le 2 || $2 = -* ]] && trap.die 'no credentials file specified!'
+                # shellcheck disable=SC2154
                 OPTS['credentials']="$2"
                 shift 2;;
 
@@ -58,6 +62,7 @@ function appenv.cmdLineArgs()
                 shift;;
 
             -n|--nocache)
+                # shellcheck disable=SC2154
                 OPTS['cached']=1
                 shift;;
 
@@ -67,6 +72,7 @@ function appenv.cmdLineArgs()
 
             -u|--user)
                 [[ $# -le 2 || $2 = -* ]] && trap.die 'no user specified'
+                # shellcheck disable=SC2154
                 OPTS['user']="$2"
                 shift 2;;
 
@@ -75,6 +81,7 @@ function appenv.cmdLineArgs()
                     local optsFile="${PROGRAM_DIR}/help.${LIB_NAME}/cmdOptions.json"
                     if [ -s "$optsFile" ] && [ "${#optsJSON[*]}" -eq 0 ]; then
                         mapfile -t optsJSON < <(jq -ser '.[]|select(.name|ascii_downcase == "'"${1,,}"'")?|to_entries[]|@sh "OPTS[\(.key)]=\(.value)"' "$optsFile" ||:)
+                        # shellcheck disable=SC2181
                         if [ $? -eq 0 ]; then
                             for opt in "${optsJSON[@]}";do
                                 eval "$opt"
@@ -102,13 +109,13 @@ function appenv.cmdLineArgs()
     done
 
     if [ -z "${OPTS['cmd']:-}" ]; then
-        [ "${#ARGS[*]}" -gt 0 ] && term.elog "***ERROR: '${ARGS[0]}' invalid command line action provided\n" 'error'
+        [ "${#ARGS[*]}" -gt 0 ] && term.elog "***ERROR: '${ARGS[0]}' invalid command line action provided\\n" 'error'
         appenv.usage
         exit 0
     fi
 
     [ "${OPTS['credentials']:-}" ] && export __SECRETS_FILE="${OPTS['credentials']}"
-    [ ${OPTS['debug']:-0} != 0 ] && export DEBUG=${OPTS['debug']:-0}
+    [ "${OPTS['debug']:-0}" != 0 ] && export DEBUG=${OPTS['debug']:-0}
     
 
 
@@ -142,6 +149,7 @@ function appenv.initialize()
     appenv.loader "${LIB_NAME}.main"
     trap appenv.onExit EXIT
 
+    # shellcheck disable=SC1090
     [ -e "${PROGRAM_DIR}/${LIB_NAME}.bashlib" ] && source "${PROGRAM_DIR}/${LIB_NAME}.bashlib"
     [ "$(type -t "${LIB_NAME}.initialize")" ] && "${LIB_NAME}.initialize"
 
@@ -156,12 +164,19 @@ function appenv.initialize()
 
     # order is to optimize resolution dependencies
     if [ "${OPTS['cached']:-0}" = 0 ]; then
+        # shellcheck disable=SC2154
         [ "$(type -t "${LIB_NAME%%-*}.PROD")" ]     && OPTS['prod']="$("${LIB_NAME%%-*}.PROD")"
+        # shellcheck disable=SC2154
         [ "$(type -t "${LIB_NAME%%-*}.SERVER")" ]   && OPTS['server']="$("${LIB_NAME%%-*}.SERVER")"
+        # shellcheck disable=SC2154
         [ "$(type -t "${LIB_NAME%%-*}.URL")" ]      && OPTS['url']="$("${LIB_NAME%%-*}.URL")"
+        # shellcheck disable=SC2154
         [ "$(type -t "${LIB_NAME%%-*}.HOST")" ]     && OPTS['host']="$("${LIB_NAME%%-*}.HOST")"
+        # shellcheck disable=SC2154
         [ "$(type -t "${LIB_NAME%%-*}.REST_API")" ] && OPTS['rest_api']="$("${LIB_NAME%%-*}.REST_API")"
+        # shellcheck disable=SC2154
         [ "$(type -t "${LIB_NAME%%-*}.USER")" ]     && OPTS['user']="$("${LIB_NAME%%-*}.USER")"
+        # shellcheck disable=SC2154
         [ "$(type -t "${LIB_NAME%%-*}.TEST")" ]     && OPTS['test']="$("${LIB_NAME%%-*}.TEST")"
     fi
     return 0
@@ -185,6 +200,7 @@ function appenv.loader()
 
     # look for libraries in common folders
     elif [ "$top" = '/usr/local/bin' ] && [ -e /usr/local/crf/bin/loadLibraries.sh ]; then
+        # shellcheck disable=SC1091
         source /usr/local/crf/bin/loadLibraries.sh
         TOP="$(pwd)"
 
@@ -194,6 +210,7 @@ function appenv.loader()
         for dir in '.' 'bin' 'bashlib' 'bin/bashlb'; do
             local libs="${top}/${dir}/loadLibraries.sh"
             if [ -e "$libs" ]; then
+                # shellcheck disable=SC1090
                 source "$libs"
                 case "$dir" in
                     bin|bashlib)     TOP="$(readlink -f "${top}/..")";;
@@ -238,6 +255,9 @@ function appenv.onExit()
     local elapsed="$(appenv.elapsedTime)"
     [ -z "${elapsed:-}" ] || (echo -e '\nElapsed time: '"$elapsed" | tee -a "$logfile") >&2
 
+    # strip color codes from log file
+    [ "${DEBUG:-0}" -eq 0 ] && [ -f "$logfile" ] && sed -i -E -e 's|\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]||g'  "$logfile"
+
     return "$status"
 }
 
@@ -245,7 +265,7 @@ function appenv.onExit()
 function appenv.run()
 {
     [ "${OPTS['quiet']:-0}" -eq 0 ] && term.elog "$(printf '%s ' "$@")"'\n' 'grey'
-    eval $@ > /dev/null
+    eval "$@" > /dev/null
 }
 
 #----------------------------------------------------------------------------------------------
@@ -326,10 +346,11 @@ function appenv.usage()
             if [ "${params['longOpts']:-null}" != 'null' ]; then
                 opt="${params['longOpts']//,/ }"
                 local -a results
+                # shellcheck disable=SC2001
                 mapfile -t results < <(echo "${params['longOpts']}" | sed -e 's|,|\n|g')
                 for opt in "${results[@]}"; do
                     params['name']="${params['name']} --${opt//:/}"
-                    [ ${opt: -1} = ':'  ] && params['name']="${params['name']} <arg>"
+                    [ "${opt: -1}" = ':'  ] && params['name']="${params['name']} <arg>"
                 done
             fi
             [ "${params['arg']:-null}" != 'null' ] && params['name']="${params['name']} ${params['arg']}"
@@ -361,7 +382,10 @@ function appenv.usage()
         [ -s "$contextHelp" ] && envsubst < "$contextHelp"
     else
         [ -s "$contextHelp" ] || trap.die 'unable to locate usage information: '"$contextHelp"
-        [ -f "$optsFile" ] && (jq -ser '.[]|select(.name|ascii_downcase == "'"${context,,}"'").message' "$optsFile" 2>/dev/null ||:)
+        if [ -f "$optsFile" ]; then
+            local msg="$(jq -ser '.[]|select(.name|ascii_downcase == "'"${context,,}"'").message' "$optsFile" 2>/dev/null ||:)"
+            eval 'echo $msg'
+        fi
         envsubst < "$contextHelp"
     fi
     echo
