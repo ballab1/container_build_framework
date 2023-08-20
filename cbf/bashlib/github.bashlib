@@ -125,6 +125,13 @@ function github.orgTeams()
 export -f github.orgTeams
 
 #----------------------------------------------------------------------------------------------
+function github.POST()
+{
+    github.io --request POST "$@" || return 1
+}
+export -f github.POST
+
+#----------------------------------------------------------------------------------------------
 function github.PROD()
 {
     if [ "${OPTS['prod']:-}" ]; then
@@ -149,13 +156,6 @@ function github.propertiesFile()
     echo "${GITHUB_PROPERTIES_FILE:=$(github.propFile)}"
 }
 export -f github.propertiesFile
-
-#----------------------------------------------------------------------------------------------
-function github.POST()
-{
-    github.io --request POST "$@" || return 1
-}
-export -f github.POST
 
 #----------------------------------------------------------------------------------------------
 function github.PUT()

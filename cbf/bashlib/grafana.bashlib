@@ -27,11 +27,7 @@ export -f grafana.createApiKey
 function grafana.createFolder()
 {
     local -r data="${1:?}"
-    local temp_file=$(mktemp)
-    echo "$data" > "$temp_file"
-    grafana.POST '--data-binary' "@$temp_file" "$(grafana.REST_API)/dashboards/db" || return 1
-    rm "$temp_file"
-
+    grafana.POST '--data' "$data" "$(grafana.REST_API)/folders"
 }
 export -f grafana.createFolder
 

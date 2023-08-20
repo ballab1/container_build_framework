@@ -60,7 +60,7 @@ function package.install()
             apk add --no-cache "${PKGS[@]}"
             ;;
         centos|fedora)
-            yum install -y "${BUILD[@]}" "${PKGS[@]}" 
+            yum install -y "${BUILD[@]}" "${PKGS[@]}"
             yum clean all
             ;;
         ubuntu)
