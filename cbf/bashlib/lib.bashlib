@@ -60,7 +60,7 @@ function lib.exportFileVars()
         key="$(cut -d '=' -f 1 <<< "$line")"
         [ "$override" = 'false' ] && [ "${!key:-}" ] && continue
         eval "$fn $line"
-    done < <(grep '=' "$settings" | grep -Ev "^\s*#" ||:)
+    done < <(grep '=' "$settings" | grep -Ev '^\s*#' ||:)
 }
 export -f lib.exportFileVars
 
@@ -140,6 +140,7 @@ export -f lib.getFiles
 #----------------------------------------------------------------------------------------------
 function lib.getGroupInfo()
 {
+    # shellcheck disable=SC2119
     local -r group=${1:-$(lib.getGroupNameOfUser)}
     local -r extended=${2:-}
 
@@ -152,8 +153,10 @@ function lib.getGroupInfo()
 export -f lib.getGroupInfo
 
 #----------------------------------------------------------------------------------------------
+# shellcheck disable=SC2120
 function lib.getGroupNameOfUser()
 {
+    # shellcheck disable=SC2119
     local -r user=${1:-$(crf.currentUser)}
 
     local gid=''
@@ -169,6 +172,7 @@ export -f lib.getGroupNameOfUser
 #----------------------------------------------------------------------------------------------
 function lib.getGID()
 {
+    # shellcheck disable=SC2119
     local -r group=${1:-$(lib.getGroupNameOfUser)}
 
     lib.lookupId "$group" 'group'
@@ -181,7 +185,7 @@ function lib.getHost()
     local -r server=${1:?"Input parameter 'server' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     # from:  https://stackoverflow.com/questions/6174220/parse-url-in-shell-script
-    local -r URI_REGEX='^(([^:/?#]+):)?(//((([^:/?#]+)@)?([^:/?#]+)(:([0-9]+))?))?((/|$)([^?#]*))(\?([^#]*))?(#(.*))?$'
+    local -r URI_REGEX='^(([^:/?#]+)://)?(((([^:/?#]+)@)?([^:/?#]+)(:([0-9]+))?))?((/|$)([^?#]*))(\?([^#]*))?(#(.*))?$'
     #                    ||            |  |||            |         | |            ||    |        |  |        | |
     #                    ||            |  |||            |         | |            ||    |        |  |        | |
     #                    |2 scheme     |  ||6 userinfo   7 host    | 9 port       ||    12 rpath |  14 query | 16 fragment
@@ -197,7 +201,7 @@ function lib.getHost()
     fi
     return 0
 }
-export -f lib.getGID
+export -f lib.getHost
 
 #----------------------------------------------------------------------------------------------
 function lib.getProperty()
@@ -213,7 +217,7 @@ function lib.getProperty()
     fi
 
     local -i status
-    local -r val="$( grep -e "^${prop}\s*=" "$file" )" && status=$? || status=$?
+    local -r val="$( grep -e "^${prop}\\s*=" "$file" )" && status=$? || status=$?
 
     # only report eval'd string (after removing 'prop=' prefix) if something was found
     if [ $status -eq 0 ] && [ "${val:-}" ]; then
@@ -336,7 +340,8 @@ function lib.normalizePath()
     fi
 
     # Remove dir/.. sequences.
-    while [[ "$path" =~ ([^/][^/]*/\.\./) ]]; do
+    local regex='([^/][^/]*/\.\./)'
+    while [[ "$path" =~ $regex ]]; do
         path="${path/${BASH_REMATCH[0]}/}"
     done
 
@@ -368,6 +373,7 @@ function lib.pidAncestors()
 
     if [ "$pid" -ne 0 ]; then
         eval "local -rA pids=($pidList)"
+        #shellcheck disable=SC2154,SC2046
         printf '%s,%d' $(lib.pidAncestors "${pids[$pid]}" "$pidList") "$pid"
     else
         printf '%d' "$pid"
@@ -406,7 +412,7 @@ function lib.removeProperty()
     local -r config_file="${2:?"Input parameter 'config_file' must be passed to 'function ${FUNCNAME[0]}()'"}"
 
     [ -f "$config_file" ] || trap.die 'Property file does not exist'
-    if grep -qE "^\s*${key}\s*=" "$config_file" ; then
+    if grep -qE "^\\s*${key}\\s*=" "$config_file" ; then
         sed -i "s|^$key=.*$||" "$config_file"
     fi
 }
@@ -421,7 +427,7 @@ function lib.saveMultiLineRecords()
 
     if [ -e "$file" ]; then
         # save the last numRecs sections of $file  (as in 'tail -$numRecs')
-        local -i offs=$(( $(grep -n "$delimStr" "$file" | cut -d ':' -f 1 | tail -$numRecs | head -n 1) - 1 ))
+        local -i offs=$(( $(grep -n "$delimStr" "$file" | cut -d ':' -f 1 | tail "-${numRecs}" | head -n 1) - 1 ))
         [ ${offs:-0} -le 0 ] || sed -i -e "1,$offs d" "$file"
     fi
 }
@@ -480,7 +486,7 @@ function lib.updatePropertyFile()
     [ -f "$config_file" ] || trap.die 'Property file does not exist'
 
     if [[ "$val" ]]; then
-        if grep -qE "^\s*${key}\s*=" "$config_file" ; then
+        if grep -qE "^\\s*${key}\\s*=" "$config_file" ; then
             sed -i "s|^$key=.*$|$key=$val|" "$config_file"
         elif [ "${must_exist:-}" ]; then
             echo "$key=$val" >> "$config_file"
@@ -521,7 +527,7 @@ function lib.urlencode()
     for (( i = 0; i < length; i++ )); do
         local c="${1:i:1}"
         case $c in
-            [a-zA-Z0-9.~_-]) printf "$c" ;;
+            [a-zA-Z0-9.~_-]) printf '%s' "$c" ;;
             *) printf '%%%02X' "'$c" ;;
         esac
     done
