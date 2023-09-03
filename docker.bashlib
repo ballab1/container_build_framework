@@ -30,8 +30,8 @@ function docker.clean()
     local -i blocksUsedBefore="$(df "${dockerRootDir}" | awk '{if (NR==2) {print $3}}')"
 
     # remove all containers which are stopped along with their associated volumes
-    mapfile -t collection < <(docker ps --all --quiet --filter "status=dead" --format "{{.Names}}")
-    collection+=( $(docker ps --all --quiet --filter "status=exited" --format "{{.Names}}") )
+    mapfile -t collection < <(docker ps --all --filter "status=dead" --format "{{.Names}}")
+    collection+=( $(docker ps --all --filter "status=exited" --format "{{.Names}}") )
     if [ "${#collection[*]}" -gt 0 ]; then
         printf "Deleting %d exited containers\n" "${#collection[*]}"
         docker rm --volumes "${collection[@]}"
@@ -40,7 +40,7 @@ function docker.clean()
 
     local fingerprint image
     # remove any 'dangling' images  (those with <none> in name)
-    collection=( $(docker images --quiet --filter "dangling=true") )
+    collection=( $(docker images --filter "dangling=true") )
 
     # locate all images tagged as ':tmp'
     for image in $(docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -s ':tmp' ||:); do
