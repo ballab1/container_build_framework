@@ -27,9 +27,9 @@ function __init.loader() {
     if [ "${#__libs[*]}" -gt 0 ]; then
         # load the bashlib files in this directory
         echo -en "    loading project libraries from $__libdir: \e[35m"
-        [[ "${DEBUG:-}" || "${DEBUG_TRACE:-0}" -gt 0 ]] && echo
+        [[ "${DEBUG:-0}" != 0 || "${DEBUG_TRACE:-0}" -gt 0 ]] && echo
         for __lib in "${__libs[@]}"; do
-            if [[ "${DEBUG:-}" || "${DEBUG_TRACE:-0}" -gt 0 ]]; then
+            if [[ "${DEBUG:-0}" != 0 || "${DEBUG_TRACE:-0}" -gt 0 ]]; then
                 echo "        $__lib"
             else
                 echo -n " $(basename "$__lib")"
@@ -41,7 +41,7 @@ function __init.loader() {
     [ ! -e "${__libdir}/init.cache" ] || source "${__libdir}/init.cache"
 }
 
-if [[ "${DEBUG:-}" || "${DEBUG_TRACE:-0}" -gt 0 ]]; then
+if [[ "${DEBUG:-0}" != 0 || "${DEBUG_TRACE:-0}" -gt 0 ]]; then
     __init.loader >&2
 else
     # TODO: instead of op to /dev/null, op to file; check for error and cat file if true; rm file.  (cannot use $(...) bcause it hides lib functions)
