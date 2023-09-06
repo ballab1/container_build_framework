@@ -30,8 +30,8 @@ function docker.clean()
     local -i blocksUsedBefore="$(df "${dockerRootDir}" | awk '{if (NR==2) {print $3}}')"
 
     # remove all containers which are stopped along with their associated volumes
-    mapfile -t collection < <(docker ps --all --filter "status=dead" --format "{{.Names}}")
-    collection+=( $(docker ps --all --filter "status=exited" --format "{{.Names}}") )
+    mapfile -t collection < <(docker ps --filter "status=dead" --format "{{.Names}}")
+    collection+=( $(docker ps --filter "status=exited" --format "{{.Names}}") )
     if [ "${#collection[*]}" -gt 0 ]; then
         printf "Deleting %d exited containers\n" "${#collection[*]}"
         docker rm --volumes "${collection[@]}"
@@ -66,7 +66,7 @@ function docker.clean()
         mapfile -t collection < <(printf '%s\n' ${collection[@]} | sort -u)   # remove duplicates
 
         # Allow any images associated with running containers
-        local -r processes="$(for i in $(docker ps --all --format '{{.Image}}'); do docker inspect $i 2>/dev/null | jq --compact-output --monochrome-output --raw-output '.[].RepoTags|unique[]' ||: ;done)"
+        local -r processes="$(for i in $(docker ps --format '{{.Image}}'); do docker inspect $i 2>/dev/null | jq --compact-output --monochrome-output --raw-output '.[].RepoTags|unique[]' ||: ;done)"
         local -i idx=${#collection[*]}
         while [ $(( idx-- )) -gt 0 ]; do
             image=${collection[$idx]}
