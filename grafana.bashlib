@@ -34,9 +34,9 @@ export -f grafana.createFolder
 #----------------------------------------------------------------------------------------------
 function grafana.createOrUpdateDashboard()
 {
-    local -r data="${1:?}"
+    local -r file="${1:?}"
 
-    grafana.POST '--data' "$data" "$(grafana.REST_API)/dashboards/db" || return 1
+    grafana.POST '--data-binary' "@${file}" "$(grafana.REST_API)/dashboards/db" || return 1
 }
 export -f grafana.createOrUpdateDashboard
 

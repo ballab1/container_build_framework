@@ -19,8 +19,8 @@ export -f registry.catalog
 #----------------------------------------------------------------------------------------------
 function registry.deleteImage()
 {
-    local -r name=${1:?}
-    local -r digest=${2:?}
+    local -r name="${1:?}"
+    local -r digest="${2:?}"
 
     echo -n "deleting ${name}@$digest  "
     registry.DELETE --show-error --write-out '%{http_code}\n' "$(registry.URL)/${name}/manifests/$digest" || echo "Failed to delete $name:$digest"
@@ -31,22 +31,22 @@ export -f registry.deleteImage
 #----------------------------------------------------------------------------------------------
 function registry.digest()
 {
-    local -r name=${1:?}
-    local -r tag=${2:?}
+    local -r name="${1:?}"
+    local -r tag="${2:?}"
 
-    local -r digest="$(registry.GET --head \
-                                    --header "Accept: application/vnd.docker.distribution.manifest.v2+json" \
+    local -r digest="$(registry.GET --header "Accept: application/vnd.docker.distribution.manifest.v2+json" \
                                     "$(registry.URL)/${name}/manifests/$(tr -d '"' <<< "$tag")" || echo "Failed to get $(registry.URL)/${name}/manifests/$tag" >&2)"
 
-    [ -z "$digest" ] || ( awk '{gsub(/\r/,"");if (tolower($1) == "docker-content-digest:") {print $2}}' ) <<< "$digest"
+#    [ -z "$digest" ] || ( awk '{gsub(/\r/,"");if (tolower($1) == "docker-content-digest:") {print $2}}' ) <<< "$digest"
+    [ -z "$digest" ] || ( jq -r '.layers[]|if has("digest") then .digest elif has("docker-content-digest") then ."docker-content-digest" else error("No digest found") end' <<< "$digest" )
 }
 export -f registry.digest
 
 #----------------------------------------------------------------------------------------------
 function registry.digests()
 {
-    local -r name=${1:?}
-    local -r no_times=${2:-}
+    local -r name="${1:?}"
+    local -r no_times="${2:-}"
 
     if [ -z "${no_times:-}" ]; then
         registry.digestsWithTimes "$name"
@@ -59,16 +59,16 @@ export -f registry.digests
 #----------------------------------------------------------------------------------------------
 function registry.digestsWithTimes()
 {
-    local -r name=${1:?}
+    local -r name="${1:?}"
 
     local -a tags
 
-    # get all the tags for current repo: "$name" 
+    # get all the tags for current repo: "$name"
     mapfile -t tags < <( registry.tags "$name" )
     [ "${#tags[*]}" -gt 0 ] || return 0
 
 
-    # get all the digests by tag for repo: "$name" 
+    # get all the digests by tag for repo: "$name"
     local tag digest
     local -A digests=()
     for tag in "${tags[@]}"; do
@@ -81,7 +81,7 @@ function registry.digestsWithTimes()
     done
 
 
-    # get the times of each digest for repo: "$name" 
+    # get the times of each digest for repo: "$name"
     local -A times
     for digest in "${!digests[@]}"; do
         # shellcheck disable=SC2206
@@ -127,7 +127,7 @@ function registry.digestsWithTimes()
 #----------------------------------------------------------------------------------------------
 function registry.digestsWithoutTimes()
 {
-    local -r name=${1:?}
+    local -r name="${1:?}"
 
     local -a tags
     mapfile -t tags < <(registry.tags "$name")
@@ -172,14 +172,14 @@ function registry.digestsWithoutTimes()
 #----------------------------------------------------------------------------------------------
 function registry.getCreateTime()
 {
-    local -r name=${1:?}
-    local -r digest=${2:?}
+    local -r name="${1:?}"
+    local -r digest="${2:?}"
     shift 2
     local -ra tags=( "$@" )
 
     local -r manifests="$(registry.manifest "$name" "${tags[0]}")"
     if [ "$manifests" ] && [[ ! $manifests =~ MANIFEST_INVALID ]]; then
-        local createTime=$(jq --compact-output --monochrome-output --raw-output 'try [ .history[].v1Compatibility.created | sub("\\.\\d+.*$"; "Z") | fromdate] | max | todate' <<< "$manifests")
+        local createTime="$(jq --compact-output --monochrome-output --raw-output 'try [ .history[].v1Compatibility.created | sub("\\.\\d+.*$"; "Z") | fromdate] | max | todate' <<< "$manifests")"
         if [ "$createTime" ]; then
             echo "$createTime"
             return 0
@@ -196,7 +196,7 @@ function registry.getCreateTime()
         local -i i="${#tags[*]}"
         while [ "$i" -gt 2 ]; do
             i="$(( i - 1 ))"
-            echo '                    '"${tags[$i]}"    
+            echo '                    '"${tags[$i]}"
         done
     fi
     echo "    recommend verifying that this image can be downloaded using 'docker pull $(registry.SERVER)$name:${tags[0]}'"
@@ -210,7 +210,7 @@ export -f registry.getCreateTime
 function registry.getLinks()
 {
     # headers:   'Link: </v2/_catalog?last=alpine%2Fphpmyadmin%2F5.0.2&n=100>; rel="next"'
-    local -r headers=${1:?}
+    local -r headers="${1:?}"
 
     sed -E -e 's|^Link:\s*</v2/(.*)>;\s*rel="(.+)".*$|["\2"]="/\1"|' <<< "$headers"
 }
@@ -246,14 +246,14 @@ function registry.io()
         [ "${DEBUG:-0}" -ne 0 ] && (echo '----------'; echo "$response" ; echo '----------'; echo )  >&2
         echo -n "$response"
 
-        #  Link: </v2/_catalog?last=thirdparty%2Fapm-server&n=100>; rel="next"
+        #  Link: </v2/_catalog?last=docker.io%2Fapm-server&n=100>; rel="next"
         text="$(grep -E '^Link:' "$headers")"
         [ "${text:-}" ]  || break
-        eval links=( $(registry.getLinks "$text") )
+        eval "links=( $(registry.getLinks "$text") )"
         url="${links['next']:-}"
         [ "${url:-}" ] || break
 
-        response=$(curl "${args[@]}" "$(registry.URL)$url") && status=$? || status=$?
+        response="$(curl "${args[@]}" "$(registry.URL)$url")" && status=$? || status=$?
     done
     [ "${TMP_DIR:-}" ] || rm "$headers"
     [ "$status" -ne 0 ] || return 0
@@ -283,8 +283,8 @@ export -f registry.io
 #----------------------------------------------------------------------------------------------
 function registry.layer()
 {
-    local -r name=${1:?}
-    local -r digest=${2:?}
+    local -r name="${1:?}"
+    local -r digest="${2:?}"
 
     registry.GET "$(registry.URL)/${name}/blobs/${digest}" || echo "Failed to get $(registry.URL)/${name}/blobs/${digest}" >&2
 }
@@ -293,8 +293,8 @@ export -f registry.layer
 #----------------------------------------------------------------------------------------------
 function registry.manifest()
 {
-    local -r name=${1:?}
-    local -r reference=${2:?}
+    local -r name="${1:?}"
+    local -r reference="${2:?}"
 
     registry.GET "$(registry.URL)/${name}/manifests/${reference}" |  jq --compact-output --monochrome-output '.history[].v1Compatibility|=fromjson' || echo "Failed to get $(registry.URL)/${name}/manifests/${reference}" >&2
 }
@@ -318,7 +318,7 @@ export -f registry.propertiesFile
 #----------------------------------------------------------------------------------------------
 function registry.tags()
 {
-    local -r name=${1:?}
+    local -r name="${1:?}"
 
     local -r json=$(registry.GET "$(registry.URL)/${name}/tags/list" || echo "Failed to get $(registry.URL)/${name}/tags/list" >&2)
     [ -z "${json:-}" ] || jq --compact-output --monochrome-output --raw-output '.tags[]?' <<< "$json"
