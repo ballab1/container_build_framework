@@ -34,11 +34,12 @@ function registry.digest()
     local -r name="${1:?}"
     local -r tag="${2:?}"
 
-    local -r digest="$(registry.GET --header "Accept: application/vnd.docker.distribution.manifest.v2+json" \
+    # get digest from header
+    local -r digest="$(registry.GET --head \
+                                    --header "Accept: application/vnd.docker.distribution.manifest.v2+json" \
                                     "$(registry.URL)/${name}/manifests/$(tr -d '"' <<< "$tag")" || echo "Failed to get $(registry.URL)/${name}/manifests/$tag" >&2)"
 
-#    [ -z "$digest" ] || ( awk '{gsub(/\r/,"");if (tolower($1) == "docker-content-digest:") {print $2}}' ) <<< "$digest"
-    [ -z "$digest" ] || ( jq -r '.layers[]|if has("digest") then .digest elif has("docker-content-digest") then ."docker-content-digest" else error("No digest found") end' <<< "$digest" )
+    [ -z "$digest" ] || ( awk '{gsub(/\r/,"");if (tolower($1) == "docker-content-digest:") {print $2}}' <<< "$digest" )
 }
 export -f registry.digest
 
