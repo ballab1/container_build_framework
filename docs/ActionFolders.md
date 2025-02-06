@@ -130,7 +130,7 @@ Every other declaration is optional.
 The *01.PHPADMIN* file, shows an example of the type of file expected in the _03.downloads_ folder:
 ```bash
 declare -A NGINX=(
-    ['version']=${NGINX_VERSION:-1.15.0}
+    ['version']=${NGINX_VERSION:-1.26.3}
     ['dir']="/tmp/nginx-${NGINX['version']}"
     ['file']="/tmp/nginx-${NGINX['version']}.tar.gz"
     ['url']="https://nginx.org/download/nginx-${NGINX['version']}.tar.gz"
