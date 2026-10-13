@@ -1,4 +1,7 @@
 #!/bin/echo 'This script cannot be executabled directly. Please source from another script'
+# -*- coding: utf-8 -*-
+#required_libs credentials lib term
+
 
 #----------------------------------------------------------------------------------------------
 #
@@ -7,28 +10,28 @@
 #----------------------------------------------------------------------------------------------
 
 #----------------------------------------------------------------------------------------------
-function confluence.DELETE()
+function confluence::DELETE()
 {
-    confluence.io --request DELETE "$@" || return 1
+    confluence::io --request DELETE "$@" || return 1
 }
-export -f confluence.DELETE
+#export -f confluence::DELETE
 
 #----------------------------------------------------------------------------------------------
-function confluence.GET()
+function confluence::GET()
 {
-    confluence.io --request GET "$@" || return 1
+    confluence::io --request GET "$@" || return 1
 }
-export -f confluence.GET
+#export -f confluence::GET
 
 #----------------------------------------------------------------------------------------------
-function confluence.io()
+function confluence::io()
 {
     local -a args
     local headers response url
     local -i status=0
     local -A links
     local -a credentials
-    mapfile -t credentials < <(credentials.get confluence)
+    mapfile -t credentials < <(credentials::get confluence)
     if [ "${DEBUG:-0}" -eq 0 ]; then
         credentials+=( '--silent' )
     else
@@ -58,7 +61,7 @@ function confluence.io()
 
     local curl_cmd=( 'curl' '--insecure' "$@" )
     echo
-(   term.log "***ERROR: failure to complete registry request
+(   term::log "***ERROR: failure to complete registry request
     command:       $(printf '%s ' "${curl_cmd[@]}")
     error code:    $(jq --compact-output --monochrome-output '.code?' <<< "$errors")
     error message: $(jq --compact-output --monochrome-output '.message?' <<< "$errors")
@@ -67,122 +70,122 @@ function confluence.io()
     " 'warn' >&2
     )
 
-    # check that 'term.log' was successful, otherwise, make sure something is echo'd
+    # check that 'term::log' was successful, otherwise, make sure something is echo'd
     [ $? -eq 0 ] || echo "command:       $(printf '%s ' "${curl_cmd[@]}")\\n    error code:    $errors" >&2
 
     return 1
 }
-export -f confluence.io
+#export -f confluence::io
 
 #----------------------------------------------------------------------------------------------
-function confluence.POST()
+function confluence::POST()
 {
-    confluence.io --request POST "$@" || return 1
+    confluence::io --request POST "$@" || return 1
 }
-export -f confluence.POST
+#export -f confluence::POST
 
 #----------------------------------------------------------------------------------------------
-function confluence.propFile()
+function confluence::propFile()
 {
     echo "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/properties/$(basename "${BASH_SOURCE[0]%.*}").properties"
 }
 
-export CONFLUENCE_PROPERTIES_FILE="${CONFLUENCE_PROPERTIES_FILE:=$(confluence.propFile)}"
+export CONFLUENCE_PROPERTIES_FILE="${CONFLUENCE_PROPERTIES_FILE:=$(confluence::propFile)}"
 
 #----------------------------------------------------------------------------------------------
-function confluence.propertiesFile()
+function confluence::propertiesFile()
 {
-    echo "${CONFLUENCE_PROPERTIES_FILE:=$(confluence.propFile)}"
+    echo "${CONFLUENCE_PROPERTIES_FILE:=$(confluence::propFile)}"
 }
-export -f confluence.propertiesFile
+#export -f confluence::propertiesFile
 
 #----------------------------------------------------------------------------------------------
-function confluence.HOST()
+function confluence::HOST()
 {
     if [ "${OPTS['host']:-}" ]; then
          echo "${OPTS['host']}"
     else
-        echo "${_CONFLUENCE_HOST:=$(lib.getHost "$( confluence.SERVER )")}"
+        echo "${_CONFLUENCE_HOST:=$(lib::getHost "$( confluence::SERVER )")}"
     fi
 }
-export -f confluence.HOST
+#export -f confluence::HOST
 
 #----------------------------------------------------------------------------------------------
-function confluence.PROD()
+function confluence::PROD()
 {
     if [ "${OPTS['prod']:-}" ]; then
          echo "${OPTS['prod']}"
     else
-        echo "${_CONFLUENCE_PROD:=$(lib.getProperty 'PROD' "$( confluence.propertiesFile )")}"
+        echo "${_CONFLUENCE_PROD:=$(lib::getProperty 'PROD' "$( confluence::propertiesFile )")}"
     fi
 }
-export -f confluence.PROD
+#export -f confluence::PROD
 
 #----------------------------------------------------------------------------------------------
-function confluence.PUT()
+function confluence::PUT()
 {
-    confluence.io --request PUT "$@" || return 1
+    confluence::io --request PUT "$@" || return 1
 }
-export -f confluence.PUT
+#export -f confluence::PUT
 
 #----------------------------------------------------------------------------------------------
-function confluence.REST_API()
+function confluence::REST_API()
 {
     if [ "${OPTS['rest_api']:-}" ]; then
          echo "${OPTS['rest_api']}"
     else
-        echo "${_CONFLUENCE_RESTAPI:=$(lib.getProperty 'REST_API' "$( confluence.propertiesFile )")}"
+        echo "${_CONFLUENCE_RESTAPI:=$(lib::getProperty 'REST_API' "$( confluence::propertiesFile )")}"
     fi
 }
-export -f confluence.REST_API
+#export -f confluence::REST_API
 
 #----------------------------------------------------------------------------------------------
-function confluence.SERVER()
+function confluence::SERVER()
 {
     if [ "${OPTS['server']:-}" ]; then
          echo "${OPTS['server']}"
     else
-        echo "${_CONFLUENCE_SERVER:=$(lib.getProperty 'SERVER' "$( confluence.propertiesFile )")}"
+        echo "${_CONFLUENCE_SERVER:=$(lib::getProperty 'SERVER' "$( confluence::propertiesFile )")}"
     fi
 }
-export -f confluence.SERVER
+#export -f confluence::SERVER
 
 #----------------------------------------------------------------------------------------------
-function confluence.TEST()
+function confluence::TEST()
 {
     if [ "${OPTS['test']:-}" ]; then
          echo "${OPTS['test']}"
     else
-        echo "${_CONFLUENCE_TEST:=$(lib.getProperty 'TEST' "$( confluence.propertiesFile )")}"
+        echo "${_CONFLUENCE_TEST:=$(lib::getProperty 'TEST' "$( confluence::propertiesFile )")}"
     fi
 }
-export -f confluence.TEST
+#export -f confluence::TEST
 
 #----------------------------------------------------------------------------------------------
-function confluence.URL()
+function confluence::URL()
 {
     if [ "${OPTS['url']:-}" ]; then
          echo "${OPTS['url']}"
     else
-        echo "${_CONFLUENCE_URL:=$(lib.getProperty 'URL' "$( confluence.propertiesFile )")}"
+        echo "${_CONFLUENCE_URL:=$(lib::getProperty 'URL' "$( confluence::propertiesFile )")}"
     fi
 }
-export -f confluence.URL
+#export -f confluence::URL
 
 #----------------------------------------------------------------------------------------------
-function confluence.USER()
+function confluence::USER()
 {
     if [ "${OPTS['user']:-}" ]; then
          echo "${OPTS['user']}"
     else
-        echo "${_CONFLUENCE_USER:=$(lib.getProperty 'USER' "$( confluence.propertiesFile )")}"
+        echo "${_CONFLUENCE_USER:=$(lib::getProperty 'USER' "$( confluence::propertiesFile )")}"
     fi
 }
-export -f confluence.USER
+#export -f confluence::USER
 
 #----------------------------------------------------------------------------------------------
-function confluence.USERID()
+function confluence::USERID()
 {
-    confluence.USER
+    confluence::USER
 }
-export -f confluence.USERID
+#export -f confluence::USERID

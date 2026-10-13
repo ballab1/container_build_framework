@@ -1,11 +1,13 @@
 #!/bin/echo 'This script cannot be executabled directly. Please source from another script'
+# -*- coding: utf-8 -*-
+#required_libs term timer trap
 
 #----------------------------------------------------------------------------------------------
 #
 #   appenv.bashlib; basic functions to load our libraries
 #
 #----------------------------------------------------------------------------------------------
-function appenv.capture()
+function appenv::capture()
 {
   file="${1:-"/tmp/$(basename "${BASH_SOURCE[0]}")"}"
   :> "$file"
@@ -13,7 +15,7 @@ function appenv.capture()
 }
 
 #----------------------------------------------------------------------------------------------
-function appenv.cmdError()
+function appenv::cmdError()
 {
     local msg="${1:'ERROR: invalid command options'}"
 
@@ -21,13 +23,13 @@ function appenv.cmdError()
     OPTS['quiet']=1
     # shellcheck disable=SC2154
     OPTS['debug']=2
-    appenv.showArgs
-    term.elog '\n'"$msg"'\n' 'error'
+    appenv::showArgs
+    term::elog '\n'"$msg"'\n' 'error'
     exit 1
 }
 
 #----------------------------------------------------------------------------------------------
-function appenv.cmdLineArgs()
+function appenv::cmdLineArgs()
 {
     local -a optsJSON=()
     local -i status=0
@@ -47,12 +49,12 @@ function appenv.cmdLineArgs()
                     shift
                     [ $# -ge 1 ] && ARGS=( "$@" )
                 fi
-                appenv.usage
-                OPTS['cmd']='appenv.usage'
+                appenv::usage
+                OPTS['cmd']='appenv::usage'
                 return 0;;
 
             -c|--credentials)
-                [[ $# -le 2 || $2 = -* ]] && trap.die 'no credentials file specified!'
+                [[ $# -le 2 || $2 = -* ]] && trap::die 'no credentials file specified!'
                 # shellcheck disable=SC2154
                 OPTS['credentials']="$2"
                 shift 2;;
@@ -71,7 +73,7 @@ function appenv.cmdLineArgs()
                 shift;;
 
             -u|--user)
-                [[ $# -le 2 || $2 = -* ]] && trap.die 'no user specified'
+                [[ $# -le 2 || $2 = -* ]] && trap::die 'no user specified'
                 # shellcheck disable=SC2154
                 OPTS['user']="$2"
                 shift 2;;
@@ -93,9 +95,9 @@ function appenv.cmdLineArgs()
                             fi
                         fi
                     fi
-                elif [ "$(type -t "${LIB_NAME}.cmdLineArgs")" ]; then
-                    "${LIB_NAME}.cmdLineArgs" "$@" && status=$? || status=$?
-                    [ "$status" -ne 0 ] && [ -z "${OPTS['cmd']:-}" ] && trap.die 'invalid option/argument'
+                elif [ "$(type -t "${LIB_NAME}::cmdLineArgs")" ]; then
+                    "${LIB_NAME}::cmdLineArgs" "$@" && status=$? || status=$?
+                    [ "$status" -ne 0 ] && [ -z "${OPTS['cmd']:-}" ] && trap::die 'invalid option/argument'
                     if [ "${OPTS['shift']:-0}" -gt 0 ]; then
                         shift "${OPTS['shift']}"
                         unset OPTS['shift']
@@ -109,8 +111,8 @@ function appenv.cmdLineArgs()
     done
 
     if [ -z "${OPTS['cmd']:-}" ]; then
-        [ "${#ARGS[*]}" -gt 0 ] && term.elog "***ERROR: '${ARGS[0]}' invalid command line action provided\\n" 'error'
-        appenv.usage
+        [ "${#ARGS[*]}" -gt 0 ] && term::elog "***ERROR: '${ARGS[0]}' invalid command line action provided\\n" 'error'
+        appenv::usage
         exit 0
     fi
 
@@ -123,67 +125,67 @@ function appenv.cmdLineArgs()
     [ $# -ge 1 ] && ARGS=( "$@" )
 
     if [ "${OPTS['argsCondition']:-}" ]; then
-        eval "[[ ${OPTS['argsCondition']} ]]" || trap.die 'invalid arguments!'
+        eval "[[ ${OPTS['argsCondition']} ]]" || trap::die 'invalid arguments!'
     fi
 
-    [ "${OPTS['cmd']:-}" ] || trap.die 'invalid arguments'
+    [ "${OPTS['cmd']:-}" ] || trap::die 'invalid arguments'
 
     return 0
 }
 
 #/----------------------------------------------------------------------------------------------
-function appenv.elapsedTime()
+function appenv::elapsedTime()
 {
     local -i elapsed=$(( $(date '+%s') - START_TIME ))
     if [ $elapsed -gt 2 ];then
-        timer.fmtElapsed "$elapsed"
+        timer::fmtElapsed "$elapsed"
     fi
 }
 
 #----------------------------------------------------------------------------------------------
-function appenv.initialize()
+function appenv::initialize()
 {
     OUTDIR="$(readlink -f "$(pwd)")"
     TMP_DIR="$(mktemp -d)"
 
-    appenv.loader "${LIB_NAME}.main"
-    trap appenv.onExit EXIT
+    appenv::loader "${LIB_NAME}::main"
+    trap appenv::onExit EXIT
 
     # shellcheck disable=SC1090
     [ -e "${PROGRAM_DIR}/${LIB_NAME}.bashlib" ] && source "${PROGRAM_DIR}/${LIB_NAME}.bashlib"
-    [ "$(type -t "${LIB_NAME}.initialize")" ] && "${LIB_NAME}.initialize"
+    [ "$(type -t "${LIB_NAME}::initialize")" ] && "${LIB_NAME}::initialize"
 
-    # check our we have correct support
+    # check we have correct support
 
-    #lib.checkAppVersion 'docker-compose' '1.18.0'
-    #lib.checkAppVersion 'docker' '17.12.0'
-    #lib.checkAppVersion 'jq' '1.5'
-    #lib.checkAppVersion 'curl' '7.40.0'
+    #lib::checkAppVersion 'docker-compose' '1.18.0'
+    #lib::checkAppVersion 'docker' '17.12.0'
+    #lib::checkAppVersion 'jq' '1.5'
+    #lib::checkAppVersion 'curl' '7.40.0'
 
-    appenv.cmdLineArgs "$@"
+    appenv::cmdLineArgs "$@"
 
     # order is to optimize resolution dependencies
     if [ "${OPTS['cached']:-0}" = 0 ]; then
         # shellcheck disable=SC2154
-        [ "$(type -t "${LIB_NAME%%-*}.PROD")" ]     && OPTS['prod']="$("${LIB_NAME%%-*}.PROD")"
+        [ "$(type -t "${LIB_NAME%%-*}::PROD")" ]     && OPTS['prod']="$("${LIB_NAME%%-*}::PROD")"
         # shellcheck disable=SC2154
-        [ "$(type -t "${LIB_NAME%%-*}.SERVER")" ]   && OPTS['server']="$("${LIB_NAME%%-*}.SERVER")"
+        [ "$(type -t "${LIB_NAME%%-*}::SERVER")" ]   && OPTS['server']="$("${LIB_NAME%%-*}::SERVER")"
         # shellcheck disable=SC2154
-        [ "$(type -t "${LIB_NAME%%-*}.URL")" ]      && OPTS['url']="$("${LIB_NAME%%-*}.URL")"
+        [ "$(type -t "${LIB_NAME%%-*}::URL")" ]      && OPTS['url']="$("${LIB_NAME%%-*}::URL")"
         # shellcheck disable=SC2154
-        [ "$(type -t "${LIB_NAME%%-*}.HOST")" ]     && OPTS['host']="$("${LIB_NAME%%-*}.HOST")"
+        [ "$(type -t "${LIB_NAME%%-*}::HOST")" ]     && OPTS['host']="$("${LIB_NAME%%-*}::HOST")"
         # shellcheck disable=SC2154
-        [ "$(type -t "${LIB_NAME%%-*}.REST_API")" ] && OPTS['rest_api']="$("${LIB_NAME%%-*}.REST_API")"
+        [ "$(type -t "${LIB_NAME%%-*}::REST_API")" ] && OPTS['rest_api']="$("${LIB_NAME%%-*}::REST_API")"
         # shellcheck disable=SC2154
-        [ "$(type -t "${LIB_NAME%%-*}.USER")" ]     && OPTS['user']="$("${LIB_NAME%%-*}.USER")"
+        [ "$(type -t "${LIB_NAME%%-*}::USER")" ]     && OPTS['user']="$("${LIB_NAME%%-*}::USER")"
         # shellcheck disable=SC2154
-        [ "$(type -t "${LIB_NAME%%-*}.TEST")" ]     && OPTS['test']="$("${LIB_NAME%%-*}.TEST")"
+        [ "$(type -t "${LIB_NAME%%-*}::TEST")" ]     && OPTS['test']="$("${LIB_NAME%%-*}::TEST")"
     fi
     return 0
 }
 
 #----------------------------------------------------------------------------------------------
-function appenv.loader()
+function appenv::loader()
 {
     readonly START_TIME="$(date '+%s')"
 
@@ -223,11 +225,11 @@ function appenv.loader()
     fi
     export TOP
 
-    trap.die 'unable to locate libraries'
+    trap::die 'unable to locate libraries'
 }
 
 #----------------------------------------------------------------------------------------------
-function appenv.onExit()
+function appenv::onExit()
 {
     local status=$?
 
@@ -238,7 +240,7 @@ function appenv.onExit()
     trap - INT
     trap - PIPE
 
-    [ "$(type -t "${LIB_NAME}.onExit")" ] && "${LIB_NAME}.onExit"
+    [ "$(type -t "${LIB_NAME}::onExit")" ] && "${LIB_NAME}::onExit"
 
     local base="$(basename "$LOGFILE")"
     local -r logfile="${OUTDIR}/${base//.log}.$(date '+%g%m%d%H%M%S').log"
@@ -252,7 +254,7 @@ function appenv.onExit()
     [ "${TMP_DIR:-}" ] && [ "${TMP_DIR:-}" != '/' ] && [ -e "${TMP_DIR:-}" ] && rm -rf "${TMP_DIR:-}"
 
 
-    local elapsed="$(appenv.elapsedTime)"
+    local elapsed="$(appenv::elapsedTime)"
     [ -z "${elapsed:-}" ] || (echo -e '\nElapsed time: '"$elapsed" | tee -a "$logfile") >&2
 
     # strip color codes from log file
@@ -262,14 +264,14 @@ function appenv.onExit()
 }
 
 #----------------------------------------------------------------------------------------------
-function appenv.run()
+function appenv::run()
 {
-    [ "${OPTS['quiet']:-0}" -eq 0 ] && term.elog "$(printf '%s ' "$@")"'\n' 'grey'
+    [ "${OPTS['quiet']:-0}" -eq 0 ] && term::elog "$(printf '%s ' "$@")"'\n' 'grey'
     eval "$@" > /dev/null
 }
 
 #----------------------------------------------------------------------------------------------
-function appenv.showArgs()
+function appenv::showArgs()
 {
     # show args
     {
@@ -311,7 +313,7 @@ function appenv.showArgs()
 }
 
 #----------------------------------------------------------------------------------------------
-function appenv.usage()
+function appenv::usage()
 {
     local context="${OPTS['cmd']:-}"
     if [[ "${OPTS['cmd']:-}" = *.catalogIterator ]]; then
@@ -381,7 +383,7 @@ function appenv.usage()
 
         [ -s "$contextHelp" ] && envsubst < "$contextHelp"
     else
-        [ -s "$contextHelp" ] || trap.die 'unable to locate usage information: '"$contextHelp"
+        [ -s "$contextHelp" ] || trap::die 'unable to locate usage information: '"$contextHelp"
         if [ -f "$optsFile" ]; then
             local msg="$(jq -ser '.[]|select(.name|ascii_downcase == "'"${context,,}"'").message' "$optsFile" 2>/dev/null ||:)"
             eval 'echo $msg'

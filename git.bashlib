@@ -1,4 +1,6 @@
 #!/bin/echo 'This script cannot be executabled directly. Please source from another script'
+# -*- coding: utf-8 -*-
+#required_libs git term trap
 
 #----------------------------------------------------------------------------------------------
 #
@@ -6,9 +8,9 @@
 #
 
 #----------------------------------------------------------------------------------------------
-function git.branch()
+function git::branch()
 {
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git rev-parse --abbrev-ref HEAD\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog 'git rev-parse --abbrev-ref HEAD\n' 'grey'
 
     local branch=$(git rev-parse --abbrev-ref HEAD)
     if [ "$branch" = 'HEAD' ]; then
@@ -19,7 +21,7 @@ function git.branch()
                                 sort -u | \
                                 awk '{if(length($0)>0) {print $0}}')
         if [ "${#branches[0]}" -eq 0 ]; then
-            term.elog "***ERROR: failure to determine current branch for $(git.repoName). Most likely on a detached HEAD"'\n' 'warn'
+            term::elog "***ERROR: failure to determine current branch for $(git::repoName). Most likely on a detached HEAD"'\n' 'warn'
             git log -n8 --oneline --graph --abbrev-commit --decorate --all >&2
             return 1
         fi
@@ -28,10 +30,10 @@ function git.branch()
     echo "$branch"
     return 0
 }
-export -f git.branch
+#export -f git::branch
 
 #----------------------------------------------------------------------------------------------
-function git.branchOrTagName()
+function git::branchOrTagName()
 {
     # Checking if we are currently on a branch or tag
     # If we are on a tag then "git branch" outputs "* (detached from <tag_name>)"
@@ -47,239 +49,239 @@ function git.branchOrTagName()
         grep \*  <<< "$gb" | cut -d ' ' -f4 | tr -d ')'
     fi
 }
-export -f git.branchOrTagName
+#export -f git::branchOrTagName
 
 #----------------------------------------------------------------------------------------------
-function git.checkout()
+function git::checkout()
 {
     local -r commit=${1:?}
     shift
     local -r flags=( "$@" )
 
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git checkout $(echo ${flags[*]:-}) $commit"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog "git checkout $(echo ${flags[*]:-}) $commit"'\n' 'grey'
     git checkout ${flags[*]:-} "$commit"
 }
-export -f git.checkout
+#export -f git::checkout
 
 #----------------------------------------------------------------------------------------------
-function git.clone()
+function git::clone()
 {
     local -r repo=${1:?}
     local -r dir=${2:-}
     shift 2
     local -r flags=( "$@" )
 
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git clone $(echo ${flags[*]:-}) -- $repo ${dir:-}"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog "git clone $(echo ${flags[*]:-}) -- $repo ${dir:-}"'\n' 'grey'
     git clone ${flags[*]:-} -- "$repo" ${dir:-}
 }
-export -f git.clone
+#export -f git::clone
 
 #----------------------------------------------------------------------------------------------
-function git.commit()
+function git::commit()
 {
     local -r branch_id=${1:?}
 
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git rev-parse refs/remotes/origin/${branch_id}^{commit}"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog "git rev-parse refs/remotes/origin/${branch_id}^{commit}"'\n' 'grey'
     git rev-parse "refs/remotes/origin/${branch_id}^{commit}"
 }
-export -f git.commit
+#export -f git::commit
 
 #----------------------------------------------------------------------------------------------
-function git.commitAuthor()
+function git::commitAuthor()
 {
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git log -1 --pretty=format:"%an"\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog 'git log -1 --pretty=format:"%an"\n' 'grey'
     git log -1 --pretty=format:"%an"
 }
-export -f git.commitAuthor
+#export -f git::commitAuthor
 
 #----------------------------------------------------------------------------------------------
-function git.commitDate()
+function git::commitDate()
 {
-    term..elog 'git log -1 --pretty=format:"%cd"' 'grey'
+    term::elog 'git log -1 --pretty=format:"%cd"' 'grey'
     git log -1 --pretty=format:"%cd"
 }
-export -f git.commitDate
+#export -f git::commitDate
 
 #----------------------------------------------------------------------------------------------
-function git.commitEmail()
+function git::commitEmail()
 {
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git log -1 --pretty=format:"%ce"\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog 'git log -1 --pretty=format:"%ce"\n' 'grey'
     git log -1 --pretty=format:"%ce"
 }
-export -f git.commitEmail
+#export -f git::commitEmail
 
 #----------------------------------------------------------------------------------------------
-function git.commitEpoch()
+function git::commitEpoch()
 {
     git log -1 --pretty=format:"%ct"
 }
-export -f git.commitEpoch
+#export -f git::commitEpoch
 
 #----------------------------------------------------------------------------------------------
-function git.commitSummary()
+function git::commitSummary()
 {
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git log -1 --pretty=format:"%s"\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog 'git log -1 --pretty=format:"%s"\n' 'grey'
     git log -1 --pretty=format:"%s"
 }
-export -f git.commitSummary
+#export -f git::commitSummary
 
 #----------------------------------------------------------------------------------------------
-function git.config()
+function git::config()
 {
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "$(printf '%s ' 'git' 'config' "$@")"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog "$(printf '%s ' 'git' 'config' "$@")"'\n' 'grey'
     git config "$@"
 }
-export -f git.config
+#export -f git::config
 
 #----------------------------------------------------------------------------------------------
-function git.cryptUnlock()
+function git::cryptUnlock()
 {
     local -r key=${1:-}
 
     if [ -z $(command -v git-crypt) ]; then
-        term.elog 'Unable to locate "git-crypt"'
+        term::elog 'Unable to locate "git-crypt"'
         return 1
     fi
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git crypt unlock\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog 'git crypt unlock\n' 'grey'
     git crypt unlock ${key:-}
 }
-export -f git.cryptUnlock
+#export -f git::cryptUnlock
 
 #----------------------------------------------------------------------------------------------
-function git.describe()
+function git::describe()
 {
     local -r flags=( "$@" )
 
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git describe $(echo ${flags[*]:-})"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog "git describe $(echo ${flags[*]:-})"'\n' 'grey'
     git describe ${flags[*]:-}
 }
-export -f git.describe
+#export -f git::describe
 
 #----------------------------------------------------------------------------------------------
-function git.difftree()
+function git::difftree()
 {
     local -r flags=( "$@" )
 
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git diff-tree $(echo ${flags[*]:-})"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog "git diff-tree $(echo ${flags[*]:-})"'\n' 'grey'
     git diff-tree ${flags[*]:-}
 }
-export -f git.difftree
+#export -f git::difftree
 
 #----------------------------------------------------------------------------------------------
-function git.diff()
+function git::diff()
 {
     local -r flags=( "$@" )
 
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git diff $(echo ${flags[*]:-})"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog "git diff $(echo ${flags[*]:-})"'\n' 'grey'
     git diff ${flags[*]:-}
 }
-export -f git.diff
+#export -f git::diff
 
 #----------------------------------------------------------------------------------------------
-function git.fetch()
+function git::fetch()
 {
     [ $# -eq 0 ] && return 1
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git fetch '$(IFS=' ' echo $*)'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog 'git fetch '$(IFS=' ' echo $*)'\n' 'grey'
     git fetch $@
 }
-export -f git.fetch
+#export -f git::fetch
 
 #----------------------------------------------------------------------------------------------
-function git.HEAD()
+function git::HEAD()
 {
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git rev-parse HEAD\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog 'git rev-parse HEAD\n' 'grey'
     git rev-parse HEAD
 }
-export -f git.HEAD
+#export -f git::HEAD
 
 #----------------------------------------------------------------------------------------------
-function git.initWorkspace()
+function git::initWorkspace()
 {
     local -r repo=${1:?}
     local -r refs=${2:-'*'}
 
     # commands obtained from Jenkins console output
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git init .\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog 'git init .\n' 'grey'
     git init '.'
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git config --local credential.helper environ\n' 'grey'
-    git config --local credential.helper environ 2>/dev/null || trap.die "Failed to set credential helper"
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git config remote.origin.url $repo"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog 'git config --local credential.helper environ\n' 'grey'
+    git config --local credential.helper environ 2>/dev/null || trap::die "Failed to set credential helper"
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog "git config remote.origin.url $repo"'\n' 'grey'
     git config remote.origin.url "$repo" # timeout=10
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git config --add remote.origin.fetch +refs/heads/${refs}:refs/remotes/origin/${refs}"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog "git config --add remote.origin.fetch +refs/heads/${refs}:refs/remotes/origin/${refs}"'\n' 'grey'
     git config --add remote.origin.fetch "+refs/heads/${refs}:refs/remotes/origin/${refs}" # timeout=10
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git config remote.origin.url $repo"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog "git config remote.origin.url $repo"'\n' 'grey'
     git config remote.origin.url "$repo" # timeout=10
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git -c core.askpass=true fetch --depth=1 $repo +refs/heads/${refs}:refs/remotes/origin/${refs}"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog "git -c core.askpass=true fetch --depth=1 $repo +refs/heads/${refs}:refs/remotes/origin/${refs}"'\n' 'grey'
     git -c core.askpass=true fetch --depth=1 "$repo" "+refs/heads/${refs}:refs/remotes/origin/${refs}" 2>/dev/null
 }
-export -f git.initWorkspace
+#export -f git::initWorkspace
 
 #----------------------------------------------------------------------------------------------
 #
 # Returns true if the current repo has modified content
 #
-function git.isDirty()
+function git::isDirty()
 {
-    [[ "$(git.describe --tags --always --dirty)" = *-dirty ]]
+    [[ "$(git::describe --tags --always --dirty)" = *-dirty ]]
 }
-export -f git.isDirty
+#export -f git::isDirty
 
 #----------------------------------------------------------------------------------------------
 #
 # Returns true if the argument passed in is a repository managed file
-# if git.isRepositoryFile "project.version" echo "yes"
+# if git::isRepositoryFile "project.version" echo "yes"
 #
-function git.isRepositoryFile()
+function git::isRepositoryFile()
 {
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git ls-files $1 --error-unmatch"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog "git ls-files $1 --error-unmatch"'\n' 'grey'
     git ls-files "$1" --error-unmatch &> /dev/null
 }
-export -f git.isRepositoryFile
+#export -f git::isRepositoryFile
 
  #----------------------------------------------------------------------------------------------
 #
 # Returns true if the argument passed in is a repository managed file
-# if git.isRepositoryFile "project.version" echo "yes"
+# if git::isRepositoryFile "project.version" echo "yes"
 #
-function git.isValid()
+function git::isValid()
 {
-    git.config
+    git::config
 }
-export -f git.isValid
+#export -f git::isValid
 
 #----------------------------------------------------------------------------------------------
-function git.lsRemote()
+function git::lsRemote()
 {
     local -r branch=${1:?}
 
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git ls-remote $branch"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog "git ls-remote $branch"'\n' 'grey'
     git ls-remote "$branch"
 }
-export -f git.lsRemote
+#export -f git::lsRemote
 
 #----------------------------------------------------------------------------------------------
-function git.lsTree()
+function git::lsTree()
 {
     local -r tree_ish=${1:?}
     local -r path=${2:?}
     shift 2
     local -r flags=( "$@" )
 
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git ls-tree $(echo ${flags[*]:-}) -- $tree_ish $path"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog "git ls-tree $(echo ${flags[*]:-}) -- $tree_ish $path"'\n' 'grey'
     git ls-tree ${flags[*]:-} -- "$tree_ish" "$path"
 }
-export -f git.lsTree
+#export -f git::lsTree
 
 #----------------------------------------------------------------------------------------------
-function git.origin()
+function git::origin()
 {
     local -r dir=${1:-.}
 
     cd "$dir"
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "$(git.describe --tags --always --dirty)"'\n' 'grey'
-    local version="$(git.describe --tags --always --dirty)"
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog "$(git::describe --tags --always --dirty)"'\n' 'grey'
+    local version="$(git::describe --tags --always --dirty)"
 
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git ls-files --others --exclude-standard\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog 'git ls-files --others --exclude-standard\n' 'grey'
     local -i untracked=$(git ls-files --others --exclude-standard | wc -l)
     if [ "$untracked" -gt 0 ]; then
         if [ "$version" = *dirty ]; then
@@ -290,34 +292,34 @@ function git.origin()
     fi
     echo "$version"
 }
-export -f git.origin
+#export -f git::origin
 
 #----------------------------------------------------------------------------------------------
-function git.populateWorkspace()
+function git::populateWorkspace()
 {
     local -r commitid=${1:?}
 
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git checkout --quiet --force $commitid --"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog "git checkout --quiet --force $commitid --"'\n' 'grey'
     GIT_LFS_SKIP_SMUDGE=1 git checkout --quiet --force "$commitid" -- 2>/dev/null
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git lfs pull\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog 'git lfs pull\n' 'grey'
     git lfs pull 2>/dev/null
 }
-export -f git.populateWorkspace
+#export -f git::populateWorkspace
 
 #----------------------------------------------------------------------------------------------
-function git.pull()
+function git::pull()
 {
     local -r flags=( "$@" )
 
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git pull $(echo ${flags[*]:-})"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog "git pull $(echo ${flags[*]:-})"'\n' 'grey'
     git pull ${flags[*]:-}
 }
-export -f git.pull
+#export -f git::pull
 
 #----------------------------------------------------------------------------------------------
-function git.referenceBranch()
+function git::referenceBranch()
 {
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git config --get core.branch\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog 'git config --get core.branch\n' 'grey'
 
     local ref="$(git config --get core.branch)"
     [[ -z "$ref" || $(git rev-parse --verify --quiet "origin/$ref" &> /dev/null ; echo $?) -ne 0 ]] && ref='main'
@@ -325,64 +327,64 @@ function git.referenceBranch()
 }
 
 #----------------------------------------------------------------------------------------------
-function git.refs()
+function git::refs()
 {
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git log -n 1 --pretty=%d HEAD\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog 'git log -n 1 --pretty=%d HEAD\n' 'grey'
     git log -n 1 --pretty=%d HEAD | sed 's/[^\(]*(\([^\)]*\)).*/\1/'
 }
-export -f git.refs
+#export -f git::refs
 
 #----------------------------------------------------------------------------------------------
-function git.remoteUrl()
+function git::remoteUrl()
 {
 #    git remote get-url origin
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git config --get remote.origin.url\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog 'git config --get remote.origin.url\n' 'grey'
     git config --get remote.origin.url
 }
-export -f git.remoteUrl
+#export -f git::remoteUrl
 
 #----------------------------------------------------------------------------------------------
-function git.repoName()
+function git::repoName()
 {
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git remote get-url origin\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog 'git remote get-url origin\n' 'grey'
     basename "$(git remote get-url origin)"
 }
-export -f git.repoName
+#export -f git::repoName
 
 #----------------------------------------------------------------------------------------------
-function git.reset()
+function git::reset()
 {
     local -r commit=${1:?}
     shift
     local -r flags=( "$@" )
 
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git reset $(echo ${flags[*]:-}) $commit"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog "git reset $(echo ${flags[*]:-}) $commit"'\n' 'grey'
     git reset ${flags[*]:-} "$commit"
 }
-export -f git.reset
+#export -f git::reset
 
 #----------------------------------------------------------------------------------------------
-function git.status()
+function git::status()
 {
     local -r flags=( "$@" )
 
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog "git status ${flags[*]:-}"'\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog "git status ${flags[*]:-}"'\n' 'grey'
     git status ${flags[*]:-}
 }
-export -f git.status
+#export -f git::status
 
 #----------------------------------------------------------------------------------------------
-function git.submodules()
+function git::submodules()
 {
     local -r dir="${1:?}"
-    
+
     cd "$dir"
     git submodule | awk '{print "[" $1 "]=\"" $2 "\""}'
 }
-export -f git.submodules
+#export -f git::submodules
 
 #----------------------------------------------------------------------------------------------
-function git.toHTTPS()
+function git::toHTTPS()
 {
     local remote=${1:?"Input parameter 'remote' must be passed to 'function ${FUNCNAME[0]}()'"}
 
@@ -392,48 +394,48 @@ function git.toHTTPS()
     [ "${remote:0:8}" = 'https://' ] || remote="https://$remote"
     echo "$remote"
 }
-export -f git.toHTTPS
+#export -f git::toHTTPS
 
 #----------------------------------------------------------------------------------------------
-function git.url()
+function git::url()
 {
-    git.toHTTPS "$( git.remoteUrl )"
+    git::toHTTPS "$( git::remoteUrl )"
 }
-export -f git.url
+#export -f git::url
 
 #----------------------------------------------------------------------------------------------
-function git.urlCommit()
+function git::urlCommit()
 {
-    echo "$(git.url)/commit/$(git.HEAD)"
+    echo "$(git::url)/commit/$(git::HEAD)"
 }
-export -f git.urlCommit
+#export -f git::urlCommit
 
 #----------------------------------------------------------------------------------------------
-function git.user()
+function git::user()
 {
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git config --get credential.username\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog 'git config --get credential.username\n' 'grey'
     local user="$(git config --get credential.username 2>/dev/null)" || :
     if [ "$user" ]; then
         echo "$user"
     else
-        [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git config --get adsk.github.account\n' 'grey'
+        [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog 'git config --get adsk.github.account\n' 'grey'
         git config --get adsk.github.account 2>/dev/null || :
     fi
 }
-export -f git.user
+#export -f git::user
 
 #----------------------------------------------------------------------------------------------
-function git.userEmail()
+function git::userEmail()
 {
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git config --get user.email\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog 'git config --get user.email\n' 'grey'
     git config --get user.email || :
 }
-export -f git.userEmail
+#export -f git::userEmail
 
 #----------------------------------------------------------------------------------------------
-function git.userName()
+function git::userName()
 {
-    [ "${DEBUG_TRACE:-0}" = 0 ] || term.dlog 'git config --get user.name\n' 'grey'
+    [ "${DEBUG_TRACE:-0}" = 0 ] || term::dlog 'git config --get user.name\n' 'grey'
     git config --get user.name || :
 }
-export -f git.userName
+#export -f git::userName
