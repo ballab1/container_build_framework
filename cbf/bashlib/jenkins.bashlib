@@ -1,4 +1,6 @@
 #!/bin/echo 'This script cannot be executabled directly. Please source from another script'
+# -*- coding: utf-8 -*-
+#required_libs credentials lib term
 
 #----------------------------------------------------------------------------------------------
 #
@@ -7,28 +9,28 @@
 #----------------------------------------------------------------------------------------------
 
 #----------------------------------------------------------------------------------------------
-function jenkins.DELETE()
+function jenkins::DELETE()
 {
-    jenkins.io --request DELETE "$@" || return 1
+    jenkins::io --request DELETE "$@" || return 1
 }
-export -f jenkins.DELETE
+#export -f jenkins::DELETE
 
 #----------------------------------------------------------------------------------------------
-function jenkins.GET()
+function jenkins::GET()
 {
-    jenkins.io --request GET "$@" || return 1
+    jenkins::io --request GET "$@" || return 1
 }
-export -f jenkins.GET
+#export -f jenkins::GET
 
 #----------------------------------------------------------------------------------------------
-function jenkins.io()
+function jenkins::io()
 {
     local -a args
     local headers response url
     local -i status=0
     local -A links
     local -a credentials
-    mapfile -t credentials < <(credentials.get jenkins)
+    mapfile -t credentials < <(credentials::get jenkins)
     if [ "${DEBUG:-0}" -eq 0 ]; then
         credentials+=( '--silent' )
     else
@@ -58,7 +60,7 @@ function jenkins.io()
 
     local curl_cmd=( 'curl' '--insecure' "$@" )
     echo
-(   term.log "***ERROR: failure to complete registry request
+(   term::log "***ERROR: failure to complete registry request
     command:       $(printf '%s ' "${curl_cmd[@]}")
     error code:    $(jq --compact-output --monochrome-output '.code?' <<< "$errors")
     error message: $(jq --compact-output --monochrome-output '.message?' <<< "$errors")
@@ -67,122 +69,122 @@ function jenkins.io()
     " 'warn' >&2
     )
 
-    # check that 'term.log' was successful, otherwise, make sure something is echo'd
+    # check that 'term::log' was successful, otherwise, make sure something is echo'd
     [ $? -eq 0 ] || echo "command:       $(printf '%s ' "${curl_cmd[@]}")\\n    error code:    $errors" >&2
 
     return 1
 }
-export -f jenkins.io
+#export -f jenkins::io
 
 #----------------------------------------------------------------------------------------------
-function jenkins.POST()
+function jenkins::POST()
 {
-    jenkins.io --request POST "$@" || return 1
+    jenkins::io --request POST "$@" || return 1
 }
-export -f jenkins.POST
+#export -f jenkins::POST
 
 #----------------------------------------------------------------------------------------------
-function jenkins.propFile()
+function jenkins::propFile()
 {
     echo "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/properties/$(basename "${BASH_SOURCE[0]%.*}").properties"
 }
 
-export JENKINS_PROPERTIES_FILE="${JENKINS_PROPERTIES_FILE:=$(jenkins.propFile)}"
+export JENKINS_PROPERTIES_FILE="${JENKINS_PROPERTIES_FILE:=$(jenkins::propFile)}"
 
 #----------------------------------------------------------------------------------------------
-function jenkins.propertiesFile()
+function jenkins::propertiesFile()
 {
-    echo "${JENKINS_PROPERTIES_FILE:=$(jenkins.propFile)}"
+    echo "${JENKINS_PROPERTIES_FILE:=$(jenkins::propFile)}"
 }
-export -f jenkins.propertiesFile
+#export -f jenkins::propertiesFile
 
 #----------------------------------------------------------------------------------------------
-function jenkins.PUT()
+function jenkins::PUT()
 {
-    jenkins.io --request PUT "$@" || return 1
+    jenkins::io --request PUT "$@" || return 1
 }
-export -f jenkins.PUT
+#export -f jenkins::PUT
 
 #----------------------------------------------------------------------------------------------
-function jenkins.HOST()
+function jenkins::HOST()
 {
     if [ "${OPTS['host']:-}" ]; then
          echo "${OPTS['host']}"
     else
-        echo "${_JENKINS_HOST:=$(lib.getHost "$( jenkins.SERVER )")}"
+        echo "${_JENKINS_HOST:=$(lib::getHost "$( jenkins::SERVER )")}"
     fi
 }
-export -f jenkins.HOST
+#export -f jenkins::HOST
 
 #----------------------------------------------------------------------------------------------
-function jenkins.PROD()
+function jenkins::PROD()
 {
     if [ "${OPTS['prod']:-}" ]; then
          echo "${OPTS['prod']}"
     else
-         echo "${_JENKINS_PROD:=$(lib.getProperty 'PROD' "$( jenkins.propertiesFile )")}"
+         echo "${_JENKINS_PROD:=$(lib::getProperty 'PROD' "$( jenkins::propertiesFile )")}"
     fi
 }
-export -f jenkins.PROD
+#export -f jenkins::PROD
 
 #----------------------------------------------------------------------------------------------
-function jenkins.REST_API()
+function jenkins::REST_API()
 {
     if [ "${OPTS['rest_api']:-}" ]; then
          echo "${OPTS['rest_api']}"
     else
-        echo "${_JENKINS_RESTAPI:=$(lib.getProperty 'REST_API' "$( jenkins.propertiesFile )")}"
+        echo "${_JENKINS_RESTAPI:=$(lib::getProperty 'REST_API' "$( jenkins::propertiesFile )")}"
     fi
 }
-export -f jenkins.REST_API
+#export -f jenkins::REST_API
 
 #----------------------------------------------------------------------------------------------
-function jenkins.SERVER()
+function jenkins::SERVER()
 {
     if [ "${OPTS['server']:-}" ]; then
          echo "${OPTS['server']}"
     else
-        echo "${_JENKINS_SERVER:=$(lib.getProperty 'SERVER' "$( jenkins.propertiesFile )")}"
+        echo "${_JENKINS_SERVER:=$(lib::getProperty 'SERVER' "$( jenkins::propertiesFile )")}"
     fi
 }
-export -f jenkins.SERVER
+#export -f jenkins::SERVER
 
 #----------------------------------------------------------------------------------------------
-function jenkins.TEST()
+function jenkins::TEST()
 {
     if [ "${OPTS['test']:-}" ]; then
          echo "${OPTS['test']}"
     else
-        echo "${_JENKINS_TEST:=$(lib.getProperty 'TEST' "$( jenkins.propertiesFile )")}"
+        echo "${_JENKINS_TEST:=$(lib::getProperty 'TEST' "$( jenkins::propertiesFile )")}"
     fi
 }
-export -f jenkins.TEST
+#export -f jenkins::TEST
 
 #----------------------------------------------------------------------------------------------
-function jenkins.URL()
+function jenkins::URL()
 {
     if [ "${OPTS['url']:-}" ]; then
          echo "${OPTS['url']}"
     else
-        echo "${_JENKINS_URL:=$(lib.getProperty 'URL' "$( jenkins.propertiesFile )")}"
+        echo "${_JENKINS_URL:=$(lib::getProperty 'URL' "$( jenkins::propertiesFile )")}"
     fi
 }
-export -f jenkins.URL
+#export -f jenkins::URL
 
 #----------------------------------------------------------------------------------------------
-function jenkins.USER()
+function jenkins::USER()
 {
     if [ "${OPTS['user']:-}" ]; then
          echo "${OPTS['user']}"
     else
-         echo "${_JENKINS_USER:=$(lib.getProperty 'USER' "$( jenkins.propertiesFile )")}"
+         echo "${_JENKINS_USER:=$(lib::getProperty 'USER' "$( jenkins::propertiesFile )")}"
     fi
 }
-export -f jenkins.USER
+#export -f jenkins::USER
 
 #----------------------------------------------------------------------------------------------
-function jenkins.USERID()
+function jenkins::USERID()
 {
-    jenkins.USER
+    jenkins::USER
 }
-export -f jenkins.USERID
+#export -f jenkins::USERID

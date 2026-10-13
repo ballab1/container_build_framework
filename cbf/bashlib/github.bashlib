@@ -1,4 +1,6 @@
 #!/bin/echo 'This script cannot be executabled directly. Please source from another script'
+# -*- coding: utf-8 -*-
+#required_libs credentials lib term
 
 #----------------------------------------------------------------------------------------------
 #
@@ -9,32 +11,32 @@
 export http_code
 
 #----------------------------------------------------------------------------------------------
-function github.DELETE()
+function github::DELETE()
 {
-    github.io --request DELETE "$@" || return 1
+    github::io --request DELETE "$@" || return 1
 }
-export -f github.DELETE
+#export -f github::DELETE
 
 #----------------------------------------------------------------------------------------------
-function github.GET()
+function github::GET()
 {
-    github.io --request GET "$@" || return 1
+    github::io --request GET "$@" || return 1
 }
-export -f github.GET
+#export -f github::GET
 
 #----------------------------------------------------------------------------------------------
-function github.HOST()
+function github::HOST()
 {
     if [ "${OPTS['host']:-}" ]; then
          echo "${OPTS['host']}"
     else
-        echo "${_GITHUB_HOST:=$(lib.getHost "$( github.SERVER )" )}"
+        echo "${_GITHUB_HOST:=$(lib::getHost "$( github::SERVER )" )}"
     fi
 }
-export -f github.HOST
+#export -f github::HOST
 
 #----------------------------------------------------------------------------------------------
-function github.io()
+function github::io()
 {
     local -a args
     local headers response url
@@ -42,7 +44,7 @@ function github.io()
     local -A links
     local -a credentials
 
-    mapfile -t credentials < <(credentials.get github)
+    mapfile -t credentials < <(credential::get github)
     if [ "${DEBUG:-0}" -eq 0 ]; then
         credentials+=( '--silent' )
     else
@@ -65,7 +67,7 @@ function github.io()
         echo -n "$response"
 
         #  Link: <https://api.github.com/search/code?q=addClass+user%3Amozilla&page=2>; rel="next", <https://api.github.com/search/code?q=addClass+user%3Amozilla&page=34>; rel="last"
-        eval 'links=( $(github.splitLinks "$headers") )'
+        eval 'links=( $(github::splitLinks "$headers") )'
         url="${links['next']:-}"
         [ "${url:-}" ] || break
 
@@ -80,7 +82,7 @@ function github.io()
 
     local curl_cmd=( 'curl' '--insecure' "$@" )
     echo
-(   term.log "***ERROR: failure to complete GitHub request
+(   term::log "***ERROR: failure to complete GitHub request
     command:       $(printf '%s ' "${curl_cmd[@]}")
     error code:    $(jq --compact-output --monochrome-output '.code?' <<< "$errors")
     error message: $(jq --compact-output --monochrome-output '.message?' <<< "$errors")
@@ -89,175 +91,175 @@ function github.io()
     " 'warn' >&2
     )
 
-    # check that 'term.log' was successful, otherwise, make sure something is echo'd
+    # check that 'term::log' was successful, otherwise, make sure something is echo'd
     [ $? -eq 0 ] || printg '%s:       %s \n    %s:    %s' 'command' "${curl_cmd[@]}" 'error code' "$errors" >&2
 
     return 1
 }
-export -f github.io
+#export -f github::io
 
 #----------------------------------------------------------------------------------------------
-function github.orgRepoInfo()
+function github::orgRepoInfo()
 {
     local -r org=${1:?}
     local -r repo=${2:?}
 
-    github.GET "$(github.REST_API)/repos/${org}/${repo}" || return 1
+    github::GET "$(github::REST_API)/repos/${org}/${repo}" || return 1
 }
-export -f github.orgRepoInfo
+#export -f github::orgRepoInfo
 
 #----------------------------------------------------------------------------------------------
-function github.orgRepos()
+function github::orgRepos()
 {
     local -r org=${1:?}
 
-    github.GET "$(github.REST_API)/orgs/${org}/repos" || return 1
+    github::GET "$(github::REST_API)/orgs/${org}/repos" || return 1
 }
-export -f github.orgRepos
+#export -f github::orgRepos
 
 #----------------------------------------------------------------------------------------------
-function github.orgTeams()
+function github::orgTeams()
 {
     local -r org=${1:?}
 
-    github.GET "$(github.REST_API)/orgs/${org}/teams" || return 1
+    github::GET "$(github::REST_API)/orgs/${org}/teams" || return 1
 }
-export -f github.orgTeams
+#export -f github::orgTeams
 
 #----------------------------------------------------------------------------------------------
-function github.POST()
+function github::POST()
 {
-    github.io --request POST "$@" || return 1
+    github::io --request POST "$@" || return 1
 }
-export -f github.POST
+#export -f github::POST
 
 #----------------------------------------------------------------------------------------------
-function github.PROD()
+function github::PROD()
 {
     if [ "${OPTS['prod']:-}" ]; then
          echo "${OPTS['prod']}"
     else
-        echo "${_GITHUB_PROD:=$(lib.getProperty 'PROD' "$( github.propertiesFile )")}"
+        echo "${_GITHUB_PROD:=$(lib::getProperty 'PROD' "$( github::propertiesFile )")}"
     fi
 }
-export -f github.PROD
+#export -f github::PROD
 
 #----------------------------------------------------------------------------------------------
-function github.propFile()
+function github::propFile()
 {
     echo "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/properties/$(basename "${BASH_SOURCE[0]%.*}").properties"
 }
 
-export GITHUB_PROPERTIES_FILE="${GITHUB_PROPERTIES_FILE:=$(github.propFile)}"
+export GITHUB_PROPERTIES_FILE="${GITHUB_PROPERTIES_FILE:=$(github::propFile)}"
 
 #----------------------------------------------------------------------------------------------
-function github.propertiesFile()
+function github::propertiesFile()
 {
-    echo "${GITHUB_PROPERTIES_FILE:=$(github.propFile)}"
+    echo "${GITHUB_PROPERTIES_FILE:=$(github::propFile)}"
 }
-export -f github.propertiesFile
+#export -f github::propertiesFile
 
 #----------------------------------------------------------------------------------------------
-function github.PUT()
+function github::PUT()
 {
-    github.io --request PUT "$@" || return 1
+    github::io --request PUT "$@" || return 1
 }
-export -f github.PUT
+#export -f github::PUT
 
 #----------------------------------------------------------------------------------------------
-function github.repoCollaborators()
+function github::repoCollaborators()
 {
     local -r org=${1:?}
     local -r repo=${2:?}
 
-    github.GET "$(github.REST_API)/repos/${org}/${repo}/collaborators" || return 1
+    github::GET "$(github::REST_API)/repos/${org}/${repo}/collaborators" || return 1
 }
-export -f github.repoCollaborators
+#export -f github::repoCollaborators
 
 #----------------------------------------------------------------------------------------------
-function github.REST_API()
+function github::REST_API()
 {
     if [ "${OPTS['rest_api']:-}" ]; then
          echo "${OPTS['rest_api']}"
     else
-         echo "${_GITHUB_REST_API:=$(lib.getProperty 'REST_API' "$( github.propertiesFile )")}"
+         echo "${_GITHUB_REST_API:=$(lib::getProperty 'REST_API' "$( github::propertiesFile )")}"
     fi
 }
-export -f github.REST_API
+#export -f github::REST_API
 
 #----------------------------------------------------------------------------------------------
-function github.SERVER()
+function github::SERVER()
 {
     if [ "${OPTS['server']:-}" ]; then
          echo "${OPTS['server']}"
     else
-        echo "${_GITHUB_SERVER:=$(lib.getProperty 'SERVER' "$( github.propertiesFile )")}"
+        echo "${_GITHUB_SERVER:=$(lib::getProperty 'SERVER' "$( github::propertiesFile )")}"
     fi
 }
-export -f github.SERVER
+#export -f github::SERVER
 
 #----------------------------------------------------------------------------------------------
-function github.splitLinks()
+function github::splitLinks()
 {
     local -r headerFile=${1:?}
 
     grep -E '^Link:' "$headerFile" | sed -E 's|^Link:||'| awk '{print $0}' RS=','| sed -e 's| <|"|' -Ee 's|^(.*)>; rel=(.)(.*)\"\s*$|[\3]=\1\2|'
 }
-export -f github.splitLinks
+#export -f github::splitLinks
 
 #----------------------------------------------------------------------------------------------
-function github.teamMembers()
+function github::teamMembers()
 {
     local -i teamid=${1:?}
 
-    github.GET "$(github.REST_API)/teams/${teamid}/members" || return 1
+    github::GET "$(github::REST_API)/teams/${teamid}/members" || return 1
 }
-export -f github.teamMembers
+#export -f github::teamMembers
 
 #----------------------------------------------------------------------------------------------
-function github.teamRepos()
+function github::teamRepos()
 {
     local -ir teamid=${1:?}
 
-    github.GET "$(github.REST_API)/teams/${teamid}/repos" || return 1
+    github::GET "$(github::REST_API)/teams/${teamid}/repos" || return 1
 }
-export -f github.teamRepos
+#export -f github::teamRepos
 
 #----------------------------------------------------------------------------------------------
-function github.TEST()
+function github::TEST()
 {
     if [ "${OPTS['test']:-}" ]; then
          echo "${OPTS['test']}"
     else
-        echo "${_GITHUB_TEST:=$(lib.getProperty 'TEST' "$( github.propertiesFile )")}"
+        echo "${_GITHUB_TEST:=$(lib::getProperty 'TEST' "$( github::propertiesFile )")}"
     fi
 }
-export -f github.TEST
+#export -f github::TEST
 
 #----------------------------------------------------------------------------------------------
-function github.USER()
+function github::USER()
 {
     if [ "${OPTS['user']:-}" ]; then
          echo "${OPTS['user']}"
     else
-        echo "${_GITHUB_USER:=$(lib.getProperty 'USER' "$( github.propertiesFile )")}"
+        echo "${_GITHUB_USER:=$(lib::getProperty 'USER' "$( github::propertiesFile )")}"
     fi
 }
-export -f github.USER
+#export -f github::USER
 
 #----------------------------------------------------------------------------------------------
-function github.USERID()
+function github::USERID()
 {
-    github.USER
+    github::USER
 }
-export -f github.USERID
+#export -f github::USERID
 
 #----------------------------------------------------------------------------------------------
-function github.userInfo()
+function github::userInfo()
 {
     local -r user=${1:?}
 
-    github.GET "$(github.REST_API)/users/${user}" || return 1
+    github::GET "$(github::REST_API)/users/${user}" || return 1
 }
-export -f github.userInfo
+#export -f github::userInfo
 

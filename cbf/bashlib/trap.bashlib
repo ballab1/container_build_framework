@@ -1,4 +1,5 @@
 #!/bin/echo 'This script cannot be executabled directly. Please source from another script'
+# -*- coding: utf-8 -*-
 
 #----------------------------------------------------------------------------
 #
@@ -7,7 +8,7 @@
 
 #----------------------------------------------------------------------------------------------
 # trap initialization
-function trap.__init()
+function trap::__init()
 {
     declare -ix trap_dying=0
     declare -ix trap_pipe_error=0
@@ -16,40 +17,40 @@ function trap.__init()
     set -o errtrace
 
     # trap ERR to provide an error handler whenever a command exits nonzero
-    trap trap.catch_error ERR
-    trap trap.catch_int INT
-    trap trap.catch_pipe PIPE
+    trap trap::catch_error ERR
+    trap trap::catch_int INT
+    trap trap::catch_pipe PIPE
 }
-export -f trap.__init
+#export -f trap::__init
 
 #----------------------------------------------------------------------------
 # Exit on any error
-function trap.catch_error()
+function trap::catch_error()
 {
     local err=$?
 
     set +o verbose
     set +o xtrace
-    trap.log "***ERROR at ${BASH_SOURCE[1]}:${BASH_LINENO[0]}. '${BASH_COMMAND}' exited with status ${err}"
-    trap.stacktrace
+    trap::log "***ERROR at ${BASH_SOURCE[1]}:${BASH_LINENO[0]}. '${BASH_COMMAND}' exited with status ${err}"
+    trap::stacktrace
     exit 1
 }
-export -f trap.catch_error
+#export -f trap::catch_error
 
 #----------------------------------------------------------------------------
 # Detect when build is aborted
-function trap.catch_int()
+function trap::catch_int()
 {
     set +o verbose
     set +o xtrace
-    trap.log "${BASH_SOURCE[0]} has been aborted with SIGINT (Ctrl-C)"
-    trap.stacktrace
+    trap::log "${BASH_SOURCE[0]} has been aborted with SIGINT (Ctrl-C)"
+    trap::stacktrace
     exit 1
 }
-export -f trap.catch_int
+#export -f trap::catch_int
 
 #----------------------------------------------------------------------------
-function trap.catch_pipe()
+function trap::catch_pipe()
 {
     trap_pipe_error+=1
     [ ${trap_pipe_error:-1} -eq 1 ] || return 0
@@ -57,14 +58,14 @@ function trap.catch_pipe()
 
     set +o verbose
     set +o xtrace
-    trap.log "${BASH_SOURCE[0]} has been aborted with SIGPIPE (broken pipe)"
-    trap.stacktrace
+    trap::log "${BASH_SOURCE[0]} has been aborted with SIGPIPE (broken pipe)"
+    trap::stacktrace
     exit 1
 }
-export -f trap.catch_pipe
+#export -f trap::catch_pipe
 
 #----------------------------------------------------------------------------
-function trap.die()
+function trap::die()
 {
     local status=$?
     [ ${status:-} -ne 0 ] || status=255
@@ -72,22 +73,22 @@ function trap.die()
 
     local args="$*"
     [ "${args:0:8}" = '***ERROR' ] || args="***ERROR: $args"
-    ( echo ''; trap.log "$args" ; echo '') >&2
-    trap.stacktrace
+    ( echo ''; trap::log "$args" ; echo '') >&2
+    trap::stacktrace
     [ "${DEBUG_TRACE:-0}" = "2" ] || exit $status
 }
-export -f trap.die
+#export -f trap::die
 
 #----------------------------------------------------------------------------
-function trap.log()
+function trap::log()
 {
     printf '\x1b[31m%s\x1b[0m\n' "$1" >&2
 }
-export -f trap.log
+#export -f trap::log
 
 #----------------------------------------------------------------------------
 # display stacktrace
-function trap.stacktrace()
+function trap::stacktrace()
 {
     [ ${DEBUG:-0} -eq 0 ] && return
 
@@ -97,29 +98,29 @@ function trap.stacktrace()
     set +o xtrace
 
     echo >&2
-    trap.log ">>>    Current directory $(pwd)"
+    trap::log ">>>    Current directory $(pwd)"
     # Print out the stack trace described by $function_stack
     if [ ${#FUNCNAME[@]} -gt 2 ]; then
-        trap.log "Stack trace:"
+        trap::log "Stack trace:"
         for ((i=1;i<${#FUNCNAME[@]}-1;i++)); do
-            trap.log "$(printf '>>>    %02d: %s %s  <<<' "$i" "${BASH_SOURCE[$i+1]}:${BASH_LINENO[$i]}" "${FUNCNAME[$i]}" )"
+            trap::log "$(printf '>>>    %02d: %s %s  <<<' "$i" "${BASH_SOURCE[$i+1]}:${BASH_LINENO[$i]}" "${FUNCNAME[$i]}" )"
         done
     fi
     eval "$__trap_options"
 }
-export -f trap.stacktrace
+#export -f trap::stacktrace
 
 #----------------------------------------------------------------------------
-function trap.warn()
+function trap::warn()
 {
     local status=$?
     local args="$*"
     [ "${args:0:7}" = '***WARN' ] || args="***WARN: $args"
-    ( echo ''; trap.log "$args" ; echo '') >&2
+    ( echo ''; trap::log "$args" ; echo '') >&2
     [[ ${CBF_WARN_FORCE_EXIT:-0} -ne 1 && ${status:-0} -ne 0 ]] || exit $status
 }
-export -f trap.warn
+#export -f trap::warn
 
 #----------------------------------------------------------------------------
 
-[ "${trap_dying:-99}" -ne 99 ] || trap.__init
+[ "${trap_dying:-99}" -ne 99 ] || trap::__init

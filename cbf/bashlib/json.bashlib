@@ -1,4 +1,5 @@
 #!/bin/echo 'This script cannot be executabled directly. Please source from another script'
+# -*- coding: utf-8 -*-
 
 #----------------------------------------------------------------------------------------------
 #
@@ -6,7 +7,7 @@
 #
 
 #----------------------------------------------------------------------------------------------
-function json.encodeArray()
+function json::encodeArray()
 {
     local type=$(typeset -p "$1" | awk '{print $2}')
     if [ "$type" = '--' ]; then
@@ -22,7 +23,7 @@ function json.encodeArray()
         local val comma
         for val in "${assoc[@]}"; do
             [ -z "${comma:-}" ] || printf ','
-            json.encodeField '--' "$val"
+            json::encodeField '--' "$val"
             comma=','
         done
         echo -n ']'
@@ -31,7 +32,7 @@ function json.encodeArray()
 }
 
 #----------------------------------------------------------------------------------------------
-function json.encodeBoolean()
+function json::encodeBoolean()
 {
     local boolVal="${1:-true}"
 
@@ -41,7 +42,7 @@ function json.encodeBoolean()
 }
 
 #----------------------------------------------------------------------------------------------
-function json.encodeField()
+function json::encodeField()
 {
     local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r val=${2:-}
@@ -54,23 +55,23 @@ function json.encodeField()
     else
         case "${mode,,}" in
             string)
-                json.encodeString "$val"
+                json::encodeString "$val"
                 ;;
 
             boolean)
-                json.encodeBoolean "$val"
+                json::encodeBoolean "$val"
                 ;;
 
             integer)
-                json.encodeInteger "$val"
+                json::encodeInteger "$val"
                 ;;
 
             array)
-                json.encodeArray "${val:1:-1}"
+                json::encodeArray "${val:1:-1}"
                 ;;
 
             hash)
-                json.encodeHash "${val:1:-1}"
+                json::encodeHash "${val:1:-1}"
                 ;;
 
             json)
@@ -79,32 +80,32 @@ function json.encodeField()
 
             *)
                 if [[ "$val" =~ ^true|false$ ]]; then
-                    json.encodeBoolean "$val"
+                    json::encodeBoolean "$val"
 
                 elif [[ "$val" =~ ^[0-9]+$ ]]; then
-                    json.encodeInteger "$val"
+                    json::encodeInteger "$val"
 
                 elif [[ "$val" = '{'*'}' ]]; then
-                    json.encodeHash "${val:1:-1}"
+                    json::encodeHash "${val:1:-1}"
 
                 elif [[ "$val" = '['*']' ]]; then
-                    json.encodeArray "${val:1:-1}"
+                    json::encodeArray "${val:1:-1}"
 
                 elif [[ "$val" = '"'*'":'* ]]; then
                     echo -n '{'"$val"'}'
 
                 else
-                    json.encodeString "$val"
+                    json::encodeString "$val"
                 fi
                 ;;
         esac
     fi
     return 0
 }
-export -f json.encodeField
+#export -f json::encodeField
 
 #----------------------------------------------------------------------------------------------
-function json.encodeHash()
+function json::encodeHash()
 {
     local type=$(typeset -p "${1:?}" | awk '{print $2}')
     if [ "$type" = '--' ]; then
@@ -127,7 +128,7 @@ function json.encodeHash()
         local val comma
         for val in "${!assoc[@]}"; do
             [ -z "${comma:-}" ] || printf ','
-            json.encodeField "$val" "${assoc[$val]}"
+            json::encodeField "$val" "${assoc[$val]}"
             comma=','
         done
     fi
@@ -136,7 +137,7 @@ function json.encodeHash()
 }
 
 #----------------------------------------------------------------------------------------------
-function json.encodeInteger()
+function json::encodeInteger()
 {
     local -r intVal=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
     if [ "$intVal" = '0' ];then
@@ -148,7 +149,7 @@ function json.encodeInteger()
 }
 
 #----------------------------------------------------------------------------------------------
-function json.encodeString()
+function json::encodeString()
 {
     local -r strVal=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
     printf '"%s"' "${strVal//\"/\\\"}"
@@ -156,7 +157,7 @@ function json.encodeString()
 }
 
 #----------------------------------------------------------------------------------------------
-function json.toYaml()
+function json::toYaml()
 {
     local -r json="${1:?"Input parameter 'json' must be passed to 'function ${FUNCNAME[0]}()'"}"
     local indent="${2:-}"
@@ -167,14 +168,14 @@ function json.toYaml()
             array)
                 printf '%s%s:\n' "$indent" "$key"
                 local idx len="$(jq ".${key}|length" <<< "$json")"
-                for (( idx=0; idx<$len; idx++ )); do 
-                    json.toYaml "$(jq ".${key}[${idx}]" <<< "$json")" "${indent}- "
+                for (( idx=0; idx<$len; idx++ )); do
+                    json::toYaml "$(jq ".${key}[${idx}]" <<< "$json")" "${indent}- "
                 done
                 ;;
             object)
                 printf '%s%s:\n' "$indent" "$key"
                 val="$(jq ".$key" <<< "$json")"
-                json.toYaml "$val" "${indent}  "
+                json::toYaml "$val" "${indent}  "
                 ;;
             *)
                 val="$(jq ".$key" <<< "$json")"

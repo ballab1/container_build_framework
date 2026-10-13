@@ -1,4 +1,6 @@
 #!/bin/echo 'This script cannot be executabled directly. Please source from another script'
+# -*- coding: utf-8 -*-
+#required_libs credentials lib term
 
 #----------------------------------------------------------------------------------------------
 #
@@ -10,62 +12,62 @@ export MAX_IMAGES_TO_KEEP=10
 export http_code
 
 #----------------------------------------------------------------------------------------------
-function registry.catalog()
+function registry::catalog()
 {
-    registry.GET "$(registry.URL)/_catalog" | jq --compact-output --monochrome-output --raw-output '.repositories| sort[]?' || echo "Failed to get $(registry.URL)/_catalog" >&2
+    registry::GET "$(registry::URL)/_catalog" | jq --compact-output --monochrome-output --raw-output '.repositories| sort[]?' || echo "Failed to get $(registry::URL)/_catalog" >&2
 }
-export -f registry.catalog
+#export -f registry::catalog
 
 #----------------------------------------------------------------------------------------------
-function registry.deleteImage()
+function registry::deleteImage()
 {
     local -r name="${1:?}"
     local -r digest="${2:?}"
 
     echo -n "deleting ${name}@$digest  "
-    registry.DELETE --show-error --write-out '%{http_code}\n' "$(registry.URL)/${name}/manifests/$digest" || echo "Failed to delete $name:$digest"
+    registry::DELETE --show-error --write-out '%{http_code}\n' "$(registry::URL)/${name}/manifests/$digest" || echo "Failed to delete $name:$digest"
     echo
 }
-export -f registry.deleteImage
+#export -f registry::deleteImage
 
 #----------------------------------------------------------------------------------------------
-function registry.digest()
+function registry::digest()
 {
     local -r name="${1:?}"
     local -r tag="${2:?}"
 
     # get digest from header
-    local -r digest="$(registry.GET --head \
+    local -r digest="$(registry::GET --head \
                                     --header "Accept: application/vnd.docker.distribution.manifest.v2+json" \
-                                    "$(registry.URL)/${name}/manifests/$(tr -d '"' <<< "$tag")" || echo "Failed to get $(registry.URL)/${name}/manifests/$tag" >&2)"
+                                    "$(registry::URL)/${name}/manifests/$(tr -d '"' <<< "$tag")" || echo "Failed to get $(registry::URL)/${name}/manifests/$tag" >&2)"
 
     [ -z "$digest" ] || ( awk '{gsub(/\r/,"");if (tolower($1) == "docker-content-digest:") {print $2}}' <<< "$digest" )
 }
-export -f registry.digest
+#export -f registry::digest
 
 #----------------------------------------------------------------------------------------------
-function registry.digests()
+function registry::digests()
 {
     local -r name="${1:?}"
     local -r no_times="${2:-}"
 
     if [ -z "${no_times:-}" ]; then
-        registry.digestsWithTimes "$name"
+        registry::digestsWithTimes "$name"
     else
-        registry.digestsWithoutTimes "$name"
+        registry::digestsWithoutTimes "$name"
     fi
 }
-export -f registry.digests
+#export -f registry::digests
 
 #----------------------------------------------------------------------------------------------
-function registry.digestsWithTimes()
+function registry::digestsWithTimes()
 {
     local -r name="${1:?}"
 
     local -a tags
 
     # get all the tags for current repo: "$name"
-    mapfile -t tags < <( registry.tags "$name" )
+    mapfile -t tags < <( registry::tags "$name" )
     [ "${#tags[*]}" -gt 0 ] || return 0
 
 
@@ -73,11 +75,11 @@ function registry.digestsWithTimes()
     local tag digest
     local -A digests=()
     for tag in "${tags[@]}"; do
-        digest="$(registry.digest "$name" "$tag")"
+        digest="$(registry::digest "$name" "$tag")"
         if [ "${digest:-}" ]; then
             digests["$digest"]="$(echo -en "${tag}\\n${digests[$digest]:-}")"
         else
-            term.elog "WARNING:  $name:$tag failed to return a digest" 'warning'
+            term::elog "WARNING:  $name:$tag failed to return a digest" 'warning'
         fi
     done
 
@@ -87,7 +89,7 @@ function registry.digestsWithTimes()
     for digest in "${!digests[@]}"; do
         # shellcheck disable=SC2206
         tags=( ${digests[$digest]} )
-        createTime="$(registry.getCreateTime "$name" "$digest" "${tags[@]}" )"
+        createTime="$(registry::getCreateTime "$name" "$digest" "${tags[@]}" )"
         [ "${createTime:-}" ] || continue
 #        [ "${times[$createTime]:-}" ] && echo "repo: ${name} contains multiple digests with the same timestamp: ${createTime}" >&2
         times["$createTime"]="$(echo -en "${digest}\\n${times[$createTime]:-}")"
@@ -126,21 +128,21 @@ function registry.digestsWithTimes()
 }
 
 #----------------------------------------------------------------------------------------------
-function registry.digestsWithoutTimes()
+function registry::digestsWithoutTimes()
 {
     local -r name="${1:?}"
 
     local -a tags
-    mapfile -t tags < <(registry.tags "$name")
+    mapfile -t tags < <(registry::tags "$name")
     [ "${#tags[*]}" -gt 0 ] || return 0
 
 
     local tag digest
     local -A digests=()
     for tag in "${tags[@]}"; do
-        digest=$(registry.digest "$name" "$tag")
+        digest=$(registry::digest "$name" "$tag")
         if [ -z "${digest:-}" ]; then
-            term.elog "WARNING:  $name:$tag failed to return a digest" 'warning'
+            term::elog "WARNING:  $name:$tag failed to return a digest" 'warning'
             continue
         fi
         digests["$digest"]="$(echo -en "${tag}\\n${digests[$digest]:-}")"
@@ -171,61 +173,41 @@ function registry.digestsWithoutTimes()
 }
 
 #----------------------------------------------------------------------------------------------
-function registry.getCreateTime()
+function registry::getCreateTime()
 {
     local -r name="${1:?}"
     local -r digest="${2:?}"
-    shift 2
-    local -ra tags=( "$@" )
 
-    local -r manifests="$(registry.manifest "$name" "${tags[0]}")"
-    if [ "$manifests" ] && [[ ! $manifests =~ MANIFEST_INVALID ]]; then
-        local createTime="$(jq --compact-output --monochrome-output --raw-output 'try [ .history[].v1Compatibility.created | sub("\\.\\d+.*$"; "Z") | fromdate] | max | todate' <<< "$manifests")"
+    local -r config="$(registry::manifest "$name" "${tags[0]}")"
+    if [ "$config" ] && [[ ! $config =~ MANIFEST_INVALID ]]; then
+        local createTime="$(jq --compact-output --monochrome-output --raw-output 'try [ .created | sub("\\.\\d+.*$"; "Z") | fromdate] | max | todate' <<< "$config")"
         if [ "$createTime" ]; then
             echo "$createTime"
             return 0
         fi
     fi
-
-    # show error info to stderr
-    {
-    echo -en '    \e[93m'
-    echo "unable to parse time from manifest returned for $(registry.SERVER)$name:${tags[0]}"
-    echo "        digest: $digest"
-    if [ "${#tags[*]}" -gt 1 ]; then
-        echo '        other tags: '"${tags[1]}"
-        local -i i="${#tags[*]}"
-        while [ "$i" -gt 2 ]; do
-            i="$(( i - 1 ))"
-            echo '                    '"${tags[$i]}"
-        done
-    fi
-    echo "    recommend verifying that this image can be downloaded using 'docker pull $(registry.SERVER)$name:${tags[0]}'"
-    echo '    if this image cannot be downloaded, it should be deleted from the repository'
-    echo -e '\e[0m'
-    } >&2
 }
-export -f registry.getCreateTime
+#export -f registry::getCreateTime
 
 #----------------------------------------------------------------------------------------------
-function registry.getLinks()
+function registry::getLinks()
 {
     # headers:   'Link: </v2/_catalog?last=alpine%2Fphpmyadmin%2F5.0.2&n=100>; rel="next"'
     local -r headers="${1:?}"
 
     sed -E -e 's|^Link:\s*</v2/(.*)>;\s*rel="(.+)".*$|["\2"]="/\1"|' <<< "$headers"
 }
-export -f registry.getLinks
+#export -f registry::getLinks
 
 #----------------------------------------------------------------------------------------------
-function registry.io()
+function registry::io()
 {
     local -a args
     local headers response text url
     local -i status=0
     local -A links
     local -a credentials
-    mapfile -t credentials < <(credentials.get registry)
+    mapfile -t credentials < <(credentials::get registry)
     if [ "${DEBUG:-0}" -eq 0 ]; then
         credentials+=( '--silent' )
     else
@@ -250,11 +232,11 @@ function registry.io()
         #  Link: </v2/_catalog?last=docker.io%2Fapm-server&n=100>; rel="next"
         text="$(grep -E '^Link:' "$headers")"
         [ "${text:-}" ]  || break
-        eval "links=( $(registry.getLinks "$text") )"
+        eval "links=( $(registry::getLinks "$text") )"
         url="${links['next']:-}"
         [ "${url:-}" ] || break
 
-        response="$(curl "${args[@]}" "$(registry.URL)$url")" && status=$? || status=$?
+        response="$(curl "${args[@]}" "$(registry::URL)$url")" && status=$? || status=$?
     done
     [ "${TMP_DIR:-}" ] || rm "$headers"
     [ "$status" -ne 0 ] || return 0
@@ -264,7 +246,7 @@ function registry.io()
 
     local curl_cmd=( 'curl' '--insecure' "$@" )
     echo
-(   term.log "***ERROR: failure to complete registry request
+(   term::log "***ERROR: failure to complete registry request
     command:       $(printf '%s ' "${curl_cmd[@]}")
     error code:    $(jq --compact-output --monochrome-output '.code?' <<< "$errors")
     error message: $(jq --compact-output --monochrome-output '.message?' <<< "$errors")
@@ -273,147 +255,182 @@ function registry.io()
     " 'warn' >&2
     )
 
-    # check that 'term.log' was successful, otherwise, make sure something is echo'd
+    # check that 'term::log' was successful, otherwise, make sure something is echo'd
     # shellcheck disable=SC2181
     [ $? -eq 0 ] || printf '%s:      %s \n    %s:    %s' 'command' "${curl_cmd[@]}" 'error code' "$errors" >&2
 
     return 1
 }
-export -f registry.io
+#export -f registry::io
 
 #----------------------------------------------------------------------------------------------
-function registry.layer()
+function registry::layer()
 {
     local -r name="${1:?}"
     local -r digest="${2:?}"
 
-    registry.GET "$(registry.URL)/${name}/blobs/${digest}" || echo "Failed to get $(registry.URL)/${name}/blobs/${digest}" >&2
+    registry::GET "$(registry::URL)/${name}/blobs/${digest}" || echo "Failed to get $(registry::URL)/${name}/blobs/${digest}" >&2
 }
-export -f registry.layer
+#export -f registry::layer
 
 #----------------------------------------------------------------------------------------------
-function registry.manifest()
+function registry::manifest()
 {
     local -r name="${1:?}"
     local -r reference="${2:?}"
+    shift 2
+    local -ra tags=( "$@" )
 
-    registry.GET "$(registry.URL)/${name}/manifests/${reference}" |  jq --compact-output --monochrome-output '.history[].v1Compatibility|=fromjson' || echo "Failed to get $(registry.URL)/${name}/manifests/${reference}" >&2
+    local manifests="$(registry::GET "$(registry::URL)/${name}/manifests/${reference}")"
+    if [ "$manifests" ] && [[ ! $manifests =~ MANIFEST_INVALID ]]; then
+        local schemaVersion="$(jq '.schemaVersion' <<< "$manifests")"
+        case "$schemaVersion" in
+          1)
+             jq --compact-output --monochrome-output --raw-output 'try .history[].v1Compatibility' <<< "$manifests"
+             return 0
+             ;;
+          2)
+             local digest="$(jq --compact-output --monochrome-output --raw-output 'try .config.digest' <<< "$manifests")"
+             registry::GET "$(registry::URL)/${name}/blobs/${digest}"
+             return 0
+             ;;
+        esac
+    fi
+    echo "Failed to get config from $(registry::URL)/${name}/manifests/${reference}" >&2
+
+    # show error info to stderr
+    {
+    echo -en '    \e[93m'
+    echo "unable to parse time from manifest returned for $(registry::SERVER)$name:${tags[0]}"
+    echo "        digest: $digest"
+    if [ "${#tags[*]}" -gt 1 ]; then
+        echo '        other tags: '"${tags[1]}"
+        local -i i="${#tags[*]}"
+        while [ "$i" -gt 2 ]; do
+            i="$(( i - 1 ))"
+            echo '                    '"${tags[$i]}"
+        done
+    fi
+    echo "    recommend verifying that this image can be downloaded using 'docker pull $(registry::SERVER)$name:${tags[0]}'"
+    echo '    if this image cannot be downloaded, it should be deleted from the repository'
+    echo -e '\e[0m'
+    } >&2
 }
-export -f registry.manifest
+#export -f registry::manifest
 
 #----------------------------------------------------------------------------------------------
-function registry.propFile()
+function registry::propFile()
 {
     echo "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/properties/$(basename "${BASH_SOURCE[0]%.*}").properties"
 }
 
-export REGISTRY_PROPERTIES_FILE="${REGISTRY_PROPERTIES_FILE:="$(registry.propFile)"}"
+export REGISTRY_PROPERTIES_FILE="${REGISTRY_PROPERTIES_FILE:="$(registry::propFile)"}"
 
 #----------------------------------------------------------------------------------------------
-function registry.propertiesFile()
+function registry::propertiesFile()
 {
-    echo "${REGISTRY_PROPERTIES_FILE:="$(registry.propFile)"}"
+    echo "${REGISTRY_PROPERTIES_FILE:="$(registry::propFile)"}"
 }
-export -f registry.propertiesFile
+#export -f registry::propertiesFile
 
 #----------------------------------------------------------------------------------------------
-function registry.tags()
+function registry::tags()
 {
     local -r name="${1:?}"
 
-    local -r json=$(registry.GET "$(registry.URL)/${name}/tags/list" || echo "Failed to get $(registry.URL)/${name}/tags/list" >&2)
+    local -r json=$(registry::GET "$(registry::URL)/${name}/tags/list" || echo "Failed to get $(registry::URL)/${name}/tags/list" >&2)
     [ -z "${json:-}" ] || jq --compact-output --monochrome-output --raw-output '.tags[]?' <<< "$json"
 }
-export -f registry.tags
+#export -f registry::tags
 
 #----------------------------------------------------------------------------------------------
-function registry.DELETE()
+function registry::DELETE()
 {
-    registry.io --request DELETE "$@" || return 1
+    registry::io --request DELETE "$@" || return 1
 }
-export -f registry.DELETE
+#export -f registry::DELETE
 
 #----------------------------------------------------------------------------------------------
-function registry.GET()
+function registry::GET()
 {
-    registry.io --request GET "$@" || return 1
+    registry::io --request GET "$@" || return 1
 }
-export -f registry.GET
+#export -f registry::GET
 
 #----------------------------------------------------------------------------------------------
-function registry.HOST()
+function registry::HOST()
 {
     if [ "${OPTS['host']:-}" ]; then
          echo "${OPTS['host']}"
     else
-        echo "${_REGISTRY_HOST:="$(lib.getHost "$( registry.SERVER )")"}"
+        echo "${_REGISTRY_HOST:="$(lib::getHost "$( registry::SERVER )")"}"
     fi
 }
-export -f registry.HOST
+#export -f registry::HOST
 
 #----------------------------------------------------------------------------------------------
-function registry.POST()
+function registry::POST()
 {
-    registry.io --request POST "$@" || return 1
+    registry::io --request POST "$@" || return 1
 }
-export -f registry.POST
+#export -f registry::POST
 
 #----------------------------------------------------------------------------------------------
-function registry.PUT()
+function registry::PUT()
 {
-    registry.io --request PUT "$@" || return 1
+    registry::io --request PUT "$@" || return 1
 }
-export -f registry.PUT
+#export -f registry::PUT
 
 #----------------------------------------------------------------------------------------------
-function registry.REGISTRY()
+function registry::REGISTRY()
 {
     if [ "${OPTS['registry']:-}" ]; then
          echo "${OPTS['registry']}"
     else
-        echo "${_REGISTRY_SERVER:="$(lib.getProperty 'REGISTRY' "$( registry.propertiesFile )")"}"
+        echo "${_REGISTRY_SERVER:="$(lib::getProperty 'REGISTRY' "$( registry::propertiesFile )")"}"
     fi
 }
-export -f registry.REGISTRY
+#export -f registry::REGISTRY
 
 #----------------------------------------------------------------------------------------------
-function registry.SERVER()
+function registry::SERVER()
 {
     if [ "${OPTS['server']:-}" ]; then
          echo "${OPTS['server']}"
     else
-        echo "${_REGISTRY_SERVER:="$(lib.getProperty 'SERVER' "$( registry.propertiesFile )")"}"
+        echo "${_REGISTRY_SERVER:="$(lib::getProperty 'SERVER' "$( registry::propertiesFile )")"}"
      fi
 }
-export -f registry.SERVER
+#export -f registry::SERVER
 
 #----------------------------------------------------------------------------------------------
-function registry.URL()
+function registry::URL()
 {
     if [ "${OPTS['url']:-}" ]; then
          echo "${OPTS['url']}"
     else
-        echo "${_REGISTRY_URL:="$(lib.getProperty 'URL' "$( registry.propertiesFile )")"}"
+        echo "${_REGISTRY_URL:="$(lib::getProperty 'URL' "$( registry::propertiesFile )")"}"
     fi
 }
-export -f registry.URL
+#export -f registry::URL
 
 #----------------------------------------------------------------------------------------------
-function registry.USER()
+function registry::USER()
 {
     if [ "${OPTS['user']:-}" ]; then
          echo "${OPTS['user']}"
     else
-        local user="${_REGISTRY_USER:="$(lib.getProperty 'USER' "$( registry.propertiesFile )")"}"
+        local user="${_REGISTRY_USER:="$(lib::getProperty 'USER' "$( registry::propertiesFile )")"}"
         [ "${user:-}" ] || user="${USERNAME:-${USER:-}}"
          echo "$user"
     fi
 }
-export -f registry.USER
+#export -f registry::USER
 
 #----------------------------------------------------------------------------------------------
-function registry.USERID()
+function registry::USERID()
 {
-    registry.USER
+    registry::USER
 }
-export -f registry.USERID
+#export -f registry::USERID

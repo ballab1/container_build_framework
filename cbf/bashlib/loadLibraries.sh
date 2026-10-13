@@ -7,8 +7,8 @@ set -o pipefail
 IFS=$'\n\t'
 
 
-function __init.loader() {
-#    __init.loadCBF
+function __init::loader() {
+#    __init::loadCBF
 
     # only load libraries from bashlib (not below). Sort to be deterministic
     local __libdir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
@@ -42,8 +42,8 @@ function __init.loader() {
 }
 
 if [[ "${DEBUG:-0}" != 0 || "${DEBUG_TRACE:-0}" -gt 0 ]]; then
-    __init.loader >&2
+    __init::loader >&2
 else
     # TODO: instead of op to /dev/null, op to file; check for error and cat file if true; rm file.  (cannot use $(...) bcause it hides lib functions)
-    __init.loader &> /dev/null
+    __init::loader &> /dev/null
 fi

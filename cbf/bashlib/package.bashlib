@@ -1,4 +1,6 @@
 #!/bin/echo 'This script cannot be executabled directly. Please source from another script'
+# -*- coding: utf-8 -*-
+#required_libs crf environ lib term trap
 
 #----------------------------------------------------------------------------------------------
 #
@@ -6,54 +8,54 @@
 #
 
 #----------------------------------------------------------------------------------------------
-function package.checkPackages()
+function package::checkPackages()
 {
     local -ar pkgs=( $@ )
 
-    case "$( environ.OSid )" in
+    case "$( environ::OSid )" in
         alpine)
-            local -a duplicates=( $(lib.intersect "${pkgs[*]}" "$( apk info )") )
-            [ ${#duplicates[*]} -eq 0 ] || trap.warn "attempting to reinstall following packages: '${duplicates[*]}'"
+            local -a duplicates=( $(lib::intersect "${pkgs[*]}" "$( apk info )") )
+            [ ${#duplicates[*]} -eq 0 ] || trap::warn "attempting to reinstall following packages: '${duplicates[*]}'"
             # now verify that packages are actually valid for installation
             for pkg in "${pkgs[@]}"; do
-                apk info "${pkg%%=*}" &>/dev/null || trap.die "Package $pkg not found"
+                apk info "${pkg%%=*}" &>/dev/null || trap::die "Package $pkg not found"
             done
             ;;
         centos|fedora)
             local -a duplicates=( $(for pkg in "${pkgs[@]}"; do yum -q list installed "$pkg" 2>/dev/null | awk 'NR>1 {print $1}' ||:; done) )
-            [ ${#duplicates[*]} -eq 0 ] || trap.warn "attempting to reinstall following packages: '${duplicates[*]}'"
+            [ ${#duplicates[*]} -eq 0 ] || trap::warn "attempting to reinstall following packages: '${duplicates[*]}'"
             # now verify that packages are actually valid for installation
             for pkg in "${pkgs[@]}"; do
-                yum search "$pkg" &>/dev/null || trap.die "Package $pkg not found"
+                yum search "$pkg" &>/dev/null || trap::die "Package $pkg not found"
             done
             ;;
         ubuntu)
-            local -a duplicates=( $(lib.intersect "${pkgs[*]}" "$( dpkg --get-selections | awk '{print $1}' )") )
-            [ ${#duplicates[*]} -eq 0 ] || trap.warn "attempting to reinstall following packages: '${duplicates[*]}'"
+            local -a duplicates=( $(lib::intersect "${pkgs[*]}" "$( dpkg --get-selections | awk '{print $1}' )") )
+            [ ${#duplicates[*]} -eq 0 ] || trap::warn "attempting to reinstall following packages: '${duplicates[*]}'"
             # now verify that packages are actually valid for installation
             for pkg in "${pkgs[@]}"; do
-                apt search "$pkg" &>/dev/null || trap.die "Package $pkg not found"
+                apt search "$pkg" &>/dev/null || trap::die "Package $pkg not found"
             done
             ;;
     esac
 }
-export -f package.checkPackages
+#export -f package::checkPackages
 
 #----------------------------------------------------------------------------------------------
-function package.install()
+function package::install()
 {
     local -r defnFile=${1:?"Input parameter 'defnFile' must be passed to 'function ${FUNCNAME[0]}()'"}
 
-    term.log "Installing ${defnFile}\n" 'task'
+    term::log "Installing ${defnFile}\n" 'task'
 
-    source "$( crf.BIN )/init.runtime"
+    source "$( crf::BIN )/init.runtime"
     source "$defnFile"
     [ "${#PKGS[*]}" -gt 0 ] || return 0
 
-    package.checkPackages "${PKGS[@]}"
+    package::checkPackages "${PKGS[@]}"
 
     [ -z "${BUILD[*]:-}" ] && local -a BUILD=()
-    case "$( environ.OSid )" in
+    case "$( environ::OSid )" in
         alpine)
             # add dummy '.buildDependencies' module which depends on all BUILD modules so we just have to delete '.buildDependencies'
             [ ${#BUILD[*]} -gt 0 ] && apk add --no-cache "${BUILD[@]}"  '--virtual' '.buildDependencies'
@@ -68,22 +70,22 @@ function package.install()
             ;;
     esac
 }
-export -f package.install
+#export -f package::install
 
 #----------------------------------------------------------------------------------------------
-function package.installTimezone()
+function package::installTimezone()
 {
     local -r tz=${1:?"Input parameter 'tz' must be passed to 'function ${FUNCNAME[0]}()'"}
 
-    case "$( environ.OSid )" in
+    case "$( environ::OSid )" in
         alpine)
-            package.updateIndexes
+            package::updateIndexes
             apk add --no-cache tzdata
             ;;
         centos|fedora)
             ;;
         ubuntu)
-            package.updateIndexes
+            package::updateIndexes
             apt-get install --yes tzdata
             ;;
     esac
@@ -91,23 +93,23 @@ function package.installTimezone()
     cp "/usr/share/zoneinfo/$tz" /etc/timezone
     cp "/usr/share/zoneinfo/$tz" /etc/localtime
 }
-export -f package.installTimezone
+#export -f package::installTimezone
 
 #----------------------------------------------------------------------------------------------
-function package.runScripts()
+function package::runScripts()
 {
     local -a files=( "$@" )
 
     for file in "${files[@]}"; do
-        ( package.install "$file" )
+        ( package::install "$file" )
     done
 }
-export -f package.runScripts
+#export -f package::runScripts
 
 #----------------------------------------------------------------------------------------------
-function package.updateIndexes()
+function package::updateIndexes()
 {
-    case "$( environ.OSid )" in
+    case "$( environ::OSid )" in
         alpine)
             apk update
             ;;
@@ -119,4 +121,4 @@ function package.updateIndexes()
             ;;
     esac
 }
-export -f package.updateIndexes
+#export -f package::updateIndexes
