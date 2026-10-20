@@ -1,48 +1,49 @@
 #!/bin/echo 'This script cannot be executabled directly. Please source from another script'
+# -*- coding: utf-8 -*-
+#required_libs credentials lib term trap
 
 #----------------------------------------------------------------------------------------------
 #
 # DO NOT ADD "IN-LINE" code to this file. Only functions should be included.
 #
-#  module:  artifactory.bashlib
+#  module:  artifactory::bashlib
 #  purpose: general 'artifactory' scripts
 #
 #----------------------------------------------------------------------------------------------
 
 #----------------------------------------------------------------------------------------------
-function artifactory.propFile()
+function artifactory::propFile()
 {
     echo "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/properties/$(basename "${BASH_SOURCE[0]%.*}").properties"
 }
-export -f artifactory.propFile
+#export -f artifactory::propFile
 
-export ARTIFACTORY_PROPERTIES_FILE="${ARTIFACTORY_PROPERTIES_FILE:=$(artifactory.propFile)}"
+export ARTIFACTORY_PROPERTIES_FILE="${ARTIFACTORY_PROPERTIES_FILE:=$(artifactory::propFile)}"
 
 #----------------------------------------------------------------------------------------------
-function artifactory.DELETE()
+function artifactory::DELETE()
 {
-    artifactory.io --request DELETE "$@" || return 1
+    artifactory::io --request DELETE "$@" || return 1
 }
-export -f artifactory.DELETE
+#export -f artifactory::DELETE
 
 #----------------------------------------------------------------------------------------------
-function artifactory.deleteArtifact()
+function artifactory::deleteArtifact()
 {
     local -r artifact=${1:?"need an artifact"}
 
     echo -n "Deleting artifact: $artifact  "
-    local url="https://$(artifactory.SERVER)/artifactory/$artifact"
+    local url="https://$(artifactory::SERVER)/artifactory/$artifact"
     [[ "$artifact" = 'http'* ]] && url="$artifact"
-    artifactory.DELETE --show-error --write-out '%{http_code}\n' "$url" || echo "Failed to delete $artifact"
+    artifactory::DELETE --show-error --write-out '%{http_code}\n' "$url" || echo "Failed to delete $artifact"
     echo
 }
-export -f artifactory.deleteArtifact
+#export -f artifactory::deleteArtifact
 
 #----------------------------------------------------------------------------------------------
 # This function will delete the property ($prop) from the artifact located at $path.
-# eg:
-# artifactory.deleteProperty https://arhost1.usd.lab.emc.com/artifactory/api/storage/cyclone-dev/com/emc/adapters/1.0-SNAPSHOT/adapters-1.0-20160212.202741-1.pom testProp
-function artifactory.deleteProperty()
+# eg:   artifactory::deleteProperty https://artifactory.home/artifactory/api/storage/dev/adapters/1.0-SNAPSHOT/adapters-1.0-20160212.202741-1.pom testProp
+function artifactory::deleteProperty()
 {
     local path=${1:?"ERROR: no path provided to ${FUNCNAME[0]}()!"}
     local prop=${2:?"ERROR: no property provided to ${FUNCNAME[0]}()!"}
@@ -50,15 +51,14 @@ function artifactory.deleteProperty()
     echo "Deleting property $prop from $path..."
 
     local url="$path?properties=$prop"
-    artifactory.DELETE "$url" || return $?
+    artifactory::DELETE "$url" || return $?
 }
-export -f artifactory.deleteProperty
+#export -f artifactory::deleteProperty
 
 #----------------------------------------------------------------------------------------------
 # This function will create a new artifact at $url
-# eg:
-# artifactoryArtifactDeploy  https://arhost1.usd.lab.emc.com/artifactory/cyclone-dev/com/emc/adapters/1.0.1 random.tar
-function artifactory.deployArtifact()
+# eg:  artifactoryArtifactDeploy  https://artifactory.home/artifactory/api/storage/dev/adapters/1.0.1 random.tar
+function artifactory::deployArtifact()
 {
     local targetFolder=${1:?"ERROR: no targetFolder provided to ${FUNCNAME[0]}()!"}
     local localFilePath=${2:?"ERROR: no localFilePath provided to ${FUNCNAME[0]}()!"}
@@ -82,26 +82,26 @@ function artifactory.deployArtifact()
     echo "$md5Value $sha1Value $localFilePath"
 
     echo "INFO: Uploading $localFilePath to $url"
-    artifactory.PUT --header "X-Checksum-Md5: $md5Value" --header "X-Checksum-Sha1: $sha1Value" --upload-file "$localFilePath" "$url" || return $?
+    artifactory::PUT --header "X-Checksum-Md5: $md5Value" --header "X-Checksum-Sha1: $sha1Value" --upload-file "$localFilePath" "$url" || return $?
 }
-export -f artifactory.deployArtifact
+#export -f artifactory::deployArtifact
 
 #----------------------------------------------------------------------------------------------
-function artifactory.GET()
+function artifactory::GET()
 {
-    artifactory.io --request GET "$@" || return $?
+    artifactory::io --request GET "$@" || return $?
 }
-export -f artifactory.GET
+#export -f artifactory::GET
 
 #----------------------------------------------------------------------------------------------
-function artifactory.io()
+function artifactory::io()
 {
     local -a args
     local headers response url
     local -i status=0
     local -A links
     local -a credentials
-    mapfile -t credentials < <(credentials.get artifactory)
+    mapfile -t credentials < <(credentials::get artifactory)
     if [ "${DEBUG:-0}" -eq 0 ]; then
         credentials+=( '--silent' )
     else
@@ -130,60 +130,59 @@ function artifactory.io()
 
     local curl_cmd=( 'curl' '--insecure' "$@" )
     (
-        [ "$status" -gt 0 ] && term.log "cURL returned error code: $status" 'warn'
+        [ "$status" -gt 0 ] && term::log "cURL returned error code: $status" 'warn'
         echo
-        term.log "***ERROR: failure to complete artifactory request
+        term::log "***ERROR: failure to complete artifactory request
     command:       $(printf '%s ' "${curl_cmd[@]}")
     error code:    $(sed -E 's|,|                  |g' <<< "$response")
 
     " 'warn' >&2
     )
 
-    # check that 'term.log' was successful, otherwise, make sure something is echo'd
+    # check that 'term::log' was successful, otherwise, make sure something is echo'd
     [ $? -eq 0 ] || echo "command:       $(printf '%s ' "${curl_cmd[@]}")\\n    error code:    $response" >&2
 
     return 1
 }
-export -f artifactory.io
+#export -f artifactory::io
 
 #----------------------------------------------------------------------------------------------
-function artifactory.propertiesFile()
+function artifactory::propertiesFile()
 {
-    echo "${ARTIFACTORY_PROPERTIES_FILE:=$(artifactory.propFile)}"
+    echo "${ARTIFACTORY_PROPERTIES_FILE:=$(artifactory::propFile)}"
 }
-export -f artifactory.propertiesFile
+#export -f artifactory::propertiesFile
 
 #----------------------------------------------------------------------------------------------
-function artifactory.POST()
+function artifactory::POST()
 {
-    artifactory.io --request POST "$@" || return $?
+    artifactory::io --request POST "$@" || return $?
 }
-export -f artifactory.POST
+#export -f artifactory::POST
 
 #----------------------------------------------------------------------------------------------
-function artifactory.PUT()
+function artifactory::PUT()
 {
-    artifactory.io --request PUT "$@" || return $?
+    artifactory::io --request PUT "$@" || return $?
 }
-export -f artifactory.PUT
+#export -f artifactory::PUT
 
 #----------------------------------------------------------------------------------------------
 # This function will retrieve the artifact at $url
-# eg:
-# artifactoryArtifactRetrieve  https://arhost1.usd.lab.emc.com/artifactory/cyclone-dev/com/emc/adapters/1.0-SNAPSHOT/adapters-1.0-20160212.202741-1.pom
+# eg:  artifactoryArtifactRetrieve  https://artifactory.home/artifactory/api/storage/dev/adapters/1.0-SNAPSHOT/adapters-1.0-20160212.202741-1.pom
 # note that this url must be of the form /artifactory/<repo> as apposed to /artifactory/api/storage/<repo> in order to download the file
-function artifactory.retrieveArtifact()
+function artifactory::retrieveArtifact()
 {
     local url=${1:?"ERROR: no url provided to ${FUNCNAME[0]}()!"}
     local filename=$(basename "$url")
 
     echo "Downloading $url to current dir..."
-    artifactory.GET "$url" --output "$filename" || return $?
+    artifactory::GET "$url" --output "$filename" || return $?
 }
-export -f artifactory.retrieveArtifact
+#export -f artifactory::retrieveArtifact
 
 #----------------------------------------------------------------------------------------------
-function artifactory.saveCBF()
+function artifactory::saveCBF()
 {
     local filename="${1:?}"
     local tmpDir="${2:-$(mktemp -d)}"
@@ -194,32 +193,30 @@ function artifactory.saveCBF()
     # create tgz file with fixed timestamp (so we get consistent sha256)
     tar --exclude='C?F.properties' --create --mtime "$filetime" container_build_framework | gzip -n > "$tarfile"
 
-    artifactory.uploadFile "container_build_framework/${filename}"  "$tarfile" || return 1
-    artifactory.uploadFile "container_build_framework/latest.tar.gz"  "$tarfile" || return $?
+    artifactory::uploadFile "container_build_framework/${filename}"  "$tarfile" || return 1
+    artifactory::uploadFile "container_build_framework/latest.tar.gz"  "$tarfile" || return $?
 }
-export -f artifactory.saveCBF
+#export -f artifactory::saveCBF
 
 #----------------------------------------------------------------------------------------------
 # This function will search for artifacts using AQL  (Artifactor Query Language) - json query save in file
-# eg:
-# artifactoryPropertySearch aqlFile
-function artifactory.search()
+# eg: artifactoryPropertySearch aqlFile
+function artifactory::search()
 {
     local -r aql=${1:?"ERROR: no aql provided to ${FUNCNAME[0]}()!"}
 
     if [ -e "$aql" ]; then
-        artifactory.POST "$(artifactory.REST_API)/search/aql" -T "$aql"
+        artifactory::POST "$(artifactory::REST_API)/search/aql" -T "$aql"
     else
-        artifactory.POST "$(artifactory.REST_API)/search/aql" -T <(echo "$aql")
+        artifactory::POST "$(artifactory::REST_API)/search/aql" -T <(echo "$aql")
     fi
 }
-export -f artifactory.search
+#export -f artifactory::search
 
 #----------------------------------------------------------------------------------------------
 # This function will set the artifact located at $path to have the given property and value ($prop and $val)
-# eg:
-# artifactory.setProperty https://arhost1.usd.lab.emc.com/artifactory/api/storage/cyclone-dev/com/emc/adapters/1.0-SNAPSHOT/adapters-1.0-20160212.202741-1.pom testProp testVal
-function artifactory.setProperty()
+# eg: https://artifactory.home/artifactory/api/storage/dev/adapters/1.0-SNAPSHOT/adapters-1.0-20160212.202741-1.pom testProp testVal
+function artifactory::setProperty()
 {
     local path=${1:?"ERROR: no path provided to ${FUNCNAME[0]}()!"}
     local prop=${2:?"ERROR: no property provided to ${FUNCNAME[0]}()!"}
@@ -227,12 +224,12 @@ function artifactory.setProperty()
 
     echo "Adding property $prop=$val to $path..."
     local url="$path?properties=$prop=$val"
-    artifactory.PUT "$url" || return $?
+    artifactory::PUT "$url" || return $?
 }
-export -f artifactory.setProperty
+#export -f artifactory::setProperty
 
 #----------------------------------------------------------------------------------------------
-function artifactory.uploadFile()
+function artifactory::uploadFile()
 {
     local -r target="${1:?}"
     local -r file="${2:?}"
@@ -243,104 +240,103 @@ function artifactory.uploadFile()
     sha1Value="${sha1Value:0:40}"
 
     local url="$target"
-    [[ "$url" = https://* ]] || [[ "$url" = http://* ]] || url="$(artifactory.URL)/cyclone-devops-mw/cyclone-devops/$target"
 
     echo "INFO: Uploading $file to $url"
-    artifactory.PUT --header "X-Checksum-Md5: $md5Value" --header "X-Checksum-Sha1: $sha1Value" --upload-file "$file" "$url" || return $?
+    artifactory::PUT --header "X-Checksum-Md5: $md5Value" --header "X-Checksum-Sha1: $sha1Value" --upload-file "$file" "$url" || return $?
 }
-export -f artifactory.uploadFile
+#export -f artifactory::uploadFile
 
 #----------------------------------------------------------------------------------------------
-function artifactory.HOST()
+function artifactory::HOST()
 {
     if [ "${OPTS['host']:-}" ]; then
          echo "${OPTS['host']}"
     else
-        echo "${_ARTIFACTORY_HOST:=$(lib.getHost "$( artifactory.SERVER )")}"
+        echo "${_ARTIFACTORY_HOST:=$(lib::getHost "$( artifactory::SERVER )")}"
     fi
 }
-export -f artifactory.HOST
+#export -f artifactory::HOST
 
 #----------------------------------------------------------------------------------------------
-function artifactory.PROD()
+function artifactory::PROD()
 {
     if [ "${OPTS['prod']:-}" ]; then
          echo "${OPTS['prod']}"
     else
-        echo "${_ARTIFACTORY_PROD:=$(lib.getProperty 'PROD' "$( artifactory.propertiesFile )")}"
+        echo "${_ARTIFACTORY_PROD:=$(lib::getProperty 'PROD' "$( artifactory::propertiesFile )")}"
     fi
 }
-export -f artifactory.PROD
+#export -f artifactory::PROD
 
 #----------------------------------------------------------------------------------------------
-function artifactory.REST_API()
+function artifactory::REST_API()
 {
     if [ "${OPTS['rest_api']:-}" ]; then
          echo "${OPTS['rest_api']}"
     else
-        echo "${_ARTIFACTORY_REST_API:=$(lib.getProperty 'REST_API' "$( artifactory.propertiesFile )")}"
+        echo "${_ARTIFACTORY_REST_API:=$(lib::getProperty 'REST_API' "$( artifactory::propertiesFile )")}"
     fi
 }
-export -f artifactory.REST_API
+#export -f artifactory::REST_API
 
 #----------------------------------------------------------------------------------------------
-function artifactory.ROUSER()
+function artifactory::ROUSER()
 {
     if [ "${OPTS['rouser']:-}" ]; then
          echo "${OPTS['rouser']}"
     else
-        echo "${_ARTIFACTORY_ROUSER:=$(lib.getProperty 'ROUSER' "$( artifactory.propertiesFile )")}"
+        echo "${_ARTIFACTORY_ROUSER:=$(lib::getProperty 'ROUSER' "$( artifactory::propertiesFile )")}"
     fi
 }
-export -f artifactory.ROUSER
+#export -f artifactory::ROUSER
 
 #----------------------------------------------------------------------------------------------
-function artifactory.SERVER()
+function artifactory::SERVER()
 {
     if [ "${OPTS['server']:-}" ]; then
          echo "${OPTS['server']}"
     else
-        echo "${_ARTIFACTORY_SERVER:=$(lib.getProperty 'SERVER' "$( artifactory.propertiesFile )")}"
+        echo "${_ARTIFACTORY_SERVER:=$(lib::getProperty 'SERVER' "$( artifactory::propertiesFile )")}"
     fi
 }
-export -f artifactory.SERVER
+#export -f artifactory::SERVER
 
 #----------------------------------------------------------------------------------------------
-function artifactory.TEST()
+function artifactory::TEST()
 {
     if [ "${OPTS['test']:-}" ]; then
          echo "${OPTS['test']}"
     else
-        echo "${_ARTIFACTORY_TEST:=$(lib.getProperty 'TEST' "$( artifactory.propertiesFile )")}"
+        echo "${_ARTIFACTORY_TEST:=$(lib::getProperty 'TEST' "$( artifactory::propertiesFile )")}"
     fi
 }
-export -f artifactory.TEST
+#export -f artifactory::TEST
 
 #----------------------------------------------------------------------------------------------
-function artifactory.URL()
+function artifactory::URL()
 {
     if [ "${OPTS['url']:-}" ]; then
          echo "${OPTS['url']}"
     else
-        echo "${_ARTIFACTORY_URL:=$(lib.getProperty 'URL' "$( artifactory.propertiesFile )")}"
+        echo "${_ARTIFACTORY_URL:=$(lib::getProperty 'URL' "$( artifactory::propertiesFile )")}"
     fi
 }
-export -f artifactory.URL
+#export -f artifactory::URL
 
 #----------------------------------------------------------------------------------------------
-function artifactory.USER()
+function artifactory::USER()
 {
     if [ "${OPTS['user']:-}" ]; then
          echo "${OPTS['user']}"
     else
-        echo "${_ARTIFACTORY_USER:=$(lib.getProperty 'USER' "$( artifactory.propertiesFile )")}"
+        echo "${_ARTIFACTORY_USER:=$(lib::getProperty 'USER' "$( artifactory::propertiesFile )")}"
     fi
 }
-export -f artifactory.USER
+#export -f artifactory::USER
 
 #----------------------------------------------------------------------------------------------
-function artifactory.USERID()
+function artifactory::USERID()
 {
-    artifactory.USER
+    artifactory::USER
 }
-export -f artifactory.USERID
+#export -f artifactory::USERID

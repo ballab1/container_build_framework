@@ -1,4 +1,6 @@
 #!/bin/echo 'This script cannot be executabled directly. Please source from another script'
+# -*- coding: utf-8 -*-
+#required_libs git lib trap
 
 #----------------------------------------------------------------------------------------------
 #
@@ -7,12 +9,12 @@
 #----------------------------------------------------------------------------------------------
 
 #----------------------------------------------------------------------------------------------
-function versions.data()
+function versions::data()
 {
     local -r deploy_yaml=${1:?}
     local commit=${2:-}
 
-    local -r deploy_json="$(lib.yamlToJson "$deploy_yaml")"
+    local -r deploy_json="$(lib::yamlToJson "$deploy_yaml")"
 
     # parse version info from provided yaml file into 'VERSIONS' associative array
     local key val
@@ -26,9 +28,9 @@ function versions.data()
     (
         if [[ "${VERSIONS['commit']:-}" || ! -d "${VERSIONS['dir']}" ]]; then
             (( DEBUG_TRACE-- )) ||:                 # temporarily reduce DEBUG_TRACE to prevent 'git' tracing
-            if versions.initialize "$commit"; then
+            if versions::initialize "$commit"; then
                 # update deploy.yml if git commit has changed
-                [ "$(git.HEAD)" != "${VERSIONS['commit']}" ] &&  sed -E -i 's|commit:.*$|commit: '${commit}'|' "$deploy_yaml"
+                [ "$(git::HEAD)" != "${VERSIONS['commit']}" ] &&  sed -E -i 's|commit:.*$|commit: '${commit}'|' "$deploy_yaml"
             fi
             (( DEBUG_TRACE++ )) ||:
         fi
@@ -36,51 +38,51 @@ function versions.data()
 
     # load variables from files
     local container_os="$(jq --compact-output --monochrome-output --raw-output 'try .container_os' <<< "$deploy_json" ||:)"
-    versions.export "$container_os"
+    versions::export "$container_os"
 }
-export -f versions.data
+#export -f versions::data
 
 #----------------------------------------------------------------------------------------------
-function versions.export()
+function versions::export()
 {
     local -r containerOS=${1:?}
 
     # export data for requested OS
     local -r versions="$(readlink -m "${VERSIONS['dir']}/$containerOS")"
-    [ -e "$versions" ] || trap.die "Unrecognized CONTAINER_OS: $containerOS"
+    [ -e "$versions" ] || trap::die "Unrecognized CONTAINER_OS: $containerOS"
 
-    lib.exportFileVars "$versions" 'export'
+    lib::exportFileVars "$versions" 'export'
 }
-export -f versions.export
+#export -f versions::export
 
 #----------------------------------------------------------------------------------------------
-function versions.initialize()
+function versions::initialize()
 {
     local commit=${1:-}
 
     local -r versions_dir="${VERSIONS['dir']}"
     if [ ! -d "$versions_dir" ]; then
-        mkdir -p "$(dirname "$versions_dir")" || trap.die 'no version information available'
-        git.clone "${VERSIONS['repo']}" "$versions_dir"  --quiet
+        mkdir -p "$(dirname "$versions_dir")" || trap::die 'no version information available'
+        git::clone "${VERSIONS['repo']}" "$versions_dir"  --quiet
     fi
     cd "$versions_dir"
     VERSIONS['dir']="$(pwd)"
 
     # return if versions directory is dirty
-    git.isDirty && return 1
+    git::isDirty && return 1
 
     # ensure version info is up-to-date
-    git.fetch --all
+    git::fetch --all
     if [ "${commit^^:-}" = 'HEAD' ] || [ -z "${VERSIONS['commit']:-}" ]; then
-        git.reset "origin/${VERSIONS['branch']:-main}" --hard
+        git::reset "origin/${VERSIONS['branch']:-main}" --hard
         return 1
     fi
 
-    git.reset "${VERSIONS['commit']}" --hard
+    git::reset "${VERSIONS['commit']}" --hard
 
     # return 0 to indicate no change in commit
     return 0
 }
-export -f versions.initialize
+#export -f versions::initialize
 
 #----------------------------------------------------------------------------------------------

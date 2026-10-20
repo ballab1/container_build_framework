@@ -1,4 +1,6 @@
 #!/bin/echo 'This script cannot be executabled directly. Please source from another script'
+# -*- coding: utf-8 -*-
+#required_libs git
 
 #----------------------------------------------------------------------------------------------
 #
@@ -6,17 +8,17 @@
 #
 
 #----------------------------------------------------------------------------------------------
-function custom.cbfVersion()
+function custom::cbfVersion()
 {
-    (cd container_build_framework; git.HEAD)
+    (cd container_build_framework; git::HEAD)
 }
-export -f custom.cbfVersion
+#export -f custom::cbfVersion
 
 #----------------------------------------------------------------------------------------------
-function custom.storage()
+function custom::storage()
 {
     echo 'GitHub'
 }
-export -f custom.storage
+#export -f custom::storage
 
 #----------------------------------------------------------------------------------------------

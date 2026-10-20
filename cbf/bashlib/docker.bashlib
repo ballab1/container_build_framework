@@ -1,4 +1,6 @@
 #!/bin/echo 'This script cannot be executabled directly. Please source from another script'
+# -*- coding: utf-8 -*-
+#required_libs registry term trap
 
 #----------------------------------------------------------------------------------------------
 #
@@ -6,7 +8,7 @@
 #
 
 #----------------------------------------------------------------------------------------------
-function docker.baseImage()
+function docker::baseImage()
 {
     local ref="${1:?}"
 
@@ -14,15 +16,15 @@ function docker.baseImage()
         echo "${ref%@*}"
 
     else
-        local registry="$(registry.SERVER)"
+        local registry="$(registry::SERVER)"
         ref="${ref#${registry}}"
         echo "${registry}${ref%:*}"
     fi
 }
-export -f docker.baseImage
+#export -f docker::baseImage
 
 #----------------------------------------------------------------------------------------------
-function docker.clean()
+function docker::clean()
 {
     local dockerRootDir="$(docker system info 2>/dev/null | grep 'Docker Root Dir:' | sed -E 's|^.+:\s+||')"
 
@@ -51,7 +53,7 @@ function docker.clean()
     for image in $(docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>' ||:); do
         fingerprint=$(docker inspect "$image" | jq --compact-output --monochrome-output --raw-output '.[].Config.Labels."container.fingerprint"?') ||:
         [ -z "${fingerprint:-}" ] && continue
-        [ "$fingerprint" != "$(docker.tag "$image")" ] && continue
+        [ "$fingerprint" != "$(docker::tag "$image")" ] && continue
         collection+=( $image )
     done
 
@@ -114,10 +116,10 @@ function docker.clean()
         echo
     ) >&2
 }
-export -f docker.clean
+#export -f docker::clean
 
 #----------------------------------------------------------------------------------------------
-function docker.imageExists()
+function docker::imageExists()
 {
     local -r image=${1:?}
     shift
@@ -125,9 +127,9 @@ function docker.imageExists()
 
     local -i status
     local imageRepo imageTag repo tag
-    imageRepo="$(docker.baseImage "$image")"
-    imageTag="$(docker.tag "$image")"
-    repo="$(docker.repo "$image")"
+    imageRepo="$(docker::baseImage "$image")"
+    imageTag="$(docker::tag "$image")"
+    repo="$(docker::repo "$image")"
 
 
     if [ "${#candidateTags[*]}" -eq 1 ]; then
@@ -197,30 +199,30 @@ function docker.imageExists()
     # nothing found. do not echo anything
     return 0
 }
-export -f docker.imageExists
+#export -f docker::imageExists
 
 #----------------------------------------------------------------------------------------------
-function docker.isRunning()
+function docker::isRunning()
 {
     if [ -S /run/docker.sock ]; then
         curl --silent --unix-socket /run/docker.sock GET http://127.0.0.1/ping &> /dev/null && return 0
     fi
     return 1
 }
-export -f docker.isRunning
+#export -f docker::isRunning
 
 #----------------------------------------------------------------------------------------------
-function docker.networks()
+function docker::networks()
 {
     local -a networks=( $( docker network ls | grep 'default' | awk "{ print \$1 }" ) )
     docker network inspect "${networks[@]}" \
     | jq --compact-output --monochrome-output --raw-output ".[].Containers|.[]|[.IPv4Address + \" : \" + .Name]|.[]" \
     | sort -t "." -k 4g
 }
-export -f docker.networks
+#export -f docker::networks
 
 #----------------------------------------------------------------------------------------------
-function docker.pushRetained()
+function docker::pushRetained()
 {
     local -ri isRetainedImage="${1:?}"
     shift
@@ -237,12 +239,12 @@ function docker.pushRetained()
         [ "${isRetainedImage:-0}" -gt 0 ] || continue
         local fp="$(docker inspect "$image" | jq --compact-output --monochrome-output --raw-output '.[].Config.Labels."container.fingerprint"?')"
         if [ "${fp:-}" ]; then
-            allImages+=( "$(docker.baseImage "$image"):$fp" )
-            docker tag "$image" "$(docker.baseImage "$image"):$fp"  > /dev/null 2>&1 ||: # ignore errors
+            allImages+=( "$(docker::baseImage "$image"):$fp" )
+            docker tag "$image" "$(docker::baseImage "$image"):$fp"  > /dev/null 2>&1 ||: # ignore errors
         fi
     done
 
-    [ "${#allImages[*]}" -gt 0 ] || trap.die 'no valid images found'
+    [ "${#allImages[*]}" -gt 0 ] || trap::die 'no valid images found'
     # strip out duplicate entries (so we don't push stuff twice)
     local -a imagesToPush
     mapfile -t imagesToPush < <(printf '%s\n' "${allImages[@]}" | sort -u)
@@ -252,11 +254,11 @@ function docker.pushRetained()
     for image in "${imagesToPush[@]}"; do
         wasPushed=0
         for attempt in {0..2}; do
-            term.log "    Pushing ${image}"'\n' 'lt_blue'
+            term::log "    Pushing ${image}"'\n' 'lt_blue'
             docker push "$image" >/dev/null && wasPushed=1 && break
             echo 'retrying...'
         done
-        [ "$wasPushed" -eq 0 ] && trap.die "Failed to push $image"
+        [ "$wasPushed" -eq 0 ] && trap::die "Failed to push $image"
     done
 
     for image in "${imagesToPush[@]}"; do
@@ -265,18 +267,18 @@ function docker.pushRetained()
             [ "$inp" = "$image" ] && wasTagged=1 && break
         done
         [ "$wasTagged" -eq 1 ] && continue
-        term.log "    Removing temporary image: ${image}"'\n' 'lt_blue'
+        term::log "    Removing temporary image: ${image}"'\n' 'lt_blue'
         docker rmi "$image" >/dev/null
     done
 }
-export -f docker.pushRetained
+#export -f docker::pushRetained
 
 #----------------------------------------------------------------------------------------------
-function docker.repo()
+function docker::repo()
 {
     local ref="${1:?}"
 
-    local registry="$(registry.SERVER)"
+    local registry="$(registry::SERVER)"
     ref="${ref#${registry}}"
 
     if [[ "$ref" = *@sha256:* ]]; then
@@ -286,10 +288,10 @@ function docker.repo()
         echo "${ref%:*}"
     fi
 }
-export -f docker.repo
+#export -f docker::repo
 
 #----------------------------------------------------------------------------------------------
-function docker.showProcessReport()
+function docker::showProcessReport()
 {
     local -r opts=${1:-}
 
@@ -307,10 +309,10 @@ function docker.showProcessReport()
         printf '%s\n' "${containers[@]}" | sort
     fi
 }
-export -f docker.showProcessReport
+#export -f docker::showProcessReport
 
 #----------------------------------------------------------------------------------------------
-function docker.tag()
+function docker::tag()
 {
     local ref="${1:?}"
 
@@ -318,11 +320,11 @@ function docker.tag()
        echo "${ref#*@}"
 
     else
-        local registry="$(registry.SERVER)"
+        local registry="$(registry::SERVER)"
         ref="${ref#${registry}}"
         echo "${ref##*:}"
     fi
 }
-export -f docker.tag
+#export -f docker::tag
 
 #----------------------------------------------------------------------------------------------

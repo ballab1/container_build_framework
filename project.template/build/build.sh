@@ -101,4 +101,5 @@ fi
 
 echo "loading framework from ${cbf_dir}"
 chmod a+rx "${cbf_dir}/cbf/bin/build.sh"
-exec "${cbf_dir}/cbf/bin/build.sh" "$@"
+#exec "${cbf_dir}/cbf/bin/build.sh" "$@"
+"${cbf_dir}/cbf/bin/build.sh" "$@"
