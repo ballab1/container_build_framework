@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #############################################################################
-function __initrt.cleanUp()
+function __initrt::cleanUp()
 {
     [ "$#" -ne 0 ] || return 0
     local _file
@@ -12,7 +12,7 @@ function __initrt.cleanUp()
 }
 
 #############################################################################
-function __initrt.envNotLoaded()
+function __initrt::envNotLoaded()
 {
     local -r filename=${1:?"Input parameter 'filename' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r envname="$( basename "$filename" )"
@@ -26,7 +26,7 @@ function __initrt.envNotLoaded()
 }
 
 #############################################################################
-function __initrt.pathNotScanned()
+function __initrt::pathNotScanned()
 {
     local -r path=${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}
 
@@ -38,7 +38,7 @@ function __initrt.pathNotScanned()
 }
 
 #############################################################################
-function __initrt.libNotLoaded()
+function __initrt::libNotLoaded()
 {
     local -r filename=${1:?"Input parameter 'filename' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r libname="$( basename "$filename" )"
@@ -51,7 +51,7 @@ function __initrt.libNotLoaded()
 }
 
 #############################################################################
-function __initrt.loadEnvars()
+function __initrt::loadEnvars()
 {
     local -r path=${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -a files=()
@@ -63,7 +63,7 @@ function __initrt.loadEnvars()
 }
 
 #############################################################################
-function __initrt.loadLibrary()
+function __initrt::loadLibrary()
 {
     local -r src=${1:?"Input parameter 'src' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r color=${2:-0}
@@ -77,13 +77,13 @@ function __initrt.loadLibrary()
 }
 
 #############################################################################
-function __initrt.loadLibs()
+function __initrt::loadLibs()
 {
     local -r path=${1:?"Input parameter 'path' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r color=${2:-0}
 
     [ "$path" ] || return 0
-    __initrt.pathNotScanned "$path" || return 0
+    __initrt::pathNotScanned "$path" || return 0
     [ -d "${path}/bashlib" ] || return 0
     local -a files
     mapfile -t files < <(find "${path}/bashlib" -maxdepth 1 -mindepth 1 -type f -name '*.bashlib'  -print)
@@ -91,14 +91,14 @@ function __initrt.loadLibs()
 
     local src
     for src in "${files[@]}" ; do
-        if  __initrt.libNotLoaded "$src" ; then
-            __initrt.loadLibrary "$src" "$color"
+        if  __initrt::libNotLoaded "$src" ; then
+            __initrt::loadLibrary "$src" "$color"
         fi
     done
 }
 
 #############################################################################
-function __initrt.sourcingMessage()
+function __initrt::sourcingMessage()
 {
     local -r src=${1:?"Input parameter 'src' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r name="$(basename "$src")"
@@ -146,25 +146,25 @@ fi
 [ -w "$(dirname "$scanTracker")" ] && :>  "$scanTracker"
 
 # load our bashlibs
-__initrt.loadLibs "$CRF_LOCATION" 35                                            # magenta
-__initrt.loadLibs "$( readlink -f "$( dirname "${BASH_SOURCE[0]}" )/.." )" 36   # cyan
+__initrt::loadLibs "$CRF_LOCATION" 35                                            # magenta
+__initrt::loadLibs "$( readlink -f "$( dirname "${BASH_SOURCE[0]}" )/.." )" 36   # cyan
 [ $__libCount2 -gt 0 ] && echo
 
 # load our environment
 if [ -e "${CRF_LOCATION}/bin/rt.environment" ]; then
-    [ "${DEBUG_TRACE:-0}" = 0 ] && [ -z "${DEBUG:-}" ] || __initrt.sourcingMessage "${CRF_LOCATION}/bin/rt.environment"
+    [ "${DEBUG_TRACE:-0}" = 0 ] && [ -z "${DEBUG:-}" ] || __initrt::sourcingMessage "${CRF_LOCATION}/bin/rt.environment"
     source "${CRF_LOCATION}/bin/rt.environment"
 fi
 
 # load our definitions (associative arrays)
-declare -a _files=( $(__initrt.loadEnvars "$CRF_LOCATION") )
-_files+=( $(__initrt.loadEnvars "${CBF_LOCATION}${CRF_LOCATION}") )
-_files+=( $(__initrt.loadEnvars "$(readlink -f "$( dirname "${BASH_SOURCE[0]}" )/..")") )
+declare -a _files=( $(__initrt::loadEnvars "$CRF_LOCATION") )
+_files+=( $(__initrt::loadEnvars "${CBF_LOCATION}${CRF_LOCATION}") )
+_files+=( $(__initrt::loadEnvars "$(readlink -f "$( dirname "${BASH_SOURCE[0]}" )/..")") )
 if [ "${#_files[@]}" -gt 0 ]; then
     declare _src
     for _src in "${_files[@]}" ; do
-        if __initrt.envNotLoaded "$_src" ; then
-            [ "${DEBUG_TRACE:-0}" = 0 ] && [ -z "${DEBUG:-}" ] || __initrt.sourcingMessage "$_src"
+        if __initrt::envNotLoaded "$_src" ; then
+            [ "${DEBUG_TRACE:-0}" = 0 ] && [ -z "${DEBUG:-}" ] || __initrt::sourcingMessage "$_src"
             source "$_src"
         fi
     done
@@ -175,9 +175,9 @@ fi
 
 
 # init the framework
-crf.__init "$CRF_LOCATION"
+crf::__init "$CRF_LOCATION"
 
-__initrt.cleanUp "${__cache[@]}"
+__initrt::cleanUp "${__cache[@]}"
 
 unset __cache
 unset __envCount

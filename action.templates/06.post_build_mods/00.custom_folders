@@ -22,7 +22,7 @@ declare -ra dirs=( bin
                    var
                    www )
 
-declare base="$( cbf.BASE )"
+declare base="$( cbf::BASE )"
 [ -z "${base:-}" ] && base=/tmp
 
 declare dir file fdir

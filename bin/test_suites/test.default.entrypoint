@@ -90,7 +90,7 @@ setup() {
     [ "$test_default_entrypoint_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running setup'
     export LOG=__test_default_entrypoint.mock_logger
     test_default_entrypoint_LOG_file=$(__test_default_entrypoint.mktemp)
-    fake 'term.log' '__test_default_entrypoint.mock_logger "$FAKE_PARAMS"'
+    fake 'term::log' '__test_default_entrypoint.mock_logger "$FAKE_PARAMS"'
     touch "$test_default_entrypoint_LOG_file"
 }
 

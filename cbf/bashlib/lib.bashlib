@@ -219,7 +219,7 @@ function lib::getProperty()
     fi
 
     local -i status
-    local -r val="$( grep -e "^${prop}\\s*=" "$file" )" && status=$? || status=$?
+    local -r val="$( grep -E -e "^${prop}\\s*=" "$file" )" && status=$? || status=$?
 
     # only report eval'd string (after removing 'prop=' prefix) if something was found
     if [ $status -eq 0 ] && [ "${val:-}" ]; then

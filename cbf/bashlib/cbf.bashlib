@@ -47,63 +47,63 @@ EOF
 #----------------------------------------------------------------------------------------------
 function cbf::CBFBASE()
 {
-    lib::getProperty "${FUNCNAME[0]##*.}" "$( cbf::propertiesFile )"
+    lib::getProperty "${FUNCNAME[0]##*::}" "$( cbf::propertiesFile )"
 }
 #export -f cbf::CBFBASE
 
 #----------------------------------------------------------------------------------------------
 function cbf::BIN()
 {
-    lib::getProperty "${FUNCNAME[0]##*.}" "$( cbf::propertiesFile )"
+    lib::getProperty "${FUNCNAME[0]##*::}" "$( cbf::propertiesFile )"
 }
 #export -f cbf::BIN
 
 #----------------------------------------------------------------------------------------------
 function cbf::LIB()
 {
-    lib::getProperty "${FUNCNAME[0]##*.}" "$( cbf::propertiesFile )"
+    lib::getProperty "${FUNCNAME[0]##*::}" "$( cbf::propertiesFile )"
 }
 #export -f cbf::LIB
 
 #----------------------------------------------------------------------------------------------
 function cbf::TEMPLATES()
 {
-    lib::getProperty "${FUNCNAME[0]##*.}" "$( cbf::propertiesFile )"
+    lib::getProperty "${FUNCNAME[0]##*::}" "$( cbf::propertiesFile )"
 }
 #export -f cbf::TEMPLATES
 
 #----------------------------------------------------------------------------------------------
 function cbf::BASE()
 {
-    lib::getProperty "${FUNCNAME[0]##*.}" "$( cbf::propertiesFile )"
+    lib::getProperty "${FUNCNAME[0]##*::}" "$( cbf::propertiesFile )"
 }
 #export -f cbf::BASE
 
 #----------------------------------------------------------------------------------------------
 function cbf::ACTION()
 {
-    lib::getProperty "${FUNCNAME[0]##*.}" "$( cbf::propertiesFile )"
+    lib::getProperty "${FUNCNAME[0]##*::}" "$( cbf::propertiesFile )"
 }
 #export -f cbf::ACTION
 
 #----------------------------------------------------------------------------------------------
 function cbf::CRF_BASE()
 {
-    lib::getProperty "${FUNCNAME[0]##*.}" "$( cbf::propertiesFile )"
+    lib::getProperty "${FUNCNAME[0]##*::}" "$( cbf::propertiesFile )"
 }
 #export -f cbf::CRF_BASE
 
 #----------------------------------------------------------------------------------------------
 function cbf::CRF_BIN()
 {
-    lib::getProperty "${FUNCNAME[0]##*.}" "$( cbf::propertiesFile )"
+    lib::getProperty "${FUNCNAME[0]##*::}" "$( cbf::propertiesFile )"
 }
 #export -f cbf::CRF_BIN
 
 #----------------------------------------------------------------------------------------------
 function cbf::CRT_BASE()
 {
-    lib::getProperty "${FUNCNAME[0]##*.}" "$( cbf::propertiesFile )"
+    lib::getProperty "${FUNCNAME[0]##*::}" "$( cbf::propertiesFile )"
 }
 #export -f cbf::CRT_BASE
 
@@ -142,7 +142,7 @@ function cbf::buildContainer()
         local last_notice=''  #  this is used indirectly by 'cbf::showActionNotice' to prevent duplicates
         if [ "$dir" = '00.bashlib' ]; then
             cbf::showActionNotice 'last_notice' "$dir"
-            cbf::initFramework
+            cbf::initFramework "$name"
             continue
         fi
 
@@ -186,6 +186,7 @@ function cbf::buildContainer()
 #----------------------------------------------------------------------------------------------
 function cbf::initFramework()
 {
+    CONTAINER_NAME=${1:?"Input parameter 'CONTAINER_NAME' must be passed to 'function ${FUNCNAME[0]}()'"}
     local basis="$(unset CONTAINER_NAME; crf::runtimeProperty 'CONTAINER_NAME' || :)"
     [ "${basis:-}" ] && (term::log '    Buidling '; term::log "$CONTAINER_NAME" 'white'; term::log ' on top of '; term::log "${basis}\n" 'white')
 
@@ -206,21 +207,21 @@ function cbf::initFramework()
     [ -e "$( cbf::CRT_BASE )/startup/.info.md" ] || cp "$( cbf::BIN )/.startup.info.md" "$( cbf::CRT_BASE )/startup/"
 
 
-
     # copy runtime framework (only copy updates)
     local -a files
+    local CBF_CRTBASE="$( cbf::CRT_BASE )"
     mapfile -t files < <(find . -type f ! -name '.*' | awk '{print substr($0,3)}' )    # awk strips './' from path
     for file in "${files[@]}"; do
         local action='creating'
         local _name="$( basename "$file" )"
-        if [ -e "$( cbf::CRT_BASE )/$file" ]; then
+        if [ -e "${CBF_CRTBASE}/$file" ]; then
             [ "$_name" != 'rt.environment' ] || continue
-            ( ! cmp -s "$file" "$( cbf::CRT_BASE )/$file" ) || continue
+            ( ! cmp -s "$file" "${CBF_CRTBASE}/$file" ) || continue
             action='updating'
         fi
-        echo "    ${action} $( cbf::CRT_BASE )/$file"
-        mkdir -p "$( dirname "$( cbf::CRT_BASE )/$file" )"
-        cp "$file" "$( cbf::CRT_BASE )/$file"
+        echo "    ${action} ${CBF_CRTBASE}/$file"
+        mkdir -p "$( dirname "${CBF_CRTBASE}/$file" )"
+        cp "$file" "${CBF_CRTBASE}/$file"
     done
 
     # update container name in runtime environment

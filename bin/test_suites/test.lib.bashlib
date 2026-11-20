@@ -16,7 +16,7 @@
 # standard test framework routines              custom support provided within this suite
 # --------------------------------              -----------------------------------------
 # setup_suite()                                 __test_lib_bashlib.mktemp()
-# teardown_suite()                              __test_lib_bashlib.mock_logger()
+# teardown_suite()                              __test_lib_bashlib::mock_logger()
 # setup()                                       export test_lib_bashlib_LOG_file
 # teardown()                                    export test_lib_bashlib_UT_TEST_DIR
 #                                               export test_lib_bashlib_DEBUG
@@ -39,56 +39,56 @@
 
 #-----------------------------------------------------------------------------------------
 # verify failure with invalid args
-test.lib.file_env_INVALIDARGS() {
-    export -f lib.file_env
-    assert_status_code 1 'lib.file_env'
+test::lib::file_env_INVALIDARGS() {
+    export -f lib::file_env
+    assert_status_code 1 'lib::file_env'
 }
 
 #-----------------------------------------------------------------------------------------
 # verify basic assignment
-test.lib.file_env_BASIC() {
-    lib.file_env 't1' 'expected'
+test::lib::file_env_BASIC() {
+    lib::file_env 't1' 'expected'
     assert_equals "expected" "$t1"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify basic assignment to a var
-test.lib.file_env_INDIRECT() {
+test::lib::file_env_INDIRECT() {
     local t2='expected'
-    lib.file_env 't2'
+    lib::file_env 't2'
     assert_equals "expected" "$t2"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify alternate assignment to a var
-test.lib.file_env_INDIRECT2() {
+test::lib::file_env_INDIRECT2() {
     local t2='xxx'
-    lib.file_env 't2' 'expected'
+    lib::file_env 't2' 'expected'
     assert_equals 'xxx' "$t2"
 }
 
 #-----------------------------------------------------------------------------------------
-# verify assignment from value specified in a file (aka: lib.getProperty)
-test.lib.file_env_FILE() {
+# verify assignment from value specified in a file (aka: lib::getProperty)
+test::lib::file_env_FILE() {
     local t3_FILE=$(__test_lib_bashlib.mktemp)
     local expected='this is a test'
     echo "$expected" > "$t3_FILE"
-    lib.file_env 't3'
+    lib::file_env 't3'
     assert_equals "$expected" "$t3"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify failure when there are both exported VAR and a file which can be referenced
-test.lib.file_env_CONFLICT() {
+test::lib::file_env_CONFLICT() {
     local t4='1'
     local t4_FILE='2'
-    export -f lib.file_env
-    assert_status_code 255 'lib.file_env "t4"'
+    export -f lib::file_env
+    assert_status_code 255 'lib::file_env "t4"'
 }
 
 #-----------------------------------------------------------------------------------------
 # verify array of full pathname visible files is returned
-test.lib.getFiles() {
+test::lib::getFiles() {
     local -r tmp=$(__test_lib_bashlib.mktemp -d)
     mkdir -p "$tmp"
     local -a names=( a b c d )
@@ -98,13 +98,13 @@ test.lib.getFiles() {
         expected+=("${tmp}/$file")
     done
     touch "${tmp}/.hidden"  # this file should not get reported"
-    local -a actual=( $( lib.getFiles "$tmp" ) )
+    local -a actual=( $( lib::getFiles "$tmp" ) )
     assert_equals "${expected[*]}" "${actual[*]}"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify that we do not return input list if we remove a file
-test.lib.getFiles_INVALID() {
+test::lib::getFiles_INVALID() {
     local -r tmp=$(__test_lib_bashlib.mktemp -d)
     mkdir -p "$tmp"
     local -a files=( a b c d )
@@ -114,13 +114,13 @@ test.lib.getFiles_INVALID() {
         expected+=( "${tmp}/$file" )
     done
     mv "${tmp}/a" "${tmp}/.hidden.a"
-    local -a actual=( $( lib.getFiles "$tmp" ) )
+    local -a actual=( $( lib::getFiles "$tmp" ) )
     assert_not_equals "${expected[*]}" "${actual[*]}"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify that we do not return input list if we remove a file
-test.lib.getFiles_filtered() {
+test::lib::getFiles_filtered() {
     not_b() {
         test $(basename $1) != 'b'
     }
@@ -133,49 +133,49 @@ test.lib.getFiles_filtered() {
         touch "${tmp}/$file"
         [ $file != b ] && expected+=( "${tmp}/$file" )
     done
-    local -a actual=( $( lib.getFiles "$tmp" 'not_b' ) )
+    local -a actual=( $( lib::getFiles "$tmp" 'not_b' ) )
     assert_equals "${expected[*]}" "${actual[*]}"
 }
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-test.lib.getProperty_USER() {
+test::lib::getProperty_USER() {
     local expected='root'
     local propFile="${CBF_LOCATION}/cbf/bin/rt.environment"
     local key='export USER'
-    local actual="$(lib.getProperty "$key" "$propFile" )"
+    local actual="$(lib::getProperty "$key" "$propFile" )"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify we can get a value from a generic property file
-test.lib.getProperty_SIMPLE() {
+test::lib::getProperty_SIMPLE() {
     local propFile="$(__test_lib_bashlib.mktemp)"
 cat << EOF > "$propFile"
 # property file
 sc=this is a property
 EOF
     local expected='this is a property'
-    local actual="$( lib.getProperty 'sc' "$propFile" )"
+    local actual="$( lib::getProperty 'sc' "$propFile" )"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify we can get a value from a generic property file
-test.lib.getProperty_SIMPLE_default() {
+test::lib::getProperty_SIMPLE_default() {
     local propFile="$(__test_lib_bashlib.mktemp)"
 cat << EOF > "$propFile"
 # property file
 sc=this is NOT the expected property
 EOF
     local expected='this is a property'
-    local actual="$( lib.getProperty 'SOMEVAL' "$propFile" "$expected" )"
+    local actual="$( lib::getProperty 'SOMEVAL' "$propFile" "$expected" )"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify we can get an indirect value from a property file
-test.lib.getProperty_EVAL() {
+test::lib::getProperty_EVAL() {
     local propFile="$(__test_lib_bashlib.mktemp)"
     export INDIRECT='this is a property'
 cat << EOF > "$propFile"
@@ -183,23 +183,23 @@ cat << EOF > "$propFile"
 akey=${INDIRECT}
 EOF
     local expected="$INDIRECT"
-    local actual="$( lib.getProperty 'akey' "$propFile" )"
+    local actual="$( lib::getProperty 'akey' "$propFile" )"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-test.lib.getProperty_WORKDIR() {
+test::lib::getProperty_WORKDIR() {
     local expected='/'
     local propFile="${CBF_LOCATION}/cbf/bin/rt.environment"
     local key='export WORKDIR'
-    local actual="$(lib.getProperty "$key" "$propFile" )"
+    local actual="$(lib::getProperty "$key" "$propFile" )"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify we can get the value in an associative array using an indirect reference
-test.lib.indirectReference() {
+test::lib::indirectReference() {
     local sc="$(__test_lib_bashlib.mktemp)"
 cat << EOF > "$sc"
 #!/bin/bash
@@ -210,42 +210,42 @@ declare -A sc=(
 EOF
     source "$sc"
     local expected='1:2:100'
-    local actual="$( lib.indirectReference 'a' 'sc' ):$( lib.indirectReference 'b' 'sc' ):$( lib.indirectReference 'c' 'sc' '100' )"
+    local actual="$( lib::indirectReference 'a' 'sc' ):$( lib::indirectReference 'b' 'sc' ):$( lib::indirectReference 'c' 'sc' '100' )"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify comparison of array with itself returns itself
-test.lib.intersect_ALL() {
+test::lib::intersect_ALL() {
     local -a AR=( 1 2 3 )
     local -a expected=( 1 2 3 )
-    local -a actual=( $( lib.intersect "${AR[*]}" "${AR[*]}" ) )
+    local -a actual=( $( lib::intersect "${AR[*]}" "${AR[*]}" ) )
     assert_equals "${expected[*]}" "${actual[*]}"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify comparison of 2 arrays returns correct intersection
-test.lib.intersect_SOME() {
+test::lib::intersect_SOME() {
     local -a AR=( 1 2 3 4 5 6 )
     local -a BR=( 1 2 3 7 8 9 )
     local -a expected=( 1 2 3 )
-    local -a actual=( $( lib.intersect "${AR[*]}" "${BR[*]}" ) )
+    local -a actual=( $( lib::intersect "${AR[*]}" "${BR[*]}" ) )
     assert_equals "${expected[*]}" "${actual[*]}"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify comparison of array with no common elements returns nothing
-test.lib.intersect_NONE() {
+test::lib::intersect_NONE() {
     local -a AR=( 4 5 6 )
     local -a BR=( 7 8 9 )
     local -a expected=()
-    local -a actual=( $( lib.intersect "${AR[*]}" "${BR[*]}" ) )
+    local -a actual=( $( lib::intersect "${AR[*]}" "${BR[*]}" ) )
     assert_equals "${expected[*]}" "${actual[*]}"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify /etc/passwd lookup of uid:0 is 0
-test.lib.lookupId_UID_0() {
+test::lib::lookupId_UID_0() {
 
     fake_getent() {
         echo "getent: $*" >> "$test_lib_bashlib_LOG_file"
@@ -254,13 +254,13 @@ test.lib.lookupId_UID_0() {
     fake 'getent' 'fake_getent "$@"'
 
     local expected=1000
-    local actual="$(lib.lookupId 0 'passwd')"
+    local actual="$(lib::lookupId 0 'passwd')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify /etc/group lookup of gid:0 is 0
-test.lib.lookupId_GID_0() {
+test::lib::lookupId_GID_0() {
     fake_getent() {
         echo "getent: $*" >> "$test_lib_bashlib_LOG_file"
         echo 'bob2:x:1234:'
@@ -268,271 +268,271 @@ test.lib.lookupId_GID_0() {
     fake 'getent' 'fake_getent "$@"'
 
     local expected=1234
-    local actual="$(lib.lookupId 0 'group')"
+    local actual="$(lib::lookupId 0 'group')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify /etc/passwd lookup of root is 0
-test.lib.lookupId_USER_ROOT() {
+test::lib::lookupId_USER_ROOT() {
     local expected=0
-    local actual="$(lib.lookupId 'root' 'passwd')"
+    local actual="$(lib::lookupId 'root' 'passwd')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify /etc/group lookup of root is 0
-test.lib.lookupId_GROUP_ROOT() {
+test::lib::lookupId_GROUP_ROOT() {
     local expected=0
-    local actual="$(lib.lookupId 'root' 'group')"
+    local actual="$(lib::lookupId 'root' 'group')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify default value returned when no entry found
-test.lib.lookupId_DEFAULT() {
+test::lib::lookupId_DEFAULT() {
     local expected='default'
-    local actual="$(lib.lookupId '9999999999' 'passwd' "$expected")"
+    local actual="$(lib::lookupId '9999999999' 'passwd' "$expected")"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify nothing returned when invalid DB specified
-test.lib.lookupId_INVALID() {
+test::lib::lookupId_INVALID() {
     local expected=''
-    local actual="$(lib.lookupId '0' 'invalid')"
+    local actual="$(lib::lookupId '0' 'invalid')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no args provided
-test.lib.lookupId_BAD_ARGS() {
-    export -f lib.lookupId
-    assert_status_code 1 'lib.lookupId'
+test::lib::lookupId_BAD_ARGS() {
+    export -f lib::lookupId
+    assert_status_code 1 'lib::lookupId'
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no args provided
-test.lib.normalizePath_BAD_ARGS() {
-    export -f lib.normalizePath
-    assert_status_code 1 'lib.normalizePath'
+test::lib::normalizePath_BAD_ARGS() {
+    export -f lib::normalizePath
+    assert_status_code 1 'lib::normalizePath'
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no args provided
-test.lib.normalizePath_base() {
+test::lib::normalizePath_base() {
     local expected='base'
-    local actual="$(lib.normalizePath "$expected")"
+    local actual="$(lib::normalizePath "$expected")"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no args provided
-test.lib.normalizePath_root() {
+test::lib::normalizePath_root() {
     local expected='/'
-    local actual="$(lib.normalizePath "$expected")"
+    local actual="$(lib::normalizePath "$expected")"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no args provided
-test.lib.normalizePath_rootbase() {
+test::lib::normalizePath_rootbase() {
     local expected='/base'
-    local actual="$(lib.normalizePath "$expected")"
+    local actual="$(lib::normalizePath "$expected")"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no args provided
-test.lib.normalizePath_normal() {
+test::lib::normalizePath_normal() {
     local expected='base/x/y/t'
-    local actual="$(lib.normalizePath "$expected")"
+    local actual="$(lib::normalizePath "$expected")"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no args provided
-test.lib.normalizePath_normalbase() {
+test::lib::normalizePath_normalbase() {
     local expected='/base/x/y/t'
-    local actual="$(lib.normalizePath "$expected")"
+    local actual="$(lib::normalizePath "$expected")"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no args provided
-test.lib.normalizePath_double_a() {
+test::lib::normalizePath_double_a() {
     local expected='/base/y/t'
-    local actual="$(lib.normalizePath '/base//y/t')"
+    local actual="$(lib::normalizePath '/base//y/t')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no args provided
-test.lib.normalizePath_double_b() {
+test::lib::normalizePath_double_b() {
     local expected='/base/y/t'
-    local actual="$(lib.normalizePath '/base//./y/t')"
+    local actual="$(lib::normalizePath '/base//./y/t')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no args provided
-test.lib.normalizePath_double_c() {
+test::lib::normalizePath_double_c() {
     local expected='/base/y/t'
-    local actual="$(lib.normalizePath '/base//x/../y/t')"
+    local actual="$(lib::normalizePath '/base//x/../y/t')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no args provided
-test.lib.normalizePath_1REL() {
+test::lib::normalizePath_1REL() {
     local expected='/base/x/y/t'
-    local actual="$(lib.normalizePath '/base/x/./y/t')"
+    local actual="$(lib::normalizePath '/base/x/./y/t')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no args provided
-test.lib.normalizePath_base1REL() {
+test::lib::normalizePath_base1REL() {
     local expected='base/x/y/t'
-    local actual="$(lib.normalizePath 'base/x/./y/t')"
+    local actual="$(lib::normalizePath 'base/x/./y/t')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no args provided
-test.lib.normalizePath_base1REL1() {
+test::lib::normalizePath_base1REL1() {
     local expected='x/y/t'
-    local actual="$(lib.normalizePath './x/./y/t')"
+    local actual="$(lib::normalizePath './x/./y/t')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no args provided
-test.lib.normalizePath_base1REL1() {
+test::lib::normalizePath_base1REL1() {
     local expected='x/y/t'
-    local actual="$(lib.normalizePath './x/./y/t/.')"
+    local actual="$(lib::normalizePath './x/./y/t/.')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no args provided
-skip_test.lib.normalizePath_parent() {
+skip_test::lib::normalizePath_parent() {
     local expected='.'
-    local actual="$(lib.normalizePath 'base/..')"
+    local actual="$(lib::normalizePath 'base/..')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no args provided
-test.lib.normalizePath_basePARENT() {
+test::lib::normalizePath_basePARENT() {
     local expected='abc'
-    local actual="$(lib.normalizePath 'base/../abc')"
+    local actual="$(lib::normalizePath 'base/../abc')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no args provided
-test.lib.normalizePath_baseCOMPOUND() {
+test::lib::normalizePath_baseCOMPOUND() {
     local expected='abc/x'
-    local actual="$(lib.normalizePath 'base/../abc/./x')"
+    local actual="$(lib::normalizePath 'base/../abc/./x')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no args provided
-test.lib.relativize_BADARGS() {
-    export -f lib.relativize
-    assert_status_code 1 'lib.relativize'
-    assert_status_code 1 'lib.relativize "..."'
+test::lib::relativize_BADARGS() {
+    export -f lib::relativize
+    assert_status_code 1 'lib::relativize'
+    assert_status_code 1 'lib::relativize "..."'
 }
 
 #-----------------------------------------------------------------------------------------
 # verify that '.' is returned when both paths are the same
-test.lib.relativize_SAME() {
+test::lib::relativize_SAME() {
     local expected='../b'
-    local actual="$( lib.relativize '/tmp/a/b' '/tmp/a/b' )"
+    local actual="$( lib::relativize '/tmp/a/b' '/tmp/a/b' )"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify correct relative path is returned when 'from' contains 'to'
-test.lib.relativize_FWD() {
+test::lib::relativize_FWD() {
     local expected='b/c/d'
-    local actual="$( lib.relativize '/tmp/a/b/c/d' '/tmp/a' )"
+    local actual="$( lib::relativize '/tmp/a/b/c/d' '/tmp/a' )"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify correct relative path is returned when 'to' contains 'from'
-test.lib.relativize_BKWD() {
+test::lib::relativize_BKWD() {
     local expected='../../../../a'
-    local actual="$( lib.relativize '/tmp/a' '/tmp/a/b/c/d' )"
+    local actual="$( lib::relativize '/tmp/a' '/tmp/a/b/c/d' )"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify correct relative path is returned when 'from' contains '..'
-test.lib.relativize_WPARENT() {
+test::lib::relativize_WPARENT() {
     local expected='../../../a'
-    local actual="$( lib.relativize '/tmp/a' '/tmp/a/b/../c/d' )"
+    local actual="$( lib::relativize '/tmp/a' '/tmp/a/b/../c/d' )"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify correct relative path is returned when 'from' contains '..'
-test.lib.relativize_test() {
+test::lib::relativize_test() {
     local expected='out/logs/01.cyc-core.out'
-    local actual="$( lib.relativize '/tmp/cyc/bash_unit_j4Z4lxPzHcKg1VY80Atest/out/logs/01.cyc-core.out' '/tmp/cyc/bash_unit_j4Z4lxPzHcKg1VY80Atest/' )"
+    local actual="$( lib::relativize '/tmp/cyc/bash_unit_j4Z4lxPzHcKg1VY80Atest/out/logs/01.cyc-core.out' '/tmp/cyc/bash_unit_j4Z4lxPzHcKg1VY80Atest/' )"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify ancestor of PID 0 is itself
-test.lib.pidAncestors_0() {
+test::lib::pidAncestors_0() {
     local expected=0
-    local actual=$( lib.pidAncestors 0 )
+    local actual=$( lib::pidAncestors 0 )
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify ancestor of PID 2 is 0
-test.lib.pidAncestors_2() {
+test::lib::pidAncestors_2() {
     local expected='0,2'
-    local actual=$( lib.pidAncestors 2 )
+    local actual=$( lib::pidAncestors 2 )
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no args provided
-test.lib.updatePropertyFile_FAIL_noargs() {
-    export -f lib.updatePropertyFile
-    assert_status_code 1 'lib.updatePropertyFile'
+test::lib::updatePropertyFile_FAIL_noargs() {
+    export -f lib::updatePropertyFile
+    assert_status_code 1 'lib::updatePropertyFile'
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no value provided
-test.lib.updatePropertyFile_FAIL_noval() {
-    export -f lib.updatePropertyFile
-    assert_status_code 1 'lib.updatePropertyFile "akey"'
+test::lib::updatePropertyFile_FAIL_noval() {
+    export -f lib::updatePropertyFile
+    assert_status_code 1 'lib::updatePropertyFile "akey"'
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no file provided
-test.lib.updatePropertyFile_FAIL_noFile() {
-    export -f lib.updatePropertyFile
-    assert_status_code 1 'lib.updatePropertyFile "akey" "aval"'
+test::lib::updatePropertyFile_FAIL_noFile() {
+    export -f lib::updatePropertyFile
+    assert_status_code 1 'lib::updatePropertyFile "akey" "aval"'
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when properties file does not exist
-test.lib.updatePropertyFile_FAIL_fileNotExists() {
-    export -f lib.updatePropertyFile
-    assert_status_code 1 'lib.updatePropertyFile "akey" "aval" "filenotexists"'
+test::lib::updatePropertyFile_FAIL_fileNotExists() {
+    export -f lib::updatePropertyFile
+    assert_status_code 1 'lib::updatePropertyFile "akey" "aval" "filenotexists"'
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when property does not exist
-skip.test.lib.updatePropertyFile_FAIL_propNotExists() {
+skip.test::lib::updatePropertyFile_FAIL_propNotExists() {
     local -r propFile="$(__test_lib_bashlib.mktemp)"
     local -r key='AKEY'
     local -r expected=''
@@ -541,14 +541,14 @@ cat << EOF > "$propFile"
 KEY0=---
 AKEY2=someval
 EOF
-    lib.updatePropertyFile "$key" "$expected" "$propFile"
+    lib::updatePropertyFile "$key" "$expected" "$propFile"
     actual="$(grep -E "^${key}=" "$propFile" | awk -F '=' '{print $2}')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when property does not exist
-test.lib.updatePropertyFile_FAIL_propNotExists_RO() {
+test::lib::updatePropertyFile_FAIL_propNotExists_RO() {
     local -r propFile="$(__test_lib_bashlib.mktemp)"
     local -r key='AKEY'
     local -r expected='aval'
@@ -557,14 +557,14 @@ cat << EOF > "$propFile"
 KEY0=---
 AKEY2=someval
 EOF
-    lib.updatePropertyFile "$key" "$expected" "$propFile" 'must_exist'
+    lib::updatePropertyFile "$key" "$expected" "$propFile" 'must_exist'
     actual="$(grep -E "^${key}=" "$propFile" | awk -F '=' '{print $2}')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-test.lib.updatePropertyFile_OK_onlyprop() {
+test::lib::updatePropertyFile_OK_onlyprop() {
     local -r propFile="$(__test_lib_bashlib.mktemp)"
     local -r key='AKEY'
     local -r expected='aval'
@@ -572,14 +572,14 @@ test.lib.updatePropertyFile_OK_onlyprop() {
 cat << EOF > "$propFile"
 AKEY=someval
 EOF
-    lib.updatePropertyFile "$key" "$expected" "$propFile"
+    lib::updatePropertyFile "$key" "$expected" "$propFile"
     actual="$(grep -E "^${key}=" "$propFile" | awk -F '=' '{print $2}')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-test.lib.updatePropertyFile_OK_middleprop() {
+test::lib::updatePropertyFile_OK_middleprop() {
     local -r propFile="$(__test_lib_bashlib.mktemp)"
     local -r key='AKEY'
     local -r expected='aval'
@@ -589,14 +589,14 @@ KEY10=-----
 AKEY=someval
 KEY11=-----
 EOF
-    lib.updatePropertyFile "$key" "$expected" "$propFile"
+    lib::updatePropertyFile "$key" "$expected" "$propFile"
     actual="$(grep -E "^${key}=" "$propFile" | awk -F '=' '{print $2}')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-test.lib.updatePropertyFile_OK_lastprop() {
+test::lib::updatePropertyFile_OK_lastprop() {
     local -r propFile="$(__test_lib_bashlib.mktemp)"
     local -r key='AKEY'
     local -r expected='aval'
@@ -605,14 +605,14 @@ cat << EOF > "$propFile"
 KEY11=-----
 AKEY=someval
 EOF
-    lib.updatePropertyFile "$key" "$expected" "$propFile"
+    lib::updatePropertyFile "$key" "$expected" "$propFile"
     actual="$(grep -E "^${key}=" "$propFile" | awk -F '=' '{print $2}')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-test.lib.updatePropertyFile_OK_lastprop2() {
+test::lib::updatePropertyFile_OK_lastprop2() {
     local -r propFile="$(__test_lib_bashlib.mktemp)"
     local -r key='AKEY'
     local -r expected='aval'
@@ -621,14 +621,14 @@ cat << EOF > "$propFile"
 KEY11=-----
 AKEY=someval
 EOF
-    lib.updatePropertyFile "$key" "$expected" "$propFile"
+    lib::updatePropertyFile "$key" "$expected" "$propFile"
     actual="$(grep -E "^${key}=" "$propFile" | awk -F '=' '{print $2}')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-test.lib.getGID() {
+test::lib::getGID() {
     fake_getent() {
         echo "getent: $*" >> "$test_lib_bashlib_LOG_file"
         if [ "$1" = 'passwd' ]; then
@@ -640,13 +640,13 @@ test.lib.getGID() {
     fake 'getent' 'fake_getent "$@"'
 
     local -r expected='1234'
-    local -r actual="$(lib.getGID)"
+    local -r actual="$(lib::getGID)"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-test.lib.getGroupInfo() {
+test::lib::getGroupInfo() {
     fake_getent() {
         echo "getent: $*" >> "$test_lib_bashlib_LOG_file"
         if [ "$1" = 'passwd' ]; then
@@ -658,13 +658,13 @@ test.lib.getGroupInfo() {
     fake 'getent' 'fake_getent "$@"'
 
     local -r expected='bob2'
-    local -r actual="$(lib.getGroupInfo)"
+    local -r actual="$(lib::getGroupInfo)"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-test.lib.getGroupInfo_X() {
+test::lib::getGroupInfo_X() {
     fake_getent() {
         echo "getent: $*" >> "$test_lib_bashlib_LOG_file"
         if [ "$1" = 'passwd' ]; then
@@ -676,13 +676,13 @@ test.lib.getGroupInfo_X() {
     fake 'getent' 'fake_getent "$@"'
 
     local -r expected='bob2(1234)'
-    local -r actual="$(lib.getGroupInfo 'root' 'extended')"
+    local -r actual="$(lib::getGroupInfo 'root' 'extended')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-test.lib.getGroupNameOfUser() {
+test::lib::getGroupNameOfUser() {
     fake_getent() {
         echo "getent: $*" >> "$test_lib_bashlib_LOG_file"
         if [ "$1" = 'passwd' ]; then
@@ -694,13 +694,13 @@ test.lib.getGroupNameOfUser() {
     fake 'getent' 'fake_getent "$@"'
 
     local -r expected='bob2'
-    local -r actual="$(lib.getGroupNameOfUser)"
+    local -r actual="$(lib::getGroupNameOfUser)"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-test.lib.getUID() {
+test::lib::getUID() {
     fake_getent() {
         echo "getent: $*" >> "$test_lib_bashlib_LOG_file"
         if [ "$1" = 'passwd' ]; then
@@ -712,13 +712,13 @@ test.lib.getUID() {
     fake 'getent' 'fake_getent "$@"'
 
     local -r expected='1000'
-    local -r actual="$(lib.getUID)"
+    local -r actual="$(lib::getUID)"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-test.lib.getUserInfo() {
+test::lib::getUserInfo() {
     fake_getent() {
         echo "getent: $*" >> "$test_lib_bashlib_LOG_file"
         if [ "$1" = 'passwd' ]; then
@@ -730,13 +730,13 @@ test.lib.getUserInfo() {
     fake 'getent' 'fake_getent "$@"'
 
     local -r expected='bobb'
-    local -r actual="$(lib.getUserInfo 'bobb')"
+    local -r actual="$(lib::getUserInfo 'bobb')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-test.lib.getUserInfo_X() {
+test::lib::getUserInfo_X() {
     fake_getent() {
         echo "getent: $*" >> "$test_lib_bashlib_LOG_file"
         if [ "$1" = 'passwd' ]; then
@@ -748,19 +748,19 @@ test.lib.getUserInfo_X() {
     fake 'getent' 'fake_getent "$@"'
 
     local -r expected='bobb(1000)'
-    local -r actual="$(lib.getUserInfo 'root' 'extended')"
+    local -r actual="$(lib::getUserInfo 'root' 'extended')"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-test.lib.isActionFile_ALPINE() {
+test::lib::isActionFile_ALPINE() {
     fake 'environ.OSid' 'echo "alpine"'
 
     local actual=''
     local -a file_names=( 01.test.alpine 01.test.centos 01.test.fedora 01.test.ubuntu 01.test.windows 01.test.sh 01.test )
     for f in "${file_names[@]}"; do
-        lib.isActionFile "$f" && actual="${actual} $f"
+        lib::isActionFile "$f" && actual="${actual} $f"
     done
     local expected=' 01.test.alpine 01.test.sh 01.test'
     assert_equals "$expected" "$actual"
@@ -768,13 +768,13 @@ test.lib.isActionFile_ALPINE() {
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-test.lib.isActionFile_CENTOS() {
+test::lib::isActionFile_CENTOS() {
     fake 'environ.OSid' 'echo "centos"'
 
     local actual=''
     local -a file_names=( 01.test.alpine 01.test.centos 01.test.fedora 01.test.ubuntu 01.test.windows 01.test.sh 01.test )
     for f in "${file_names[@]}"; do
-        lib.isActionFile "$f" && actual="${actual} $f"
+        lib::isActionFile "$f" && actual="${actual} $f"
     done
     local expected=' 01.test.centos 01.test.sh 01.test'
     assert_equals "$expected" "$actual"
@@ -782,13 +782,13 @@ test.lib.isActionFile_CENTOS() {
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-test.lib.isActionFile_FEDORA() {
+test::lib::isActionFile_FEDORA() {
     fake 'environ.OSid' 'echo "fedora"'
 
     local actual=''
     local -a file_names=( 01.test.alpine 01.test.centos 01.test.fedora 01.test.ubuntu 01.test.windows 01.test.sh 01.test )
     for f in "${file_names[@]}"; do
-        lib.isActionFile "$f" && actual="${actual} $f"
+        lib::isActionFile "$f" && actual="${actual} $f"
     done
     local expected=' 01.test.fedora 01.test.sh 01.test'
     assert_equals "$expected" "$actual"
@@ -796,13 +796,13 @@ test.lib.isActionFile_FEDORA() {
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-test.lib.isActionFile_UBUNTU() {
+test::lib::isActionFile_UBUNTU() {
     fake 'environ.OSid' 'echo "ubuntu"'
 
     local actual=''
     local -a file_names=( 01.test.alpine 01.test.centos 01.test.fedora 01.test.ubuntu 01.test.windows 01.test.sh 01.test )
     for f in "${file_names[@]}"; do
-        lib.isActionFile "$f" && actual="${actual} $f"
+        lib::isActionFile "$f" && actual="${actual} $f"
     done
     local expected=' 01.test.ubuntu 01.test.sh 01.test'
     assert_equals "$expected" "$actual"
@@ -810,13 +810,13 @@ test.lib.isActionFile_UBUNTU() {
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-test.lib.isActionFile_WINDOWS() {
+test::lib::isActionFile_WINDOWS() {
     fake 'environ.OSid' 'echo "windows"'
 
     local actual=''
     local -a file_names=( 01.test.alpine 01.test.centos 01.test.fedora 01.test.ubuntu 01.test.windows 01.test.sh 01.test )
     for f in "${file_names[@]}"; do
-        lib.isActionFile "$f" && actual="${actual} $f"
+        lib::isActionFile "$f" && actual="${actual} $f"
     done
     local expected=' 01.test.windows 01.test.sh 01.test'
     assert_equals "$expected" "$actual"
@@ -824,11 +824,11 @@ test.lib.isActionFile_WINDOWS() {
 
 #-----------------------------------------------------------------------------------------
 # verify property file contains correct value after update
-skip.test.lib.updateConfigFromENV() {
+skip.test::lib::updateConfigFromENV() {
     fake 'env' 'printf 'TEST_%s=TEST_xxx\n' AA_A_A BB CC_C DD_D EE_E FF_F; printf 'XXX_%s=TST_yyy\n' aa bb cc dd ee ff'
     local cfgFile="$(__test_lib_bashlib.mktemp)"
 
-    lib.updateConfigFromENV 'TEST_' "$cfgFile"
+    lib::updateConfigFromENV 'TEST_' "$cfgFile"
     local actual=$(< "$cfgFile")
     local expected="aa.a.a=TEST_xxx
 bb=TEST_xxx
@@ -891,9 +891,9 @@ teardown_suite() {
 # setup MOCK logger
 setup() {
     [ "$test_lib_bashlib_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running setup'
-    export LOG=__test_lib_bashlib.mock_logger
+    export LOG=__test_lib_bashlib::mock_logger
     test_lib_bashlib_LOG_file=$(__test_lib_bashlib.mktemp)
-    fake 'term.log' '__test_lib_bashlib.mock_logger "$FAKE_PARAMS"'
+    fake 'term::log' '__test_lib_bashlib::mock_logger "$FAKE_PARAMS"'
     touch "$test_lib_bashlib_LOG_file"
 }
 
@@ -919,10 +919,10 @@ __test_lib_bashlib.mktemp() {
 export -f __test_lib_bashlib.mktemp
 
 # MOCK logger implementation
-__test_lib_bashlib.mock_logger() {
+__test_lib_bashlib::mock_logger() {
     printf '%s\n' "$*" >> "$test_lib_bashlib_LOG_file"
 }
-export -f __test_lib_bashlib.mock_logger
+export -f __test_lib_bashlib::mock_logger
 
 export test_lib_bashlib_LOG_file
 export test_lib_bashlib_UT_TEST_DIR

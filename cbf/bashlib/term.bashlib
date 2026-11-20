@@ -9,7 +9,7 @@
 #----------------------------------------------------------------------------------------------
 function term::__init()
 {
-    export LOG="$(term::log)"
+    export LOG="$(term::log ' ')"
     export TERM_DIR="$(readlink -f "$( dirname "${BASH_SOURCE[0]}" )/properties")"
 
     export CBF_LOG_FILE
@@ -26,7 +26,7 @@ function term::__init()
 #----------------------------------------------------------------------------------------------
 function term::codes_ATTR_RESET()
 {
-    local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()' from 'function ${FUNCNAME[1]}()' 'loc: ${BASH_SOURCE[2]}:${BASH_LINENO[0]}'"}
 
     declare -Ax ATTR_RESET=( ['bold']=21 ['dim']=22 ['underline']=24 ['blink']=25 ['invert']=27 ['hidden']=28 ['all']=0 )
     echo "${ATTR_RESET[$name]:--1}"
@@ -36,7 +36,7 @@ function term::codes_ATTR_RESET()
 #----------------------------------------------------------------------------------------------
 function term::codes_ATTR_SETTERS()
 {
-    local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()' from 'function ${FUNCNAME[1]}()' 'loc: ${BASH_SOURCE[2]}:${BASH_LINENO[0]}'"}
 
     declare -Ax ATTR_SETTERS=( ['bold']=1 ['dim']=2 ['underline']=4 ['blink']=5 ['invert']=7 ['hidden']=8 )
     echo "${ATTR_SETTERS[$name]:--1}"
@@ -56,7 +56,7 @@ function term::codes_BACKGROUND()
 #----------------------------------------------------------------------------------------------
 function term::codes_FOREGROUND()
 {
-    local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()' from 'function ${FUNCNAME[1]}()'"}
 
     declare -Ax FOREGROUND=( ['black']=30 ['blue']=34 ['cyan']=36 ['default']=39 ['dk_gray']=90 ['dk_grey']=90 ['gray']=90 ['grey']=90 ['green']=32 ['lt_blue']=94 ['lt_cyan']=96 ['lt_gray']=37 ['lt_grey']=37 ['lt_green']=92 ['lt_magenta']=95 ['lt_red']=91 ['lt_yellow']=93 ['magenta']=35 ['red']=31 ['white']=97 ['yellow']=33 )
     echo "${FOREGROUND[$name]:--1}"
@@ -66,8 +66,8 @@ function term::codes_FOREGROUND()
 #----------------------------------------------------------------------------------------------
 function term::codes()
 {
-    local -r mode=${1:?"Input parameter 'mode' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local -r name=${2:?"Input parameter 'code' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r mode=${1:?"Input parameter 'mode' must be passed to 'function ${FUNCNAME[0]}()' from 'function ${FUNCNAME[1]}()' 'loc: ${BASH_SOURCE[2]}:${BASH_LINENO[0]}'"}
+    local -r name=${2:?"Input parameter 'code' must be passed to 'function ${FUNCNAME[0]}()' from 'function ${FUNCNAME[1]}()' 'loc: ${BASH_SOURCE[2]}:${BASH_LINENO[0]}'"}
 
 
     local -i code="$("term::codes_$mode" "$name")"
@@ -79,7 +79,7 @@ function term::codes()
 function term::decode()
 {
 #    [ -t 1 ] || return 0
-    local -r fg=${1:?"Input parameter 'fg' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r fg=${1:?"Input parameter 'fg' must be passed to 'function ${FUNCNAME[0]}()' from 'function ${FUNCNAME[1]}()' 'loc: ${BASH_SOURCE[2]}:${BASH_LINENO[0]}'"}
     local -r bg=${2:-}
 
     if [ -z "${bg:-}" ]; then
@@ -121,7 +121,7 @@ function term::elog()
 #----------------------------------------------------------------------------------------------
 function term::header()
 {
-    local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r name=${1:?"Input parameter 'name' must be passed to 'function ${FUNCNAME[0]}()' from 'function ${FUNCNAME[1]}()' 'loc: ${BASH_SOURCE[2]}:${BASH_LINENO[0]}'"}
     local -r bars='+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
 
     term::log "\n${bars}\n" 'blue'
@@ -133,7 +133,7 @@ function term::header()
 #----------------------------------------------------------------------------------------------
 function term::log()
 {
-    local -r msg=${1:?"Input parameter 'msg' must be passed to 'function ${FUNCNAME[0]}()'"}
+    local -r msg=${1:?"Input parameter 'msg' must be passed to 'function ${FUNCNAME[0]}()' from 'function ${FUNCNAME[1]}()' 'loc: ${BASH_SOURCE[2]}:${BASH_LINENO[0]}'"}
     local msg_type=${2:-}
 
 #    [ -t 1 ] || unset msg_type

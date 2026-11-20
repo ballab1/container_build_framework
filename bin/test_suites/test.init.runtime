@@ -135,7 +135,7 @@ setup() {
     [ "$test_init_runtime_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running setup'
     export LOG=__test_init_runtime.mock_logger
     test_init_runtime_LOG_file=$(__test_init_runtime.mktemp)
-    fake 'term.log' '__test_init_runtime.mock_logger "$FAKE_PARAMS"'
+    fake 'term::log' '__test_init_runtime.mock_logger "$FAKE_PARAMS"'
     touch "$test_init_runtime_LOG_file"
 }
 

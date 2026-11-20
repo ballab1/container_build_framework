@@ -39,55 +39,55 @@
 
 #-----------------------------------------------------------------------------------------
 # verify correctly formatted value returned
-test.timer.fmtElapsed_ZERO() {
+test::timer::fmtElapsed_ZERO() {
     local expected='00:00:00'
-    local actual="$( timer.fmtElapsed 0 )"
+    local actual="$( timer::fmtElapsed 0 )"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify correctly formatted value returned
-test.timer.fmtElapsed_86399() {
+test::timer::fmtElapsed_86399() {
     local expected='23:59:59'
-    local actual="$( timer.fmtElapsed 86399 )"
+    local actual="$( timer::fmtElapsed 86399 )"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify correctly formatted value returned
-test.timer.fmtElapsed_86401() {
+test::timer::fmtElapsed_86401() {
     local expected='24:00:01'
-    local actual="$( timer.fmtElapsed 86401 )"
+    local actual="$( timer::fmtElapsed 86401 )"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # verify correctly formatted string returned
-test.timer.logElapsed() {
+test::timer::logElapsed() {
     local expected='Time elapsed (test): 00:00:00'
-    local actual="$( timer.logElapsed 'test' 0 )"
+    local actual="$( timer::logElapsed 'test' 0 )"
     assert_equals "$expected" "$actual"
 }
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-test.timer.measureCmd_NONAME() {
-    export -f timer.measureCmd
-    assert_status_code 1 'timer.measureCmd'
+test::timer::measureCmd_NONAME() {
+    export -f timer::measureCmd
+    assert_status_code 1 'timer::measureCmd'
 }
 
 #-----------------------------------------------------------------------------------------
 # verify error returned when no cmd provided
-test.timer.measureCmd_NOCMD() {
-    export -f timer.measureCmd
-    assert_status_code 1 'timer.measureCmd sleep'
+test::timer::measureCmd_NOCMD() {
+    export -f timer::measureCmd
+    assert_status_code 1 'timer::measureCmd sleep'
 }
 
 #-----------------------------------------------------------------------------------------
 # verify correctly formatted string returned when command takes 2 secs
-test.timer.measureCmd_FORREAL() {
+test::timer::measureCmd_FORREAL() {
     local expected='Time elapsed (test): 00:00:02'
-    local actual="$( timer.measureCmd test sleep 2 )"
+    local actual="$( timer::measureCmd test sleep 2 )"
     assert_equals "$expected" "$actual"
 }
 
@@ -144,7 +144,7 @@ setup() {
     [ "$test_timer_bashlib_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running setup'
     export LOG=__test_timer_bashlib.mock_logger
     test_timer_bashlib_LOG_file=$(__test_timer_bashlib.mktemp)
-    fake 'term.log' '__test_timer_bashlib.mock_logger "$FAKE_PARAMS"'
+    fake 'term::log' '__test_timer_bashlib.mock_logger "$FAKE_PARAMS"'
     touch "$test_timer_bashlib_LOG_file"
 }
 

@@ -274,7 +274,7 @@ cat << EOF >> "$test_file"
 setup() {
     [ "\$${namespace}_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running setup'
     export LOG=__${namespace}.mock_logger
-    fake 'term.log' '__${namespace}.mock_logger "\$FAKE_PARAMS"'
+    fake 'term::log' '__${namespace}.mock_logger "\$FAKE_PARAMS"'
     ${namespace}_LOG_file=\$(__${namespace}.mktemp)
     touch "\$${namespace}_LOG_file"
 }

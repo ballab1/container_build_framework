@@ -39,7 +39,7 @@
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.trap.catch_error() {
+skip.test::trap::catch_error() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -48,7 +48,7 @@ skip.test.trap.catch_error() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.trap.catch_int() {
+skip.test::trap::catch_int() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -57,7 +57,7 @@ skip.test.trap.catch_int() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.trap.catch_pipe() {
+skip.test::trap::catch_pipe() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -66,7 +66,7 @@ skip.test.trap.catch_pipe() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.trap.die() {
+skip.test::trap::die() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -75,7 +75,7 @@ skip.test.trap.die() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.trap.__init() {
+skip.test::trap::__init() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -84,7 +84,7 @@ skip.test.trap.__init() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.trap.log() {
+skip.test::trap::log() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -93,7 +93,7 @@ skip.test.trap.log() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.trap.stacktrace() {
+skip.test::trap::stacktrace() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -153,7 +153,7 @@ setup() {
     [ "$test_trap_bashlib_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running setup'
     export LOG=__test_trap_bashlib.mock_logger
     test_trap_bashlib_LOG_file=$(__test_trap_bashlib.mktemp)
-    fake 'term.log' '__test_trap_bashlib.mock_logger "$FAKE_PARAMS"'
+    fake 'term::log' '__test_trap_bashlib.mock_logger "$FAKE_PARAMS"'
     touch "$test_trap_bashlib_LOG_file"
 }
 

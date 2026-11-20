@@ -90,7 +90,7 @@ setup() {
     [ "$test_build_sh_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running setup'
     export LOG=__test_build_sh.mock_logger
     test_build_sh_LOG_file=$(__test_build_sh.mktemp)
-    fake 'term.log' '__test_build_sh.mock_logger "$FAKE_PARAMS"'
+    fake 'term::log' '__test_build_sh.mock_logger "$FAKE_PARAMS"'
     touch "$test_build_sh_LOG_file"
 }
 

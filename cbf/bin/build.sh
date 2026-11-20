@@ -23,8 +23,9 @@ function die() {
 source "$(readlink -f "$( dirname "${BASH_SOURCE[0]}" )")/init.libraries"
 
 # build our container
-timer.measureCmd "$NAME" 'cbf.buildContainer' "$NAME" "$DEBUG_TRACE" "$TZ"
-[ -w "$(crf.propertiesFile)" ] && rm "$(crf.propertiesFile)"
-[ -w "$(cbf.propertiesFile)" ] && rm "$(cbf.propertiesFile)"
+timer::measureCmd "$NAME" 'cbf::buildContainer' "$NAME" "$DEBUG_TRACE" "$TZ"
+set -x
+[ -w "$(crf::propertiesFile)" ] && rm "$(crf::propertiesFile)"
+[ -w "$(cbf::propertiesFile)" ] && rm "$(cbf::propertiesFile)"
 echo ''
 echo ''

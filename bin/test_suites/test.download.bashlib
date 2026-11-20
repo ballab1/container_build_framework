@@ -108,7 +108,7 @@ setup() {
     [ "$test_download_bashlib_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running setup'
     export LOG=__test_download_bashlib.mock_logger
     test_download_bashlib_LOG_file=$(__test_download_bashlib.mktemp)
-    fake 'term.log' '__test_download_bashlib.mock_logger "$FAKE_PARAMS"'
+    fake 'term::log' '__test_download_bashlib.mock_logger "$FAKE_PARAMS"'
     touch "$test_download_bashlib_LOG_file"
 }
 

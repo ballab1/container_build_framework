@@ -47,28 +47,28 @@ EOF
 #----------------------------------------------------------------------------------------------
 function crf::BASE()
 {
-    lib::getProperty "${FUNCNAME[0]##*.}" "$( crf::propertiesFile )"
+    lib::getProperty "${FUNCNAME[0]##*::}" "$( crf::propertiesFile )"
 }
 #export -f crf::BASE
 
 #----------------------------------------------------------------------------------------------
 function crf::BIN()
 {
-    lib::getProperty "${FUNCNAME[0]##*.}" "$( crf::propertiesFile )"
+    lib::getProperty "${FUNCNAME[0]##*::}" "$( crf::propertiesFile )"
 }
 #export -f crf::BIN
 
 #----------------------------------------------------------------------------------------------
 function crf::ENV()
 {
-    lib::getProperty "${FUNCNAME[0]##*.}" "$( crf::propertiesFile )"
+    lib::getProperty "${FUNCNAME[0]##*::}" "$( crf::propertiesFile )"
 }
 #export -f crf::ENV
 
 #----------------------------------------------------------------------------------------------
 function crf::LIB()
 {
-    lib::getProperty "${FUNCNAME[0]##*.}" "$( crf::propertiesFile )"
+    lib::getProperty "${FUNCNAME[0]##*::}" "$( crf::propertiesFile )"
 }
 #export -f crf::LIB
 
@@ -89,7 +89,7 @@ function crf::RT_ENVIRON_PREFIX()
 #----------------------------------------------------------------------------------------------
 function crf::STARTUP()
 {
-    lib::getProperty "${FUNCNAME[0]##*.}" "$( crf::propertiesFile )"
+    lib::getProperty "${FUNCNAME[0]##*::}" "$( crf::propertiesFile )"
 }
 #export -f crf::STARTUP
 

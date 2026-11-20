@@ -129,9 +129,9 @@ function setupCBF.main()
     [ "${scanTracker:-}" ] && [ -e "$scanTracker" ] && rm "$scanTracker"
 
     local propFile
-    propFile="$(cbf.propertiesFile)"
+    propFile="$(cbf::propertiesFile)"
     [ "${propFile:-}" ] && [ -e "$propFile" ] && rm "$propFile"
-    propFile="$(crf.propertiesFile)"
+    propFile="$(crf::propertiesFile)"
     [ "${propFile:-}" ] && [ -e "$propFile" ] && rm "$propFile"
 }
 
@@ -157,7 +157,7 @@ function setupCBF.setupProjectFiles()
     echo "setting files for project: $projectName"
     projectName=${projectName,,}
     
-    local -r templates_folder="$( cbf.CBFBASE )/project.template"
+    local -r templates_folder="$( cbf::CBFBASE )/project.template"
     local isNew
     [ -e "${top}/.cbfProject" ] || isNew='true'
 
@@ -168,7 +168,7 @@ function setupCBF.setupProjectFiles()
 
     # ensure our folder structure exists
     while read -r abs_dir; do
-        local dir="$( lib.relativize "$abs_dir" "$templates_folder" )"
+        local dir="$( lib::relativize "$abs_dir" "$templates_folder" )"
         mkdir -p "${top}/$dir"
     done < <(find "$templates_folder" -mindepth 1 -type d)
 
@@ -178,7 +178,7 @@ function setupCBF.setupProjectFiles()
                           .dockerignore
                           .gitattributes"
     while read -r abs_file; do
-        local file="$( lib.relativize "$abs_file" "$templates_folder" )"
+        local file="$( lib::relativize "$abs_file" "$templates_folder" )"
         if [ ! -e "$file" ]; then
             sed "s|newcontainer|${projectName}|gi" "$abs_file" > "$file"
             echo "  created: ${file}"
@@ -217,15 +217,15 @@ function setupCBF.setupProjectFiles()
 
     # setup our structure
     local -r action_folders="${top}/build/action_folders"
-    setupCBF.createStructure "$action_folders" "$( cbf.CBFBASE )/action.templates" "${isNew:-}"
+    setupCBF.createStructure "$action_folders" "$( cbf::CBFBASE )/action.templates" "${isNew:-}"
 }
 
 ######################################################################
 function setupCBF.verifyDependentContainerExists()
 {
     if [ -z "$(  docker images --filter 'reference=base_container:*' -q --format '{{.Repository}}:{{.Tag}}' )" ];then
-        term.log "The Docker image on which this project depends does not exist\n" 'error'
-        term.log "Either modify this project's dependencies, or build the docker image: 'base_container:20180217'\n" 'warn'
+        term::log "The Docker image on which this project depends does not exist\n" 'error'
+        term::log "Either modify this project's dependencies, or build the docker image: 'base_container:20180217'\n" 'warn'
     fi
 }
 

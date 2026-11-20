@@ -39,7 +39,7 @@
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-test.cbf.ACTION() {
+test::cbf::ACTION() {
     local expected="${test_cbf_bashlib_UT_TEST_DIR}/action_folders"
     local actual="$(cbf.ACTION)"
     assert_equals "$expected" "$actual"
@@ -47,7 +47,7 @@ test.cbf.ACTION() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-test.cbf.BASE() {
+test::cbf::BASE() {
     local expected="${test_cbf_bashlib_UT_TEST_DIR}"
     local actual="$(cbf.BASE)"
     assert_equals "$expected" "$actual"
@@ -55,7 +55,7 @@ test.cbf.BASE() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-test.cbf.BIN() {
+test::cbf::BIN() {
     local expected="${test_cbf_bashlib_UT_TEST_DIR}/tmp/cbf/bin"
     local actual="$(cbf.BIN)"
     assert_equals "$expected" "$actual"
@@ -63,7 +63,7 @@ test.cbf.BIN() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.cbf.buildContainer() {
+skip.test::cbf::buildContainer() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -72,7 +72,7 @@ skip.test.cbf.buildContainer() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.cbf.CBFBASE() {
+skip.test::cbf::CBFBASE() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -81,7 +81,7 @@ skip.test.cbf.CBFBASE() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.cbf.CRF_BASE() {
+skip.test::cbf::CRF_BASE() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -90,7 +90,7 @@ skip.test.cbf.CRF_BASE() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.cbf.CRF_BIN() {
+skip.test::cbf::CRF_BIN() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -99,7 +99,7 @@ skip.test.cbf.CRF_BIN() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.cbf.CRT_BASE() {
+skip.test::cbf::CRT_BASE() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -108,7 +108,7 @@ skip.test.cbf.CRT_BASE() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.cbf.__init() {
+skip.test::cbf::__init() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -117,7 +117,7 @@ skip.test.cbf.__init() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.cbf.LIB() {
+skip.test::cbf::LIB() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -126,7 +126,7 @@ skip.test.cbf.LIB() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.cbf.makeScript() {
+skip.test::cbf::makeScript() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -135,7 +135,7 @@ skip.test.cbf.makeScript() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.cbf.propertiesFile() {
+skip.test::cbf::propertiesFile() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -144,7 +144,7 @@ skip.test.cbf.propertiesFile() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.cbf.runScripts() {
+skip.test::cbf::runScripts() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -153,7 +153,7 @@ skip.test.cbf.runScripts() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.cbf.TEMPLATE() {
+skip.test::cbf::TEMPLATE() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -213,7 +213,7 @@ setup() {
     [ "$test_cbf_bashlib_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running setup'
     export LOG=__test_cbf_bashlib.mock_logger
     test_cbf_bashlib_LOG_file=$(__test_cbf_bashlib.mktemp)
-    fake 'term.log' '__test_cbf_bashlib.mock_logger "$FAKE_PARAMS"'
+    fake 'term::log' '__test_cbf_bashlib.mock_logger "$FAKE_PARAMS"'
     touch "$test_cbf_bashlib_LOG_file"
 }
 

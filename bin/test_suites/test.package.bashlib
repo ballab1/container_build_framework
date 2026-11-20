@@ -39,7 +39,7 @@
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.package.checkIfInstalled() {
+skip.test::package::checkIfInstalled() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -48,7 +48,7 @@ skip.test.package.checkIfInstalled() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.package.checkPackage() {
+skip.test::package::checkPackage() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -57,7 +57,7 @@ skip.test.package.checkPackage() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.package.install() {
+skip.test::package::install() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -66,7 +66,7 @@ skip.test.package.install() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.package.installTimezone() {
+skip.test::package::installTimezone() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -75,7 +75,7 @@ skip.test.package.installTimezone() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.package.packageList() {
+skip.test::package::packageList() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -84,7 +84,7 @@ skip.test.package.packageList() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.package.runScripts() {
+skip.test::package::runScripts() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -93,7 +93,7 @@ skip.test.package.runScripts() {
 
 #-----------------------------------------------------------------------------------------
 # provide brief explanation of what test does
-skip.test.package.updateIndexes() {
+skip.test::package::updateIndexes() {
     local expected=0
     local actual=0
 #    assert_equals "$expected" "$actual"
@@ -153,7 +153,7 @@ setup() {
     [ "$test_package_bashlib_DEBUG" = 0 ] || printf '\x1b[94m%s\x1b[0m\n\n' 'Running setup'
     export LOG=__test_package_bashlib.mock_logger
     test_package_bashlib_LOG_file=$(__test_package_bashlib.mktemp)
-    fake 'term.log' '__test_package_bashlib.mock_logger "$FAKE_PARAMS"'
+    fake 'term::log' '__test_package_bashlib.mock_logger "$FAKE_PARAMS"'
     touch "$test_package_bashlib_LOG_file"
 }
 
