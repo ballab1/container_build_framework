@@ -16,7 +16,7 @@ declare -A test=()
 
 
 #############################################################################
-function test.downloadFramework()
+function test::downloadFramework()
 {
     local -r download_dir=${1:?"must pass parameter 'download_dir' to 'function ${FUNCNAME[0]}()'"}
 
@@ -69,7 +69,7 @@ function test.downloadFramework()
 }
 
 #############################################################################
-function test.processArgs()
+function test::processArgs()
 {
     local -a args=( "$@" )
 
@@ -97,8 +97,8 @@ function test.processArgs()
             fi
 
             # add prefix if ommitted
-            if [ -e "test.$f" ]; then
-                args[i]="test.${args[i]}"
+            if [ -e "test::$f" ]; then
+                args[i]="test::${args[i]}"
                 continue
             fi
 
@@ -109,8 +109,8 @@ function test.processArgs()
             fi
 
             # add prefix & suffix if ommitted
-            if [ -e "test.${f}.bashlib" ]; then
-                args[i]="test.${args[i]}.bashlib"
+            if [ -e "test::${f}.bashlib" ]; then
+                args[i]="test::${args[i]}.bashlib"
                 continue
             fi
         done
@@ -119,17 +119,17 @@ function test.processArgs()
 }
 
 #############################################################################
-function test.main()
+function test::main()
 {
     # tests are maintained in the 'test_suites' folder in directory this script is in
     declare -r DIR_OF_TESTS_TO_RUN="$(dirname "${BASH_SOURCE[0]}")/test_suites"
     cd "$DIR_OF_TESTS_TO_RUN" ||:
 
-    local -a args=( $(test.processArgs "$@") )
+    local -a args=( $(test::processArgs "$@") )
     local -i status=0
 
     # configure where our test framework comes from, and in which dir it resides
-    local -r test_dir="${BASH_UNIT_ROOT:-$(test.tmpDir)}"
+    local -r test_dir="${BASH_UNIT_ROOT:-$(test::tmpDir)}"
     test['BASH_UNIT_DIR']="$( readlink -f "$test_dir" )"
 
 
@@ -139,7 +139,7 @@ function test.main()
         ("${test['BASH_UNIT']}" -f tap ${args[@]}) && status=$? || status=$?
 
     # download the test framework if needed
-    elif test.downloadFramework "${test['BASH_UNIT_DIR']}" ; then
+    elif test::downloadFramework "${test['BASH_UNIT_DIR']}" ; then
 
         ("${test['BASH_UNIT']}" -f tap ${args[@]}) && status=$? || status=$?
     fi
@@ -147,7 +147,7 @@ function test.main()
 }
 
 #############################################################################
-function test.tmpDir()
+function test::tmpDir()
 {
     local -r tmpUserDir="${TMPDIR:-/tmp}/$USER"
     mkdir -p "$tmpUserDir"
@@ -180,4 +180,4 @@ function test.tmpDir()
 #
 #############################################################################
 
-test.main "$@"
+test::main "$@"

@@ -8,7 +8,7 @@
 declare -r SPLITTER='#-----------------------------------------------------------------------------------------'
 
 #----------------------------------------------------------------------------
-function stub_testsuite.usage()
+function stub_testsuite::usage()
 {
 cat << EOF
 
@@ -25,7 +25,7 @@ EOF
 }
 
 #----------------------------------------------------------------------------
-function stub_testsuite.createFile()
+function stub_testsuite::createFile()
 {
     local -r file_under_test=${1:?"Input parameter 'file_under_test' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r test_file=${2:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -33,7 +33,7 @@ function stub_testsuite.createFile()
     printf '\nGenerating test suite file: %s\n' "$test_file"
     [ -e "$test_file" ] && mv "$test_file" "${test_file}.sav"
 
-    local namespace="$( stub_testsuite.nameSpace "$test_file" )"
+    local namespace="$( stub_testsuite::nameSpace "$test_file" )"
 
 cat << EOF > "$test_file"
 #!/usr/bin/env bash_unit
@@ -78,10 +78,10 @@ EOF
 }
 
 #----------------------------------------------------------------------------
-function stub_testsuite.custom_support()
+function stub_testsuite::custom_support()
 {
     local -r test_file=${1:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local namespace="$( stub_testsuite.nameSpace "$test_file" )"
+    local namespace="$( stub_testsuite::nameSpace "$test_file" )"
 
     echo '  adding: custom support'
     echo "    __${namespace}.mktemp"
@@ -116,7 +116,7 @@ EOF
 }
 
 #----------------------------------------------------------------------------
-function stub_testsuite.die()
+function stub_testsuite::die()
 {
     local status=$?
     [[ $status -ne 0 ]] || status=255
@@ -126,30 +126,30 @@ function stub_testsuite.die()
 }
 
 #----------------------------------------------------------------------------
-function stub_testsuite.generateTestFile()
+function stub_testsuite::generateTestFile()
 {
     local -r file_under_test=${1:?"Input parameter 'file_under_test' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r test_file=${2:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
 
-    stub_testsuite.createFile "$file_under_test" "$test_file"
+    stub_testsuite::createFile "$file_under_test" "$test_file"
 
     local -i test_count=0
-    for function_name in $(stub_testsuite.getFunctionNames "$file_under_test"); do
-        stub_testsuite.test_stub "$test_file" "$function_name"
+    for function_name in $(stub_testsuite::getFunctionNames "$file_under_test"); do
+        stub_testsuite::test_stub "$test_file" "$function_name"
         (( test_count++ ))
     done
 
-    stub_testsuite.setup_suite "$test_file"
-    stub_testsuite.teardown_suite "$test_file"
-    stub_testsuite.setup "$test_file"
-    stub_testsuite.teardown "$test_file"
-    stub_testsuite.custom_support "$test_file"
+    stub_testsuite::setup_suite "$test_file"
+    stub_testsuite::teardown_suite "$test_file"
+    stub_testsuite::setup "$test_file"
+    stub_testsuite::teardown "$test_file"
+    stub_testsuite::custom_support "$test_file"
 
     printf '\n%d tests generated\n' ${test_count}
 }
 
 #----------------------------------------------------------------------------
-function stub_testsuite.getFunctionNames()
+function stub_testsuite::getFunctionNames()
 {
     local -r file_under_test=${1:?"Input parameter 'file_under_test' must be passed to 'function ${FUNCNAME[0]}()'"}
 
@@ -159,7 +159,7 @@ function stub_testsuite.getFunctionNames()
 }
 
 #----------------------------------------------------------------------------
-function stub_testsuite.getTestNames()
+function stub_testsuite::getTestNames()
 {
     local -r test_file=${1:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
 
@@ -169,14 +169,14 @@ function stub_testsuite.getTestNames()
 }
 
 #----------------------------------------------------------------------------
-function stub_testsuite.main()
+function stub_testsuite::main()
 {
     local -r fut=${1:?"Input parameter 'fut' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r test_dir=${2:?"Input parameter 'test_dir' must be passed to 'function ${FUNCNAME[0]}()'"}
     shift ; shift
     local -ra args=( $@ )
 
-    [ -e "$fut" ] || stub_testsuite.die "Test file does not exist"
+    [ -e "$fut" ] || stub_testsuite::die "Test file does not exist"
 
     # fully qualified name of file_under_test
     local -r file_under_test="$( cd "$( dirname "$fut" )" && pwd )/$( basename "$fut" )"
@@ -188,12 +188,12 @@ function stub_testsuite.main()
 
     if [ "${#args[*]}" -gt 0 ]; then
         case "${args[0]}" in
-            help | -h | --h | --help) stub_testsuite.usage;;
-            Help | --Help)            stub_testsuite.usage;;
-            HELP | -H | --H | --HELP) stub_testsuite.usage;;
-            gen | -g | --g | --gen)   stub_testsuite.generateTestFile "$file_under_test" "$test_file";;
-            scan | -s | --s | --scan) stub_testsuite.scanTestFile "$file_under_test" "$test_file";;
-            *) echo '..Invalid argument suplied'; stub_testsuite.usage; exit 1;;
+            help | -h | --h | --help) stub_testsuite::usage;;
+            Help | --Help)            stub_testsuite::usage;;
+            HELP | -H | --H | --HELP) stub_testsuite::usage;;
+            gen | -g | --g | --gen)   stub_testsuite::generateTestFile "$file_under_test" "$test_file";;
+            scan | -s | --s | --scan) stub_testsuite::scanTestFile "$file_under_test" "$test_file";;
+            *) echo '..Invalid argument suplied'; stub_testsuite::usage; exit 1;;
         esac
         exit 0
     fi
@@ -201,12 +201,12 @@ function stub_testsuite.main()
         echo ''
         echo 'No option to <scan> or <gen> supplied'
     echo ''
-    stub_testsuite.usage
-        exit 1
+    stub_testsuite::usage
+    exit 1
 }
 
 #----------------------------------------------------------------------------
-function stub_testsuite.nameSpace()
+function stub_testsuite::nameSpace()
 {
     local -r test_file=${1:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
 
@@ -214,15 +214,15 @@ function stub_testsuite.nameSpace()
 }
 
 #----------------------------------------------------------------------------
-function stub_testsuite.scanTestFile()
+function stub_testsuite::scanTestFile()
 {
     local -r file_under_test=${1:?"Input parameter 'file_under_test' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r test_file=${2:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
 
     printf '\nTest suite being checked:   %s' "$test_file"
 
-    local -ar functions=( $(stub_testsuite.getFunctionNames "$file_under_test") )
-    local -a tests=( $(stub_testsuite.getTestNames "$test_file") )
+    local -ar functions=( $(stub_testsuite::getFunctionNames "$file_under_test") )
+    local -a tests=( $(stub_testsuite::getTestNames "$test_file") )
 
     printf '\n  %d functions detected' "${#functions[@]}"
     printf ',  %d tests detected' "${#tests[@]}"
@@ -262,10 +262,10 @@ function stub_testsuite.scanTestFile()
 }
 
 #----------------------------------------------------------------------------
-function stub_testsuite.setup()
+function stub_testsuite::setup()
 {
     local -r test_file=${1:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local namespace="$( stub_testsuite.nameSpace "$test_file" )"
+    local namespace="$( stub_testsuite::nameSpace "$test_file" )"
 
     echo '  adding: setup'
 cat << EOF >> "$test_file"
@@ -282,10 +282,10 @@ EOF
 }
 
 #----------------------------------------------------------------------------
-function stub_testsuite.setup_suite()
+function stub_testsuite::setup_suite()
 {
     local -r test_file=${1:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local namespace="$( stub_testsuite.nameSpace "$test_file" )"
+    local namespace="$( stub_testsuite::nameSpace "$test_file" )"
 
     echo '  adding: setup_suite'
 cat << EOF >> "$test_file"
@@ -327,10 +327,10 @@ EOF
 }
 
 #----------------------------------------------------------------------------
-function stub_testsuite.teardown()
+function stub_testsuite::teardown()
 {
     local -r test_file=${1:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local namespace="$( stub_testsuite.nameSpace "$test_file" )"
+    local namespace="$( stub_testsuite::nameSpace "$test_file" )"
 
     echo '  adding: teardown'
 cat << EOF >> "$test_file"
@@ -345,10 +345,10 @@ EOF
 }
 
 #----------------------------------------------------------------------------
-function stub_testsuite.teardown_suite()
+function stub_testsuite::teardown_suite()
 {
     local -r test_file=${1:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
-    local namespace="$( stub_testsuite.nameSpace "$test_file" )"
+    local namespace="$( stub_testsuite::nameSpace "$test_file" )"
 
     echo '  adding: teardownsuite'
 cat << EOF >> "$test_file"
@@ -370,7 +370,7 @@ EOF
 }
 
 #----------------------------------------------------------------------------
-function stub_testsuite.test_stub()
+function stub_testsuite::test_stub()
 {
     local -r test_file=${1:?"Input parameter 'test_file' must be passed to 'function ${FUNCNAME[0]}()'"}
     local -r function_name=${2:?"Input parameter 'function_name' must be passed to 'function ${FUNCNAME[0]}()'"}
@@ -391,12 +391,12 @@ EOF
 
 #----------------------------------------------------------------------------
 
-[ $# -ne 0 ] || stub_testsuite.usage
+[ $# -ne 0 ] || stub_testsuite::usage
 case "$1" in
-    -h|-H|--h|--H|-help|--HELP|-Help|--Help) stub_testsuite.usage;;
+    -h|-H|--h|--H|-help|--HELP|-Help|--Help) stub_testsuite::usage;;
 esac
 
 declare -r TEST_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/test_suites" && pwd )"
 declare -r FUT="${1?"Input parameter 'FUT' must be passed to '${BASH_SOURCE[0]}'"}"
 shift
-stub_testsuite.main "$FUT" "$TEST_DIR" "$@"
+stub_testsuite::main "$FUT" "$TEST_DIR" "$@"

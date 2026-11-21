@@ -5,7 +5,7 @@ set -o nounset
 set -o errexit
 
 ######################################################################
-function setupCBF.createStructure()
+function setupCBF::createStructure()
 {
     local action_folders=${1:?"must pass parameter 'action_folders' to 'function ${FUNCNAME[0]}()'"}
     local templates_folder=${2:?"must pass parameter 'templates_folder' to 'function ${FUNCNAME[0]}()'"}
@@ -22,19 +22,19 @@ function setupCBF.createStructure()
         done
 
         # rename all folders from prior versions of CBF
-        setupCBF.renameActionFolder "00.setup" "01.environment"
-        setupCBF.renameActionFolder "01.setup" "01.environment"
-        setupCBF.renameActionFolder "01.rt_environment" "01.environment"
-        setupCBF.renameActionFolder "01.packages" "02.packages"
-        setupCBF.renameActionFolder "02.users_groups" "03.users_groups"
-        setupCBF.renameActionFolder "03.downloads" "04.downloads"
-        setupCBF.renameActionFolder "04.applications" "05.applications"
-        setupCBF.renameActionFolder "05.build.customizations" "06.post_build_mods"
-        setupCBF.renameActionFolder "05.customizations" "06.post_build_mods"
-        setupCBF.renameActionFolder "06.build.customizations" "06.post_build_mods"
-        setupCBF.renameActionFolder "06.run.startup" "07.run.startup"
-        setupCBF.renameActionFolder "06.permissions" "07.run.startup"
-        setupCBF.renameActionFolder "07.cleanup" "08.cleanup"
+        setupCBF::renameActionFolder "00.setup" "01.environment"
+        setupCBF::renameActionFolder "01.setup" "01.environment"
+        setupCBF::renameActionFolder "01.rt_environment" "01.environment"
+        setupCBF::renameActionFolder "01.packages" "02.packages"
+        setupCBF::renameActionFolder "02.users_groups" "03.users_groups"
+        setupCBF::renameActionFolder "03.downloads" "04.downloads"
+        setupCBF::renameActionFolder "04.applications" "05.applications"
+        setupCBF::renameActionFolder "05.build.customizations" "06.post_build_mods"
+        setupCBF::renameActionFolder "05.customizations" "06.post_build_mods"
+        setupCBF::renameActionFolder "06.build.customizations" "06.post_build_mods"
+        setupCBF::renameActionFolder "06.run.startup" "07.run.startup"
+        setupCBF::renameActionFolder "06.permissions" "07.run.startup"
+        setupCBF::renameActionFolder "07.cleanup" "08.cleanup"
     fi
 
     # ensure we have empty folders for this CBF
@@ -51,14 +51,14 @@ function setupCBF.createStructure()
 }
 
 ######################################################################
-function setupCBF.die()
+function setupCBF::die()
 {
     echo "***ERROR: $1" >&2
     exit 1
 }
 
 ######################################################################
-function setupCBF.isValidProject()
+function setupCBF::isValidProject()
 {
     if [ ! -e "${project_dir}/.cbfBlacklist" ]; then
         # check if an existing project
@@ -80,7 +80,7 @@ function setupCBF.isValidProject()
 }
 
 ######################################################################
-function setupCBF.main()
+function setupCBF::main()
 {
     # load our libraries
     local -r project_dir="$( pwd )"
@@ -88,7 +88,7 @@ function setupCBF.main()
 
 
     # skip unless this is a valid project
-    setupCBF.isValidProject || exit 0
+    setupCBF::isValidProject || exit 0
 
 
     local cbf_dir
@@ -105,9 +105,9 @@ function setupCBF.main()
         # since no CBF directory located, attempt to download CBF based on specified verion
         local -r cbf_tgz="${temporary_dir}/cbf.tar.gz"
         local -r cbf_url="https://github.com/ballab1/container_build_framework/archive/${cbf_version}.tar.gz"
-        wget --no-check-certificate --quiet --output-document="$cbf_tgz" "$cbf_url" || setupCBF.die "Failed to download $cbf_url"
+        wget --no-check-certificate --quiet --output-document="$cbf_tgz" "$cbf_url" || setupCBF::die "Failed to download $cbf_url"
 
-        tar -xzC "$temporary_dir" -f "$cbf_tgz" || setupCBF.die "$(basename "$project_dir") not setup: Failed to download $cbf_url"
+        tar -xzC "$temporary_dir" -f "$cbf_tgz" || setupCBF::die "$(basename "$project_dir") not setup: Failed to download $cbf_url"
         cbf_dir="$( ls -d "${temporary_dir}/container_build_framework"* 2>/dev/null )"
     fi
 
@@ -119,7 +119,7 @@ function setupCBF.main()
     # now init stuff so we can use lib functionality
     source "${CBF_LOCATION}/cbf/bin/init.libraries"
     
-    setupCBF.setupProjectFiles "$project_dir"
+    setupCBF::setupProjectFiles "$project_dir"
 
     # clean up
     [ "${libTracker:-}" ] && [ -e "$libTracker" ] && rm "$libTracker"
@@ -136,7 +136,7 @@ function setupCBF.main()
 }
 
 ######################################################################
-function setupCBF.renameActionFolder()
+function setupCBF::renameActionFolder()
 {
     local org_name=${1:?"must pass parameter 'org_name' to 'function ${FUNCNAME[0]}()'"}
     local new_name=${2:?"must pass parameter 'new_name' to 'function ${FUNCNAME[0]}()'"}
@@ -148,7 +148,7 @@ function setupCBF.renameActionFolder()
 }
 
 ######################################################################
-function setupCBF.setupProjectFiles()
+function setupCBF::setupProjectFiles()
 {
     local top=${1:?"must pass parameter 'top' to 'function ${FUNCNAME[0]}()'"}
 
@@ -217,11 +217,11 @@ function setupCBF.setupProjectFiles()
 
     # setup our structure
     local -r action_folders="${top}/build/action_folders"
-    setupCBF.createStructure "$action_folders" "$( cbf::CBFBASE )/action.templates" "${isNew:-}"
+    setupCBF::createStructure "$action_folders" "$( cbf::CBFBASE )/action.templates" "${isNew:-}"
 }
 
 ######################################################################
-function setupCBF.verifyDependentContainerExists()
+function setupCBF::verifyDependentContainerExists()
 {
     if [ -z "$(  docker images --filter 'reference=base_container:*' -q --format '{{.Repository}}:{{.Tag}}' )" ];then
         term::log "The Docker image on which this project depends does not exist\n" 'error'
@@ -231,4 +231,4 @@ function setupCBF.verifyDependentContainerExists()
 
 ######################################################################
 
-setupCBF.main
+setupCBF::main
